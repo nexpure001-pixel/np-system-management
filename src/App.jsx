@@ -356,7 +356,14 @@ function App() {
     <div className="app-container">
       <header className="header">
         <h1>店舗管理ダッシュボード</h1>
-        <button className="glass-btn" onClick={openAddModal} disabled={isLoading}>+ 新規追加</button>
+        <div className="header-right">
+          <nav className="system-nav">
+            <button className="nav-item active">店舗管理</button>
+            <button className="nav-item">入金管理</button>
+            <button className="nav-item">分析</button>
+          </nav>
+          <button className="glass-btn" onClick={openAddModal} disabled={isLoading}>+ 新規追加</button>
+        </div>
       </header>
 
       {error && (
