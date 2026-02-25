@@ -45,7 +45,9 @@ const StoreManagement = () => {
         productSettingPlan: 'product_setting_plan',
         notPurchasedList: 'not_purchased_list',
         changedDuringActivity: 'changed_during_activity',
-        shippingDateEntered: 'shipping_date_entered'
+        shippingDateEntered: 'shipping_date_entered',
+        distinction: 'distinction',
+        paymentStatus: 'payment_status'
     };
 
     // データ表示用のキーに変換 (DB -> UI)
@@ -72,9 +74,9 @@ const StoreManagement = () => {
             salesStatus: item.sales_ok || '準備中',
             yearlyRenewal: item.yearly_renewal_legacy || '',
             renewalMonth: item.renewal_month || '',
-            payment: item.payment_date ? '完了' : '未入金',
+            payment: (item.distinction === 'FD店舗' || item.distinction === '特別店舗') ? '免除' : (item.payment_status || (item.payment_date ? '完了' : '未入金')),
             isDocComplete,
-            classification: isFD ? 'FD店舗' : (isNew ? '新規店舗' : '-'),
+            classification: item.distinction || (isFD ? 'FD店舗' : (isNew ? '新規店舗' : '通常')),
             documents: {
                 consent: item.doc_consent || '未提出',
                 registry: item.doc_registry || '未提出',
@@ -107,6 +109,7 @@ const StoreManagement = () => {
         data.initial_cost = formData.get('initial_cost');
 
         const paymentStatus = formData.get('payment_status');
+        data.payment_status = paymentStatus;
         if (paymentStatus === '完了' && !data.payment_date) {
             data.payment_date = new Date().toISOString();
         } else if (paymentStatus === '未入金') {
@@ -125,6 +128,7 @@ const StoreManagement = () => {
         data.not_purchased_list = formData.get('not_purchased_list');
         data.changed_during_activity = formData.get('changed_during_activity');
         data.shipping_date_entered = formData.get('shipping_date_entered');
+        data.distinction = formData.get('distinction');
 
         return data;
     };
@@ -204,6 +208,8 @@ const StoreManagement = () => {
             case '完了':
             case '提出済み':
                 return 'badge success';
+            case '免除':
+                return 'badge info'; // or something that looks neutral/good
             case '一時停止':
             case '未入金':
             case '未提出':
@@ -456,9 +462,28 @@ const StoreManagement = () => {
                                             </select>
                                         </div>
                                         <div className="form-group">
+                                            <label>区別</label>
+                                            <select
+                                                name="distinction"
+                                                defaultValue={editingStore?.classification || '通常'}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === 'FD店舗' || val === '特別店舗') {
+                                                        const paymentSelect = e.target.form.elements.payment_status;
+                                                        if (paymentSelect) paymentSelect.value = '免除';
+                                                    }
+                                                }}
+                                            >
+                                                <option value="通常">通常</option>
+                                                <option value="FD店舗">FD店舗</option>
+                                                <option value="特別店舗">特別店舗</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
                                             <label>入金状況</label>
                                             <select name="payment_status" defaultValue={editingStore?.payment || '未入金'}>
                                                 <option value="完了">完了</option>
+                                                <option value="免除">免除</option>
                                                 <option value="未入金">未入金</option>
                                             </select>
                                         </div>
