@@ -355,7 +355,7 @@ function App() {
   return (
     <div className="app-container">
       <header className="header">
-        <h1>店舗管理 Dashboard</h1>
+        <h1>店舗管理ダッシュボード</h1>
         <button className="glass-btn" onClick={openAddModal} disabled={isLoading}>+ 新規追加</button>
       </header>
 
