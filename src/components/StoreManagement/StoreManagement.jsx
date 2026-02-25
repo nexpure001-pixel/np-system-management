@@ -264,8 +264,10 @@ const StoreManagement = () => {
         if (filterMode === 'renewal-current') {
             const isMatch = (val) => {
                 if (!val) return false;
-                const normalized = String(val).replace('月', '');
-                return normalized === String(now.getMonth() + 1);
+                // 「2月」も「2」も「02」も現在の月と比較可能な形式に
+                const normalized = String(val).replace(/月/g, '').padStart(2, '0');
+                const target = String(now.getMonth() + 1).padStart(2, '0');
+                return normalized === target;
             };
             return store.salesStatus === '販売OK' && (isMatch(store.yearlyRenewal) || isMatch(store.renewalMonth));
         }
@@ -324,8 +326,9 @@ const StoreManagement = () => {
                         {isLoading ? '-' : stores.filter(s => {
                             const isMatch = (val) => {
                                 if (!val) return false;
-                                const normalized = String(val).replace('月', '');
-                                return normalized === String(now.getMonth() + 1);
+                                const normalized = String(val).replace(/月/g, '').padStart(2, '0');
+                                const target = String(now.getMonth() + 1).padStart(2, '0');
+                                return normalized === target;
                             };
                             return s.salesStatus === '販売OK' && (isMatch(s.yearlyRenewal) || isMatch(s.renewalMonth));
                         }).length}
@@ -382,7 +385,14 @@ const StoreManagement = () => {
                                             <span className={getBadgeClass(store.isDocComplete ? '提出済み' : '未提出')} style={{ padding: '4px 8px' }}>{store.isDocComplete ? '完備' : '不足'}</span>
                                         </div>
                                     </td>
-                                    <td>{store.yearlyRenewal || (store.renewalMonth ? store.renewalMonth + '月' : '-')}</td>
+                                    <td>
+                                        {(() => {
+                                            const val = store.yearlyRenewal || store.renewalMonth;
+                                            if (!val) return '-';
+                                            // 「2月」ならそのまま、「2」なら「2月」に変換
+                                            return String(val).includes('月') ? val : val + '月';
+                                        })()}
+                                    </td>
                                     <td><button className="action-btn edit-btn" onClick={() => openEditModal(store)}>詳細・編集</button></td>
                                 </tr>
                             ))}

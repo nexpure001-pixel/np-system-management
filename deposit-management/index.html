@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 入金管理システム ✨</title>
+    <!-- Google Fonts: Zen Maru Gothic for a soft, cute feeling -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- SheetJS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <!-- 超かわいい通信中ローディング画面 -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <i class="fa-solid fa-spinner fa-spin loading-spinner"></i>
+            <h2 class="loading-text">スプレッドシートと通信中...💖</h2>
+            <p>かわいく準備しています！少しだけ待っててね✨</p>
+        </div>
+        <div id="heartsContainer"></div>
+    </div>
+
+    <div class="background-bubbles">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <div class="container glass-panel">
+        <header style="position: relative;">
+            <h1><i class="fa-solid fa-heart header-icon"></i> 入金管理システム</h1>
+            <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%);">
+                <button id="openHelpBtn" class="secondary-btn pulse-hover"
+                    style="background: #fff0f5; color: #ff6b81; border: 2px solid #ffb6c1; font-size: 0.9em; padding: 8px 15px; margin: 0;">
+                    <i class="fa-solid fa-circle-question"></i> 使い方・ヘルプ 🎀
+                </button>
+            </div>
+        </header>
+
+        <div class="file-operations glass-panel"
+            style="margin-bottom: 20px; display: flex; gap: 15px; padding: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <button class="primary-btn pulse-hover" id="loadFromGasBtn"
+                    style="background:#4a90e2; color:white; border:none;" title="スプレッドシートの最新データを読み込みます">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> シートから読込
+                </button>
+                <button class="primary-btn pulse-hover" id="syncToGasBtn"
+                    style="background:#ff6b81; color:white; border:none;" title="画面の最新状態をそのままスプレッドシートへ上書き保存します">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> シートへ一括保存
+                </button>
+            </div>
+
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <label for="excelUpload" class="secondary-btn"
+                    style="cursor: pointer; margin: 0; background: rgba(255,255,255,0.8); color: var(--text-color);">
+                    <i class="fa-solid fa-folder-open"></i> エクセル読込（バックアップ用）
+                </label>
+                <input type="file" id="excelUpload" accept=".xlsx, .xls" style="display: none;">
+                <button id="exportExcelBtn" class="secondary-btn"
+                    style="background: rgba(255,255,255,0.8); color: var(--text-color); display: none;">
+                    <i class="fa-solid fa-file-export"></i> エクセル保存（バックアップ用）
+                </button>
+            </div>
+        </div>
+
+        <div class="controls-area">
+            <div class="search-box">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="searchInput" placeholder="氏名や備考などのキーワードで検索...">
+            </div>
+            <button class="primary-btn pulse-hover" id="openAddModalBtn" style="display: none;">
+                <i class="fa-solid fa-plus"></i> 新規入金登録
+            </button>
+        </div>
+
+        <div class="table-container">
+            <table id="dataTable" class="cute-table">
+                <colgroup>
+                    <col style="width: 7%;">
+                    <col style="width: 7%;">
+                    <col style="width: 12%;">
+                    <col style="width: 7%;">
+                    <col style="width: 15%;">
+                    <col style="width: 9%;">
+                    <col style="width: 13%;">
+                    <col style="width: 10%;">
+                    <col style="width: 15%;">
+                    <col style="width: 5%;">
+                </colgroup>
+                <thead id="tableHead">
+                    <tr>
+                        <th class="sortable" data-sort="shiharaibiNyuuryoku">支払日入力 <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable" data-sort="boxIdou">BOX移動 <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable" data-sort="tourokuJouhou">登録情報 <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable" data-sort="soshikizuKakunin">組織図確認 <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable" data-sort="rankUpBikou">ランクアップ <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable" data-sort="chuumonbi">振込日 <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable" data-sort="shimei">氏名 <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable" data-sort="nyuukinKingaku">入金金額 <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable" data-sort="bikou">備考 <i class="fa-solid fa-sort"></i></th>
+                        <th class="sortable" data-sort="kanryou" style="color: #ff6b81;">完了 <i
+                                class="fa-solid fa-sort"></i></th>
+                    </tr>
+                    <!-- 各項目の検索フィルター -->
+                    <tr class="filter-row" style="background: rgba(255,255,255,0.9);">
+                        <th>
+                            <select id="filterShiharaibi" class="cute-input filter-input">
+                                <option value="">すべて</option>
+                                <option value="済">済のみ</option>
+                                <option value="未">未のみ</option>
+                            </select>
+                        </th>
+                        <th>
+                            <select id="filterBoxIdou" class="cute-input filter-input">
+                                <option value="">すべて</option>
+                                <option value="済">済のみ</option>
+                                <option value="未">未のみ</option>
+                            </select>
+                        </th>
+                        <th><input type="text" id="filterTouroku" class="cute-input filter-input" placeholder="検索...">
+                        </th>
+                        <th>
+                            <select id="filterSoshikizu" class="cute-input filter-input">
+                                <option value="">すべて</option>
+                                <option value="済">済のみ</option>
+                                <option value="未">未のみ</option>
+                            </select>
+                        </th>
+                        <th><input type="text" id="filterRankUp" class="cute-input filter-input" placeholder="検索...">
+                        </th>
+                        <th><input type="text" id="filterDate" class="cute-input filter-input" placeholder="検索..."></th>
+                        <th><input type="text" id="filterName" class="cute-input filter-input" placeholder="名前を検索...">
+                        </th>
+                        <th><input type="text" id="filterAmount" class="cute-input filter-input" placeholder="金額...">
+                        </th>
+                        <th><input type="text" id="filterBikou" class="cute-input filter-input" placeholder="備考を検索...">
+                        </th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="quickAddBody" style="border-bottom: 2px dashed #ffb6c1;">
+                    <tr style="height: 15px; background: transparent;">
+                        <td colspan="10"
+                            style="border: none !important; border-top: 2px dashed #ffb6c1 !important; padding: 0 !important; pointer-events: none;">
+                        </td>
+                    </tr>
+                    <tr style="height: 10px; background: transparent;">
+                        <td colspan="10" style="border: none !important; padding: 0 !important; pointer-events: none;">
+                        </td>
+                    </tr>
+                    <tr class="quick-add-row" style="background-color: rgba(255, 240, 245, 0.8);">
+                        <td style="text-align: center; vertical-align: middle;">
+                            <label class="cute-checkbox"
+                                style="display:inline-flex; justify-content:center; margin-bottom: 0;">
+                                <input type="checkbox" id="qaShiharaibi">
+                                <span class="checkmark" style="width: 18px; height: 18px;"></span>
+                            </label>
+                        </td>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <label class="cute-checkbox"
+                                style="display:inline-flex; justify-content:center; margin-bottom: 0;">
+                                <input type="checkbox" id="qaBoxIdou">
+                                <span class="checkmark" style="width: 18px; height: 18px;"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <select id="qaTourokuJouhou" class="cute-input"
+                                style="padding: 2px; font-size: 0.85em !important; border-radius: 5px !important; width: 100%; min-width: 80px;">
+                                <option value=""></option>
+                                <option value="未注文">未注文</option>
+                                <option value="未登録">未登録</option>
+                                <option value="新規">新規</option>
+                                <option value="追加">追加</option>
+                                <option value="ランクアップ">ﾗﾝｸｱｯﾌﾟ</option>
+                                <option value="新規／追加">新規/追加</option>
+                                <option value="新規／ランクアップ">新規/ﾗﾝｸｱｯﾌﾟ</option>
+                                <option value="追加／ランクアップ">追加/ﾗﾝｸｱｯﾌﾟ</option>
+                                <option value="リピート／購入">ﾘﾋﾟｰﾄ/購入</option>
+                                <option value="救済">救済</option>
+                                <option value="店舗関連">店舗関連</option>
+                                <option value="オートシップ">ｵｰﾄｼｯﾌﾟ</option>
+                            </select>
+                        </td>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <label class="cute-checkbox"
+                                style="display:inline-flex; justify-content:center; margin-bottom: 0;">
+                                <input type="checkbox" id="qaSoshikizu">
+                                <span class="checkmark" style="width: 18px; height: 18px;"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <select id="qaRankUp" class="cute-input"
+                                style="padding: 2px; font-size: 0.85em !important; border-radius: 5px !important; width: 100%; min-width: 80px;">
+                                <option value=""></option>
+                                <option value="登録">登録</option>
+                                <option value="旧登録">旧登録</option>
+                                <option value="申請日">申請日</option>
+                                <option value="3個ok">3個ok</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="date" id="qaChuumonbi" class="cute-input"
+                                style="padding: 2px 5px; font-size: 0.85em !important; border-radius: 5px !important; width: 100%; box-sizing: border-box;">
+                        </td>
+                        <td>
+                            <input type="text" id="qaShimei" class="cute-input" placeholder="氏名(連打用)"
+                                style="padding: 2px 5px; font-size: 0.85em !important; border-radius: 5px !important; width: 100%; box-sizing: border-box;">
+                        </td>
+                        <td>
+                            <input type="text" id="qaNyuukinKingaku" class="cute-input" placeholder="金額"
+                                style="padding: 2px 5px; font-size: 0.85em !important; border-radius: 5px !important; width: 100%; box-sizing: border-box; text-align: right; font-weight: bold;">
+                        </td>
+                        <td>
+                            <input type="text" id="qaBikou" class="cute-input" placeholder="備考"
+                                style="padding: 2px 5px; font-size: 0.85em !important; border-radius: 5px !important; width: 100%; box-sizing: border-box;">
+                        </td>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <button id="qaAddBtn" class="primary-btn pulse-hover"
+                                style="padding: 4px 10px; font-size: 0.85em; border-radius: 20px; white-space: nowrap;">
+                                <i class="fa-solid fa-plus"></i> 追加
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="10" class="loading-cell">
+                            <i class="fa-solid fa-info-circle"></i> 「Excelを開く」ボタンから <b>入金管理シート.xlsx</b> を読み込んでください 💖
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal for Add/Edit -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2 id="modalTitle">🌟 新規入金登録</h2>
+                <button class="close-btn" id="closeModalBtn"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <input type="hidden" id="recordId" name="id">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>支払日入力・済</label>
+                            <label class="cute-checkbox">
+                                <input type="checkbox" name="shiharaibiNyuuryoku" id="shiharaibiNyuuryoku">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>BOX移動・済</label>
+                            <label class="cute-checkbox">
+                                <input type="checkbox" name="boxIdou" id="boxIdou">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tourokuJouhou">登録情報 <i class="fa-solid fa-chevron-down input-icon"></i></label>
+                            <select id="tourokuJouhou" name="tourokuJouhou" class="cute-input">
+                                <option value="">選択してください</option>
+                                <option value="未注文">未注文</option>
+                                <option value="未登録">未登録</option>
+                                <option value="新規">新規</option>
+                                <option value="追加">追加</option>
+                                <option value="ランクアップ">ランクアップ</option>
+                                <option value="新規／追加">新規／追加</option>
+                                <option value="新規／ランクアップ">新規／ランクアップ</option>
+                                <option value="追加／ランクアップ">追加／ランクアップ</option>
+                                <option value="リピート／購入">リピート／購入</option>
+                                <option value="救済">救済</option>
+                                <option value="店舗関連">店舗関連</option>
+                                <option value="オートシップ">オートシップ</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>組織図確認・済</label>
+                            <label class="cute-checkbox">
+                                <input type="checkbox" name="soshikizuKakunin" id="soshikizuKakunin">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="rankUpBikouGroup" style="display: none;">
+                        <label for="rankUpBikou">ランクアップ <i class="fa-solid fa-star input-icon"></i></label>
+                        <select id="rankUpBikou" name="rankUpBikou" class="cute-input">
+                            <option value="">選択してください</option>
+                            <option value="登録">登録</option>
+                            <option value="旧登録">旧登録</option>
+                            <option value="申請日">申請日</option>
+                            <option value="3個ok">3個ok</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="chuumonbi">注文日/振込日 <i class="fa-regular fa-calendar input-icon"></i></label>
+                            <input type="date" id="chuumonbi" name="chuumonbi" class="cute-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="nyuukinKingaku">ご入金金額 (円) <i class="fa-solid fa-coins input-icon"></i></label>
+                            <input type="text" id="nyuukinKingaku" name="nyuukinKingaku" class="cute-input"
+                                placeholder="例: 10,000" style="font-weight: bold;">
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="shimei">氏名 <i class="fa-solid fa-user input-icon"></i></label>
+                        <input type="text" id="shimei" name="shimei" class="cute-input" placeholder="氏名を入力">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="bikou">備考 <i class="fa-solid fa-comment-dots input-icon"></i></label>
+                        <textarea id="bikou" name="bikou" class="cute-input" rows="3" placeholder="備考を入力"></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="secondary-btn" id="cancelBtn">キャンセル</button>
+                        <button type="submit" class="primary-btn" id="saveBtn">更新する 💖</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width: 650px; padding: 30px;">
+            <div class="modal-header">
+                <h2 id="helpModalTitle"><i class="fa-solid fa-book-open"></i> 使い方マニュアル 🎀</h2>
+                <button class="close-btn" id="closeHelpModalBtn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body help-content"
+                style="max-height: 60vh; overflow-y: auto; text-align: left; padding: 0 10px;">
+
+                <div class="help-section">
+                    <h3><i class="fa-solid fa-cloud-arrow-down"></i> 1. データの読み込み</h3>
+                    <p>まずは画面左上の<strong>「シートから読込」</strong>ボタンを押して、スプレッドシートの最新データを読み込みます。</p>
+                </div>
+
+                <div class="help-section">
+                    <h3><i class="fa-solid fa-bolt"></i> 2. 連続・爆速データ入力（クイックアド）</h3>
+                    <p>検索バーのすぐ下にあるピンクの点線で囲まれた行が<strong>「連続入力専用の行」</strong>です。</p>
+                    <ul>
+                        <li>日付や登録情報を選んで、氏名・金額などを入力します。</li>
+                        <li><strong>Enterキー</strong>を押すか「追加」ボタンを押すと、一番上にポンッと追加されます。</li>
+                        <li>追加した後は<strong>氏名欄にカーソルが戻る</strong>ので、そのまま次のデータをどんどん連打入力できます！（日付はそのまま残るので繰り返しの入力が超ラクです✨）</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3><i class="fa-solid fa-pen"></i> 3. データの直接編集・完了チェック</h3>
+                    <p>一覧表のデータは、文字を消して<strong>直接書き直すだけで自動的に更新</strong>されます。</p>
+                    <ul>
+                        <li>金額欄は、入力後にフォーカスを外すと<strong>自動で3桁カンマ</strong>が入り、太字で見やすくなります！</li>
+                        <li>一番右の<strong>ハートのチェックボックス</strong>を押すと、可愛いピンク色に跳ねて、その行全体が薄いグレーアウト（完了状態）になります💖</li>
+                    </ul>
+                </div>
+
+                <div class="help-section">
+                    <h3><i class="fa-solid fa-cloud-arrow-up"></i> 4. データの保存</h3>
+                    <p>すべての入力と編集が終わったら、最後に画面左上の<strong>「シートへ一括保存」</strong>ボタンを押してください。スプレッドシートに全て上書き保存され、翌日にも引き継がれます！
+                    </p>
+                </div>
+
+            </div>
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button type="button" class="primary-btn" id="closeHelpModalBottomBtn" style="padding: 10px 30px;">とじる
+                    💖</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">
+        <i class="fa-solid fa-check-circle"></i> <span id="toastMessage">保存しました</span>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>
