@@ -1,16 +1,346 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import * as XLSX from 'xlsx';
+import './PaymentManagement.css';
 
 const PaymentManagement = () => {
+    // --- State ---
+    const [payments, setPayments] = useState(() => {
+        const savedData = localStorage.getItem('np_payments_data');
+        if (savedData) {
+            try {
+                return JSON.parse(savedData);
+            } catch (e) {
+                console.error('PaymentManagement: Failed to parse saved data', e);
+                return [];
+            }
+        }
+        return [];
+    });
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filters, setFilters] = useState({
+        shiharaibi: '',
+        boxIdou: '',
+        touroku: '',
+        soshikizu: '',
+        rankUp: '',
+        chuumonbi: '',
+        shimei: '',
+        nyuukin: '',
+        bikou: ''
+    });
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+    // Quick Add State
+    const [quickAdd, setQuickAdd] = useState({
+        shiharaibi: false,
+        boxIdou: false,
+        touroku: '',
+        soshikizu: false,
+        rankUp: '',
+        chuumonbi: new Date().toISOString().split('T')[0],
+        shimei: '',
+        nyuukin: '',
+        bikou: ''
+    });
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingRecord, setEditingRecord] = useState(null);
+
+    // --- Lifecycle: Save to LocalStorage ---
+    useEffect(() => {
+        localStorage.setItem('np_payments_data', JSON.stringify(payments));
+    }, [payments]);
+
+    // --- Handlers ---
+    const handleQuickAdd = () => {
+        if (!quickAdd.shimei && !quickAdd.nyuukin) return;
+
+        const newRecord = {
+            ...quickAdd,
+            id: Date.now(),
+            kanryou: false,
+            // Format amount as number if possible
+            nyuukin: quickAdd.nyuukin.replace(/,/g, '')
+        };
+
+        setPayments([newRecord, ...payments]);
+        // Reset fields except date and some status
+        setQuickAdd(prev => ({
+            ...prev,
+            shiharaibi: false,
+            boxIdou: false,
+            touroku: '',
+            soshikizu: false,
+            rankUp: '',
+            shimei: '',
+            nyuukin: '',
+            bikou: ''
+        }));
+    };
+
+    const handleSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const toggleKanryou = (id) => {
+        setPayments(payments.map(p =>
+            p.id === id ? { ...p, kanryou: !p.kanryou } : p
+        ));
+    };
+
+    const handleInlineEdit = (id, field, value) => {
+        setPayments(payments.map(p =>
+            p.id === id ? { ...p, [field]: value } : p
+        ));
+    };
+
+    const handleExportExcel = () => {
+        const header = ["支払日入力", "BOX移動", "登録情報", "組織図確認", "ランクアップ", "振込日", "氏名", "入金金額", "備考", "完了"];
+        const data = payments.map(p => [
+            p.shiharaibi ? '済' : '未',
+            p.boxIdou ? '済' : '未',
+            p.touroku,
+            p.soshikizu ? '済' : '未',
+            p.rankUp,
+            p.chuumonbi,
+            p.shimei,
+            p.nyuukin,
+            p.bikou,
+            p.kanryou ? '完了' : '未'
+        ]);
+
+        const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "入金管理");
+        XLSX.writeFile(wb, "入金管理エクスポート.xlsx");
+    };
+
+    // --- Derived Data: Filtered & Sorted ---
+    const filteredPayments = useMemo(() => {
+        const lowerQuery = searchQuery.toLowerCase();
+        return payments
+            .filter(p => {
+                const matchesGlobal = (
+                    (p.shimei || '').toLowerCase().includes(lowerQuery) ||
+                    (p.bikou || '').toLowerCase().includes(lowerQuery) ||
+                    (p.touroku || '').toLowerCase().includes(lowerQuery)
+                );
+
+                const matchesColumns = (
+                    (!filters.shiharaibi || (p.shiharaibi ? '済' : '未') === filters.shiharaibi) &&
+                    (!filters.boxIdou || (p.boxIdou ? '済' : '未') === filters.boxIdou) &&
+                    (!filters.touroku || (p.touroku || '').toLowerCase().includes(filters.touroku.toLowerCase())) &&
+                    (!filters.shimei || (p.shimei || '').toLowerCase().includes(filters.shimei.toLowerCase())) &&
+                    (!filters.nyuukin || (p.nyuukin || '').toString().includes(filters.nyuukin))
+                );
+
+                return matchesGlobal && matchesColumns;
+            })
+            .sort((a, b) => {
+                if (!sortConfig.key) return 0;
+                const aVal = a[sortConfig.key] || '';
+                const bVal = b[sortConfig.key] || '';
+                if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+    }, [payments, searchQuery, filters, sortConfig]);
+
     return (
-        <div className="payment-management-placeholder">
-            <header className="header">
-                <h1>入金管理ダッシュボード</h1>
+        <div className="payment-management-container">
+            <div className="background-bubbles">
+                <div className="bubble"></div>
+                <div className="bubble"></div>
+                <div className="bubble"></div>
+                <div className="bubble"></div>
+                <div className="bubble"></div>
+            </div>
+
+            <header>
+                <h1><i className="fa-solid fa-heart header-icon"></i> 入金管理システム (ローカル版)</h1>
             </header>
-            <div className="glass-panel" style={{ padding: '40px', textAlign: 'center' }}>
-                <h2 style={{ color: 'var(--primary-accent)' }}>システムの構築準備中</h2>
-                <p style={{ marginTop: '20px', color: 'var(--text-muted)' }}>
-                    これから入金管理の画面とロジックを構築していきます。
-                </p>
+
+            <div className="file-operations glass-panel" style={{ padding: '15px', display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="primary-btn" onClick={() => alert('ローカル版のためシート連携は無効です。Supabase移行時に有効化されます。')}>
+                        <i className="fa-solid fa-cloud"></i> クラウド同期 (準備中)
+                    </button>
+                    <button className="secondary-btn" onClick={handleExportExcel}>
+                        <i className="fa-solid fa-file-export"></i> Excel保存
+                    </button>
+                </div>
+                <div style={{ color: 'var(--text-color)', fontSize: '0.9em', opacity: 0.8 }}>
+                    ※ データはブラウザにのみ保存されています
+                </div>
+            </div>
+
+            <div className="controls-area">
+                <div className="search-box">
+                    <i className="fa-solid fa-search"></i>
+                    <input
+                        type="text"
+                        placeholder="氏名や備考で検索..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <div className="table-container glass-panel">
+                <table className="cute-table">
+                    <thead>
+                        <tr>
+                            <th onClick={() => handleSort('shiharaibi')}>支払日入力</th>
+                            <th onClick={() => handleSort('boxIdou')}>BOX移動</th>
+                            <th onClick={() => handleSort('touroku')}>登録情報</th>
+                            <th onClick={() => handleSort('soshikizu')}>組織図確認</th>
+                            <th onClick={() => handleSort('rankUp')}>ランクアップ</th>
+                            <th onClick={() => handleSort('chuumonbi')}>振込日</th>
+                            <th onClick={() => handleSort('shimei')}>氏名</th>
+                            <th onClick={() => handleSort('nyuukin')}>金額</th>
+                            <th onClick={() => handleSort('bikou')}>備考</th>
+                            <th style={{ textAlign: 'center' }}>完了</th>
+                        </tr>
+                        <tr className="filter-row">
+                            <th>
+                                <select className="filter-input" value={filters.shiharaibi} onChange={e => setFilters({ ...filters, shiharaibi: e.target.value })}>
+                                    <option value="">すべて</option>
+                                    <option value="済">済</option>
+                                    <option value="未">未</option>
+                                </select>
+                            </th>
+                            <th>
+                                <select className="filter-input" value={filters.boxIdou} onChange={e => setFilters({ ...filters, boxIdou: e.target.value })}>
+                                    <option value="">すべて</option>
+                                    <option value="済">済</option>
+                                    <option value="未">未</option>
+                                </select>
+                            </th>
+                            <th><input className="filter-input" placeholder="検索" onChange={e => setFilters({ ...filters, touroku: e.target.value })} /></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th><input className="filter-input" placeholder="名前" onChange={e => setFilters({ ...filters, shimei: e.target.value })} /></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                        <tr className="quick-add-row">
+                            <td style={{ textAlign: 'center' }}>
+                                <label className="cute-checkbox">
+                                    <input type="checkbox" checked={quickAdd.shiharaibi} onChange={e => setQuickAdd({ ...quickAdd, shiharaibi: e.target.checked })} />
+                                    <span className="checkmark"></span>
+                                </label>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                                <label className="cute-checkbox">
+                                    <input type="checkbox" checked={quickAdd.boxIdou} onChange={e => setQuickAdd({ ...quickAdd, boxIdou: e.target.checked })} />
+                                    <span className="checkmark"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <select className="filter-input" value={quickAdd.touroku} onChange={e => setQuickAdd({ ...quickAdd, touroku: e.target.value })}>
+                                    <option value=""></option>
+                                    <option value="新規">新規</option>
+                                    <option value="追加">追加</option>
+                                    <option value="ランクアップ">ﾗﾝｸｱｯﾌﾟ</option>
+                                </select>
+                            </td>
+                            <td>
+                                <label className="cute-checkbox">
+                                    <input type="checkbox" checked={quickAdd.soshikizu} onChange={e => setQuickAdd({ ...quickAdd, soshikizu: e.target.checked })} />
+                                    <span className="checkmark"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <select className="filter-input" value={quickAdd.rankUp} onChange={e => setQuickAdd({ ...quickAdd, rankUp: e.target.value })}>
+                                    <option value=""></option>
+                                    <option value="登録">登録</option>
+                                    <option value="3個ok">3個ok</option>
+                                </select>
+                            </td>
+                            <td><input type="date" className="filter-input" value={quickAdd.chuumonbi} onChange={e => setQuickAdd({ ...quickAdd, chuumonbi: e.target.value })} /></td>
+                            <td><input type="text" className="filter-input" placeholder="氏名" value={quickAdd.shimei} onChange={e => setQuickAdd({ ...quickAdd, shimei: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
+                            <td><input type="text" className="filter-input" placeholder="金額" value={quickAdd.nyuukin} onChange={e => setQuickAdd({ ...quickAdd, nyuukin: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
+                            <td><input type="text" className="filter-input" placeholder="備考" value={quickAdd.bikou} onChange={e => setQuickAdd({ ...quickAdd, bikou: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
+                            <td style={{ textAlign: 'center' }}>
+                                <button className="primary-btn" style={{ padding: '2px 8px', fontSize: '0.7em' }} onClick={handleQuickAdd}>追加</button>
+                            </td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredPayments.map(p => (
+                            <tr key={p.id} className={p.kanryou ? 'completed-row' : ''}>
+                                <td style={{ textAlign: 'center' }}>
+                                    <label className="cute-checkbox">
+                                        <input type="checkbox" checked={p.shiharaibi} onChange={e => handleInlineEdit(p.id, 'shiharaibi', e.target.checked)} />
+                                        <span className="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                    <label className="cute-checkbox">
+                                        <input type="checkbox" checked={p.boxIdou} onChange={e => handleInlineEdit(p.id, 'boxIdou', e.target.checked)} />
+                                        <span className="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <select className="filter-input" value={p.touroku} onChange={e => handleInlineEdit(p.id, 'touroku', e.target.value)}>
+                                        <option value=""></option>
+                                        <option value="新規">新規</option>
+                                        <option value="追加">追加</option>
+                                        <option value="ランクアップ">ﾗﾝｸｱｯﾌﾟ</option>
+                                    </select>
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                    <label className="cute-checkbox">
+                                        <input type="checkbox" checked={p.soshikizu} onChange={e => handleInlineEdit(p.id, 'soshikizu', e.target.checked)} />
+                                        <span className="checkmark"></span>
+                                    </label>
+                                </td>
+                                <td>{p.rankUp}</td>
+                                <td>{p.chuumonbi}</td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        className="filter-input"
+                                        style={{ background: 'transparent', border: 'none', fontWeight: 'bold' }}
+                                        value={p.shimei}
+                                        onChange={e => handleInlineEdit(p.id, 'shimei', e.target.value)}
+                                    />
+                                </td>
+                                <td style={{ textAlign: 'right' }}>
+                                    <input
+                                        type="text"
+                                        className="filter-input"
+                                        style={{ background: 'transparent', border: 'none', textAlign: 'right' }}
+                                        value={Number(p.nyuukin || 0).toLocaleString()}
+                                        onChange={e => handleInlineEdit(p.id, 'nyuukin', e.target.value.replace(/,/g, ''))}
+                                    />
+                                </td>
+                                <td>
+                                    <input
+                                        type="text"
+                                        className="filter-input"
+                                        style={{ background: 'transparent', border: 'none' }}
+                                        value={p.bikou}
+                                        onChange={e => handleInlineEdit(p.id, 'bikou', e.target.value)}
+                                    />
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                    <label className="cute-heart-checkbox">
+                                        <input type="checkbox" checked={p.kanryou} onChange={() => toggleKanryou(p.id)} />
+                                        <i className="fa-solid fa-heart"></i>
+                                    </label>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

@@ -1,0 +1,393 @@
+/* Ported from deposit-management/css/style.css */
+.payment-management-container {
+    --primary-color: #ffb6c1;
+    --secondary-color: #e6e6fa;
+    --accent-color: #ff9a9e;
+    --text-color: #5c4b51;
+    --bg-color: #fff0f5;
+    --white: #ffffff;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --shadow: 0 8px 32px 0 rgba(255, 182, 193, 0.3);
+
+    font-family: 'Zen Maru Gothic', sans-serif;
+    color: var(--text-color);
+    min-height: 100vh;
+    padding: 30px;
+    position: relative;
+    overflow-x: hidden;
+    background: var(--bg-color);
+}
+
+/* Background Bubbles Animation */
+.payment-management-container .background-bubbles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.payment-management-container .bubble {
+    position: absolute;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 182, 193, 0.3));
+    border-radius: 50%;
+    animation: float 8s infinite ease-in-out;
+}
+
+.payment-management-container .bubble:nth-child(1) {
+    width: 100px;
+    height: 100px;
+    left: 10%;
+    top: 20%;
+    animation-delay: 0s;
+}
+
+.payment-management-container .bubble:nth-child(2) {
+    width: 150px;
+    height: 150px;
+    left: 80%;
+    top: 40%;
+    animation-delay: -2s;
+}
+
+.payment-management-container .bubble:nth-child(3) {
+    width: 80px;
+    height: 80px;
+    left: 50%;
+    top: 70%;
+    animation-delay: -4s;
+}
+
+.payment-management-container .bubble:nth-child(4) {
+    width: 120px;
+    height: 120px;
+    left: 20%;
+    top: 80%;
+    animation-delay: -6s;
+}
+
+.payment-management-container .bubble:nth-child(5) {
+    width: 60px;
+    height: 60px;
+    left: 85%;
+    top: 10%;
+    animation-delay: -3s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-30px) scale(1.05);
+    }
+}
+
+.payment-management-container header,
+.payment-management-container .file-operations,
+.payment-management-container .controls-area,
+.payment-management-container .table-container {
+    position: relative;
+    z-index: 1;
+}
+
+.payment-management-container .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+}
+
+.payment-management-container h1 {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: var(--accent-color);
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.payment-management-container .header-icon {
+    animation: HeartBeat 1.5s infinite;
+}
+
+@keyframes HeartBeat {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    15% {
+        transform: scale(1.15);
+    }
+
+    30% {
+        transform: scale(1);
+    }
+
+    45% {
+        transform: scale(1.15);
+    }
+
+    60% {
+        transform: scale(1);
+    }
+}
+
+.payment-management-container .controls-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.payment-management-container .search-box {
+    position: relative;
+    flex-grow: 1;
+    max-width: 400px;
+}
+
+.payment-management-container .search-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent-color);
+}
+
+.payment-management-container input[type="text"],
+.payment-management-container input[type="date"],
+.payment-management-container select,
+.payment-management-container textarea {
+    width: 100%;
+    padding: 10px 15px 10px 40px;
+    border: 2px solid transparent;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.9);
+    font-family: inherit;
+    font-size: 0.95em;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+
+.payment-management-container textarea {
+    border-radius: 15px;
+    padding-left: 15px;
+}
+
+.payment-management-container input:focus,
+.payment-management-container select:focus,
+.payment-management-container textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(255, 182, 193, 0.5);
+    background: var(--white);
+}
+
+.payment-management-container .primary-btn,
+.payment-management-container .secondary-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 30px;
+    font-family: inherit;
+    font-size: 0.9em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.payment-management-container .primary-btn {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    color: var(--white);
+}
+
+.payment-management-container .secondary-btn {
+    background: var(--white);
+    color: var(--text-color);
+    border: 2px solid var(--secondary-color);
+}
+
+.payment-management-container .table-container {
+    overflow: auto;
+    max-height: calc(100vh - 300px);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.payment-management-container .cute-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.payment-management-container .cute-table th,
+.payment-management-container .cute-table td {
+    padding: 6px 4px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 182, 193, 0.3);
+    border-right: 2px solid rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.85em;
+}
+
+.payment-management-container .cute-table th {
+    background: #ffecf0;
+    color: var(--text-color);
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.payment-management-container .filter-input {
+    width: 100%;
+    padding: 4px 2px !important;
+    font-size: 0.75em !important;
+    border-radius: 8px !important;
+}
+
+/* Checkbox Styles */
+.payment-management-container .cute-checkbox {
+    display: block;
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    height: 18px;
+}
+
+.payment-management-container .cute-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.payment-management-container .checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 18px;
+    width: 18px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 2px solid var(--primary-color);
+    border-radius: 4px;
+}
+
+.payment-management-container .cute-checkbox input:checked~.checkmark {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.payment-management-container .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.payment-management-container .cute-checkbox input:checked~.checkmark:after {
+    display: block;
+    left: 5px;
+    top: 1px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Heart Checkbox */
+.payment-management-container .cute-heart-checkbox {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.4em;
+    color: #e0e0e0;
+}
+
+.payment-management-container .cute-heart-checkbox input {
+    position: absolute;
+    opacity: 0;
+}
+
+.payment-management-container .cute-heart-checkbox input:checked~i {
+    color: #ff6b81;
+    animation: heartPop 0.4s ease-out forwards;
+}
+
+@keyframes heartPop {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.3);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.payment-management-container tr.completed-row {
+    background-color: rgba(255, 182, 193, 0.1) !important;
+}
+
+.payment-management-container tr.completed-row td {
+    opacity: 0.6;
+}
+
+.payment-management-container tr.completed-row td:last-child {
+    opacity: 1;
+}
+
+/* Quick Add Styles */
+.payment-management-container .quick-add-row {
+    background-color: rgba(255, 240, 245, 0.8);
+}
+
+.payment-management-container .quick-add-row td {
+    border-top: 2px dashed #ffb6c1 !important;
+}
+
+/* Modal and Overlays */
+.payment-management-container .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.payment-management-container .modal-content {
+    width: 90%;
+    max-width: 500px;
+    background: var(--glass-bg);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: var(--shadow);
+}
