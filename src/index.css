@@ -103,6 +103,7 @@ td {
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(4px);
   white-space: nowrap;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 tr td:first-child {
@@ -114,6 +115,22 @@ tr td:first-child {
 tr td:last-child {
   border-top-right-radius: 12px;
   border-bottom-right-radius: 12px;
+  border-right: none;
+}
+
+th {
+  text-align: left;
+  padding: 12px 20px;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+th:last-child {
+  border-right: none;
 }
 
 tr:hover td {
