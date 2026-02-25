@@ -396,17 +396,62 @@ const StoreManagement = () => {
                                 <section>
                                     <h3>ステータス・進捗</h3>
                                     <div className="form-grid">
-                                        <div className="form-group"><label>販売ステータス</label><input type="text" name="sales_ok" defaultValue={editingStore?.sales_ok || '準備中'} list="sales-status-options" /></div>
-                                        <div className="form-group"><label>入金状況</label><select name="payment_status" defaultValue={editingStore?.payment || '未入金'}><option value="完了">完了</option><option value="未入金">未入金</option></select></div>
-                                        <div className="form-group"><label>同意書</label><input type="text" name="doc_consent" defaultValue={editingStore?.doc_consent || '未提出'} list="doc-status-options" /></div>
-                                        <div className="form-group"><label>登記簿謄本</label><input type="text" name="doc_registry" defaultValue={editingStore?.doc_registry || '未提出'} list="doc-status-options" /></div>
-                                        <div className="form-group"><label>住民票</label><input type="text" name="doc_resident" defaultValue={editingStore?.doc_resident || '未提出'} list="doc-status-options" /></div>
+                                        <div className="form-group">
+                                            <label>販売ステータス</label>
+                                            <select name="sales_ok" defaultValue={editingStore?.sales_ok || '準備中'}>
+                                                <option value="準備中">準備中</option>
+                                                <option value="審査中">審査中</option>
+                                                <option value="販売OK">販売OK</option>
+                                                <option value="一時停止">一時停止</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>入金状況</label>
+                                            <select name="payment_status" defaultValue={editingStore?.payment || '未入金'}>
+                                                <option value="完了">完了</option>
+                                                <option value="未入金">未入金</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>同意書</label>
+                                            <select name="doc_consent" defaultValue={editingStore?.doc_consent || '未提出'}>
+                                                <option value="提出済み">提出済み</option>
+                                                <option value="原本のみ">原本のみ</option>
+                                                <option value="未確認">未確認</option>
+                                                <option value="未提出">未提出</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>登記簿謄本</label>
+                                            <select name="doc_registry" defaultValue={editingStore?.doc_registry || '未提出'}>
+                                                <option value="提出済み">提出済み</option>
+                                                <option value="原本のみ">原本のみ</option>
+                                                <option value="未確認">未確認</option>
+                                                <option value="未提出">未提出</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>住民票</label>
+                                            <select name="doc_resident" defaultValue={editingStore?.doc_resident || '未提出'}>
+                                                <option value="提出済み">提出済み</option>
+                                                <option value="原本のみ">原本のみ</option>
+                                                <option value="未確認">未確認</option>
+                                                <option value="未提出">未提出</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </section>
                                 <section>
                                     <h3>契約・プラン・日付</h3>
                                     <div className="form-grid">
                                         <div className="form-group"><label>契約プラン</label><input type="text" name="initial_plan" defaultValue={editingStore?.initial_plan || ''} /></div>
+                                        <div className="form-group">
+                                            <label>プラン追加</label>
+                                            <select name="plan_addition" defaultValue={editingStore?.raw?.plan_addition || 'なし'}>
+                                                <option value="なし">なし</option>
+                                                <option value="追加20品目">追加20品目</option>
+                                            </select>
+                                        </div>
                                         <div className="form-group"><label>申込日</label><input type="date" name="application_date" defaultValue={editingStore?.application_date || ''} /></div>
                                         <div className="form-group"><label>更新月 (YYYY-MM)</label><input type="text" name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''} /></div>
                                     </div>
