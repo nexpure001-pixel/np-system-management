@@ -8,7 +8,7 @@ function App() {
   const [activeSystem, setActiveSystem] = useState('stores'); // 'stores' or 'payments'
 
   return (
-    <div className="app-layout">
+    <div className={`app-layout theme-${activeSystem}`}>
       <Sidebar activeSystem={activeSystem} setActiveSystem={setActiveSystem} />
 
       <main className="main-content">

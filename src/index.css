@@ -21,10 +21,9 @@
 }
 
 body {
-  background: var(--bg-gradient);
-  background-attachment: fixed;
   min-height: 100vh;
   color: var(--text-main);
+  margin: 0;
 }
 
 .app-container {
@@ -62,13 +61,21 @@ body {
 .app-layout {
   display: flex;
   min-height: 100vh;
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  transition: background 0.5s ease;
+}
+
+.app-layout.theme-payments {
+  background: linear-gradient(135deg, #fff0f5 0%, #ffb6c1 100%);
+  background-attachment: fixed;
 }
 
 .sidebar {
   width: 260px;
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(20px);
-  border-right: 1px solid var(--glass-border);
+  border-right: 1px solid #000;
   padding: 30px 20px;
   display: flex;
   flex-direction: column;

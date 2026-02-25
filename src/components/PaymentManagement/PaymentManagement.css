@@ -16,7 +16,7 @@
     padding: 30px;
     position: relative;
     overflow-x: hidden;
-    background: var(--bg-color);
+    /* background: var(--bg-color); */
 }
 
 /* Background Bubbles Animation */
