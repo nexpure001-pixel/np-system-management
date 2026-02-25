@@ -213,6 +213,7 @@ function App() {
   const getBadgeClass = (status) => {
     switch (status) {
       case '販売OK':
+      case 'OK':
       case '完了':
       case '提出済み':
         return 'badge success';
