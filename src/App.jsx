@@ -256,11 +256,18 @@ function App() {
     let valA = a[key] ?? '';
     let valB = b[key] ?? '';
 
-    // IDなどは数値として比較
+    // 数値比較 (ID, Noなど)
     if (key === 'storeId' || key === 'no') {
       const numA = parseInt(valA, 10) || 0;
       const numB = parseInt(valB, 10) || 0;
       return direction === 'asc' ? numA - numB : numB - numA;
+    }
+
+    // 日付比較 (申込日, 入金日など)
+    if (key === 'applicationDate' || key === 'paymentDate' || key === 'emailArrivalDate') {
+      const dateA = valA ? new Date(valA).getTime() : 0;
+      const dateB = valB ? new Date(valB).getTime() : 0;
+      return direction === 'asc' ? dateA - dateB : dateB - dateA;
     }
 
     // 文字列の比較 (日本語対応)
@@ -422,6 +429,7 @@ function App() {
                   <th onClick={() => handleSort('email')} className="sortable">メール/パス {sortConfig.key === 'email' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                   <th onClick={() => handleSort('salesStatus')} className="sortable">販売ステータス {sortConfig.key === 'salesStatus' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                   <th onClick={() => handleSort('plan')} className="sortable">プラン {sortConfig.key === 'plan' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                  <th onClick={() => handleSort('paymentDate')} className="sortable">入金日 {sortConfig.key === 'paymentDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                   <th onClick={() => handleSort('documents')} className="sortable">書類提出 {sortConfig.key === 'documents' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                   <th onClick={() => handleSort('yearlyRenewal')} className="sortable">更新月 {sortConfig.key === 'yearlyRenewal' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                   <th>アクション</th>
@@ -446,6 +454,7 @@ function App() {
                     </td>
                     <td><span className={getBadgeClass(store.salesStatus)}>{store.salesStatus}</span></td>
                     <td>{store.plan}</td>
+                    <td>{store.paymentDate ? new Date(store.paymentDate).toLocaleDateString('ja-JP') : '-'}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span className={getBadgeClass(store.documents?.consent)} style={{ padding: '4px 8px' }}>同意書: {store.documents?.consent}</span>
