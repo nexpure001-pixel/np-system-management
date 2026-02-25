@@ -10,7 +10,7 @@ function App() {
   const [editingStore, setEditingStore] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filterMode, setFilterMode] = useState('all'); // 'all', 'document-pending', 'renewal-current'
+  const [filterMode, setFilterMode] = useState('all'); // 'all', 'document-pending', 'renewal-current', 'unpaid'
   const [sortConfig, setSortConfig] = useState({ key: 'storeId', direction: 'asc' });
   const fileInputRef = useRef(null);
 
@@ -294,6 +294,9 @@ function App() {
       // 厳密な判定: "1月" が "11月" に含まれないようにする
       return store.salesStatus === '販売OK' && store.yearlyRenewal === currentMonthStr;
     }
+    if (filterMode === 'unpaid') {
+      return store.payment === '未入金';
+    }
 
     return true;
   });
@@ -387,9 +390,18 @@ function App() {
           className={`glass-panel stat-card clickable ${filterMode === 'document-pending' ? 'active' : ''}`}
           onClick={() => setFilterMode('document-pending')}
         >
-          <h3>書類未提出 (判定条件込)</h3>
+          <h3>書類未提出</h3>
           <div className="value">
             {isLoading ? '-' : stores.filter(s => !s.isDocComplete).length}
+          </div>
+        </div>
+        <div
+          className={`glass-panel stat-card clickable ${filterMode === 'unpaid' ? 'active' : ''}`}
+          onClick={() => setFilterMode('unpaid')}
+        >
+          <h3>未入金</h3>
+          <div className="value">
+            {isLoading ? '-' : stores.filter(s => s.payment === '未入金').length}
           </div>
         </div>
       </div>
