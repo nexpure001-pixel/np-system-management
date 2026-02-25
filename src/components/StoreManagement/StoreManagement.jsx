@@ -71,6 +71,7 @@ const StoreManagement = () => {
             dateSigned: item.application_date || '',
             salesStatus: item.sales_ok || '準備中',
             yearlyRenewal: item.yearly_renewal_legacy || '',
+            renewalMonth: item.renewal_month || '',
             payment: item.payment_date ? '完了' : '未入金',
             isDocComplete,
             classification: isFD ? 'FD店舗' : (isNew ? '新規店舗' : '-'),
@@ -260,7 +261,14 @@ const StoreManagement = () => {
             store.contactPerson?.includes(searchTerm);
         if (!matchesSearch) return false;
         if (filterMode === 'document-pending') return !store.isDocComplete;
-        if (filterMode === 'renewal-current') return store.salesStatus === '販売OK' && store.yearlyRenewal === currentMonthStr;
+        if (filterMode === 'renewal-current') {
+            const isMatch = (val) => {
+                if (!val) return false;
+                const normalized = String(val).replace('月', '');
+                return normalized === String(now.getMonth() + 1);
+            };
+            return store.salesStatus === '販売OK' && (isMatch(store.yearlyRenewal) || isMatch(store.renewalMonth));
+        }
         if (filterMode === 'unpaid') return store.payment === '未入金';
         return true;
     });
@@ -312,7 +320,16 @@ const StoreManagement = () => {
                 </div>
                 <div className={`glass-panel stat-card clickable ${filterMode === 'renewal-current' ? 'active' : ''}`} onClick={() => setFilterMode('renewal-current')}>
                     <h3>今月更新 ({currentMonthStr}・販売OK)</h3>
-                    <div className="value">{isLoading ? '-' : stores.filter(s => s.salesStatus === '販売OK' && s.yearlyRenewal === currentMonthStr).length}</div>
+                    <div className="value">
+                        {isLoading ? '-' : stores.filter(s => {
+                            const isMatch = (val) => {
+                                if (!val) return false;
+                                const normalized = String(val).replace('月', '');
+                                return normalized === String(now.getMonth() + 1);
+                            };
+                            return s.salesStatus === '販売OK' && (isMatch(s.yearlyRenewal) || isMatch(s.renewalMonth));
+                        }).length}
+                    </div>
                 </div>
                 <div className={`glass-panel stat-card clickable ${filterMode === 'document-pending' ? 'active' : ''}`} onClick={() => setFilterMode('document-pending')}>
                     <h3>書類未提出</h3>
@@ -365,7 +382,7 @@ const StoreManagement = () => {
                                             <span className={getBadgeClass(store.isDocComplete ? '提出済み' : '未提出')} style={{ padding: '4px 8px' }}>{store.isDocComplete ? '完備' : '不足'}</span>
                                         </div>
                                     </td>
-                                    <td>{store.yearlyRenewal}</td>
+                                    <td>{store.yearlyRenewal || (store.renewalMonth ? store.renewalMonth + '月' : '-')}</td>
                                     <td><button className="action-btn edit-btn" onClick={() => openEditModal(store)}>詳細・編集</button></td>
                                 </tr>
                             ))}
@@ -453,7 +470,8 @@ const StoreManagement = () => {
                                             </select>
                                         </div>
                                         <div className="form-group"><label>申込日</label><input type="date" name="application_date" defaultValue={editingStore?.application_date || ''} /></div>
-                                        <div className="form-group"><label>更新月 (YYYY-MM)</label><input type="text" name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''} /></div>
+                                        <div className="form-group"><label>更新月 (レガシー: YYYY-MM)</label><input type="text" name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''} /></div>
+                                        <div className="form-group"><label>更新月 (数値のみ: 1-12)</label><input type="text" name="renewal_month" defaultValue={editingStore?.renewal_month || ''} /></div>
                                     </div>
                                 </section>
                                 <section>
