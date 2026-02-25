@@ -264,12 +264,24 @@ const StoreManagement = () => {
         if (filterMode === 'renewal-current') {
             const isMatch = (val) => {
                 if (!val) return false;
-                // 「2月」も「2」も「02」も現在の月と比較可能な形式に
-                const normalized = String(val).replace(/月/g, '').padStart(2, '0');
-                const target = String(now.getMonth() + 1).padStart(2, '0');
-                return normalized === target;
+                // 全角数字を半角に変換し、月やハイフンを処理して数値として比較
+                const normalized = String(val)
+                    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                    .replace(/月/g, '');
+                let monthPart = normalized;
+                if (normalized.includes('-')) {
+                    const parts = normalized.split('-');
+                    monthPart = parts[1] || parts[0];
+                }
+                return parseInt(monthPart, 10) === (now.getMonth() + 1);
             };
-            return store.salesStatus === '販売OK' && (isMatch(store.yearlyRenewal) || isMatch(store.renewalMonth));
+            // 管理対象（販売OK または 済み）かつ、いずれかの更新月フィールドが今月と一致
+            const isActive = store.salesStatus === '販売OK' || store.salesStatus === '済み' || store.salesStatus === 'OK';
+            return isActive && (
+                isMatch(store.yearly_renewal_legacy) ||
+                isMatch(store.yearly_renewal_month) ||
+                isMatch(store.renewal_month)
+            );
         }
         if (filterMode === 'unpaid') return store.payment === '未入金';
         return true;
@@ -326,11 +338,22 @@ const StoreManagement = () => {
                         {isLoading ? '-' : stores.filter(s => {
                             const isMatch = (val) => {
                                 if (!val) return false;
-                                const normalized = String(val).replace(/月/g, '').padStart(2, '0');
-                                const target = String(now.getMonth() + 1).padStart(2, '0');
-                                return normalized === target;
+                                const normalized = String(val)
+                                    .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                                    .replace(/月/g, '');
+                                let monthPart = normalized;
+                                if (normalized.includes('-')) {
+                                    const parts = normalized.split('-');
+                                    monthPart = parts[1] || parts[0];
+                                }
+                                return parseInt(monthPart, 10) === (now.getMonth() + 1);
                             };
-                            return s.salesStatus === '販売OK' && (isMatch(s.yearlyRenewal) || isMatch(s.renewalMonth));
+                            const isActive = s.salesStatus === '販売OK' || s.salesStatus === '済み' || s.salesStatus === 'OK';
+                            return isActive && (
+                                isMatch(s.yearly_renewal_legacy) ||
+                                isMatch(s.yearly_renewal_month) ||
+                                isMatch(s.renewal_month)
+                            );
                         }).length}
                     </div>
                 </div>
