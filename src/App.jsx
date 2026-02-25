@@ -365,9 +365,6 @@ function App() {
           <button className="nav-item">
             <span className="nav-icon">💰</span> 入金管理
           </button>
-          <button className="nav-item">
-            <span className="nav-icon">📈</span> 分析
-          </button>
         </nav>
       </aside>
 
