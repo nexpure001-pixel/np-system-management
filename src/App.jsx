@@ -454,7 +454,7 @@ function App() {
                     </td>
                     <td><span className={getBadgeClass(store.salesStatus)}>{store.salesStatus}</span></td>
                     <td>{store.plan}</td>
-                    <td>{store.paymentDate ? new Date(store.paymentDate).toLocaleDateString('ja-JP') : '-'}</td>
+                    <td>{store.paymentDate ? new Date(store.paymentDate).toLocaleDateString('ja-JP') : '未確認'}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span className={getBadgeClass(store.documents?.consent)} style={{ padding: '4px 8px' }}>同意書: {store.documents?.consent}</span>
