@@ -353,299 +353,310 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      <header className="header">
-        <h1>店舗管理ダッシュボード</h1>
-        <div className="header-right">
-          <nav className="system-nav">
-            <button className="nav-item active">店舗管理</button>
-            <button className="nav-item">入金管理</button>
-            <button className="nav-item">分析</button>
-          </nav>
-          <button className="glass-btn" onClick={openAddModal} disabled={isLoading}>+ 新規追加</button>
+    <div className="app-layout">
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <h2>NP システム</h2>
         </div>
-      </header>
-
-      {error && (
-        <div className="error-message glass-panel" style={{ color: 'var(--danger-accent)', marginBottom: '20px', padding: '15px' }}>
-          <strong>エラーが発生しました:</strong><br />
-          {error}
-          <div style={{ marginTop: '10px', fontSize: '0.85rem' }}>
-            ※Supabaseの環境変数が設定されているか確認してください。
-          </div>
-        </div>
-      )}
-
-      <div className="stats-grid">
-        <div
-          className={`glass-panel stat-card clickable ${filterMode === 'all' ? 'active' : ''}`}
-          onClick={() => setFilterMode('all')}
-        >
-          <h3>総店舗数</h3>
-          <div className="value">{isLoading && stores.length === 0 ? '-' : stores.length}</div>
-        </div>
-        <div
-          className={`glass-panel stat-card clickable ${filterMode === 'renewal-current' ? 'active' : ''}`}
-          onClick={() => setFilterMode('renewal-current')}
-        >
-          <h3>今月更新 ({currentMonthStr}・販売OK)</h3>
-          <div className="value">
-            {isLoading ? '-' : stores.filter(s => s.salesStatus === '販売OK' && s.yearlyRenewal === currentMonthStr).length}
-          </div>
-        </div>
-        <div
-          className={`glass-panel stat-card clickable ${filterMode === 'document-pending' ? 'active' : ''}`}
-          onClick={() => setFilterMode('document-pending')}
-        >
-          <h3>書類未提出</h3>
-          <div className="value">
-            {isLoading ? '-' : stores.filter(s => !s.isDocComplete).length}
-          </div>
-        </div>
-        <div
-          className={`glass-panel stat-card clickable ${filterMode === 'unpaid' ? 'active' : ''}`}
-          onClick={() => setFilterMode('unpaid')}
-        >
-          <h3>未入金</h3>
-          <div className="value">
-            {isLoading ? '-' : stores.filter(s => s.payment === '未入金').length}
-          </div>
-        </div>
-      </div>
-
-      <div className="glass-panel table-panel">
-        <div className="controls-bar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="店舗名・ID・代表者名で検索..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            disabled={isLoading}
-          />
-          <button className="glass-btn secondary" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
-            CSVインポート
+        <nav className="system-nav">
+          <button className="nav-item active">
+            <span className="nav-icon">📊</span> 店舗管理
           </button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImportCSV}
-            accept=".csv"
-            style={{ display: 'none' }}
-          />
-        </div>
+          <button className="nav-item">
+            <span className="nav-icon">💰</span> 入金管理
+          </button>
+          <button className="nav-item">
+            <span className="nav-icon">📈</span> 分析
+          </button>
+        </nav>
+      </aside>
 
-        <div className="table-container">
-          {isLoading && stores.length === 0 ? (
-            <div className="empty-state">データを読み込み中...</div>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th onClick={() => handleSort('storeId')} className="sortable">ID {sortConfig.key === 'storeId' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th onClick={() => handleSort('classification')} className="sortable">区別する {sortConfig.key === 'classification' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th onClick={() => handleSort('storeName')} className="sortable">店舗名 / 法人名 {sortConfig.key === 'storeName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th onClick={() => handleSort('representative')} className="sortable">代表者・担当者 {sortConfig.key === 'representative' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th onClick={() => handleSort('email')} className="sortable">メール/パス {sortConfig.key === 'email' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th onClick={() => handleSort('salesStatus')} className="sortable">販売ステータス {sortConfig.key === 'salesStatus' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th onClick={() => handleSort('plan')} className="sortable">プラン {sortConfig.key === 'plan' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th onClick={() => handleSort('paymentDate')} className="sortable">入金日 {sortConfig.key === 'paymentDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th onClick={() => handleSort('documents')} className="sortable">書類提出 {sortConfig.key === 'documents' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th onClick={() => handleSort('yearlyRenewal')} className="sortable">更新月 {sortConfig.key === 'yearlyRenewal' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                  <th>アクション</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStores.map(store => (
-                  <tr key={store.storeId}>
-                    <td>{store.storeId}</td>
-                    <td><span className={`badge ${store.classification === 'FD店舗' ? 'success' : (store.classification === '新規店舗' ? 'warning' : 'neutral')}`}>{store.classification}</span></td>
-                    <td style={{ minWidth: '240px' }}>
-                      <strong>{store.storeName}</strong>
-                      {store.corporateName && <span style={{ opacity: 0.7, marginLeft: '8px', fontSize: '0.85rem' }}>({store.corporateName})</span>}
-                    </td>
-                    <td>
-                      {store.representative}
-                      {store.contactPerson && <span style={{ color: 'var(--primary-accent)', marginLeft: '8px', fontSize: '0.85rem' }}>(担: {store.contactPerson})</span>}
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '0.85rem' }}>{store.email || '-'}</span>
-                      {store.password && <span style={{ opacity: 0.6, marginLeft: '8px', fontSize: '0.85rem' }}>[{store.password}]</span>}
-                    </td>
-                    <td><span className={getBadgeClass(store.salesStatus)}>{store.salesStatus}</span></td>
-                    <td>{store.plan}</td>
-                    <td>{store.paymentDate ? new Date(store.paymentDate).toLocaleDateString('ja-JP') : '未確認'}</td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className={getBadgeClass(store.documents?.consent)} style={{ padding: '4px 8px' }}>同意書: {store.documents?.consent}</span>
-                        <span className={getBadgeClass(store.isDocComplete ? '提出済み' : '未提出')} style={{ padding: '4px 8px' }}>
-                          {store.isDocComplete ? '完備' : '不足'}
-                        </span>
-                      </div>
-                    </td>
-                    <td>{store.yearlyRenewal}</td>
-                    <td>
-                      <button className="action-btn edit-btn" onClick={() => openEditModal(store)}>詳細・編集</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          {!isLoading && filteredStores.length === 0 && !error && (
-            <div className="empty-state">該当する店舗が見つからないか、データがありません。</div>
-          )}
-        </div>
-      </div>
+      <main className="main-content">
+        <header className="header">
+          <h1>店舗管理ダッシュボード</h1>
+          <button className="glass-btn" onClick={openAddModal} disabled={isLoading}>+ 新規追加</button>
+        </header>
 
-      {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content glass-panel">
-            <h2>{editingStore ? '店舗情報の編集' : '新規店舗の追加'}</h2>
-            <form onSubmit={handleSave} className="modal-form">
-              <div className="modal-scroll-area">
-                <section>
-                  <h3>基本情報</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>店舗ID</label>
-                      <input type="text" name="store_id" readOnly={!!editingStore} defaultValue={editingStore?.store_id || ''} placeholder="自動生成されます" />
-                    </div>
-                    <div className="form-group">
-                      <label>No</label>
-                      <input type="text" name="no" defaultValue={editingStore?.no || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>店舗名</label>
-                      <input type="text" name="store_name" required defaultValue={editingStore?.store_name || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>法人名</label>
-                      <input type="text" name="corporate_name" defaultValue={editingStore?.corporate_name || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>代表者名</label>
-                      <input type="text" name="representative" required defaultValue={editingStore?.representative || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>担当者名</label>
-                      <input type="text" name="contact_person" defaultValue={editingStore?.contact_person || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>メールアドレス</label>
-                      <input type="email" name="email" defaultValue={editingStore?.email || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>パスワード</label>
-                      <input type="text" name="password" defaultValue={editingStore?.password || ''} />
-                    </div>
-                  </div>
-                </section>
+        {error && (
+          <div className="error-message glass-panel" style={{ color: 'var(--danger-accent)', marginBottom: '20px', padding: '15px' }}>
+            <strong>エラーが発生しました:</strong><br />
+            {error}
+            <div style={{ marginTop: '10px', fontSize: '0.85rem' }}>
+              ※Supabaseの環境変数が設定されているか確認してください。
+            </div>
+          </div>
+        )}
 
-                <section>
-                  <h3>ステータス・進捗</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>販売ステータス</label>
-                      <input type="text" name="sales_ok" defaultValue={editingStore?.sales_ok || '準備中'} list="sales-status-options" />
-                      <datalist id="sales-status-options">
-                        <option value="販売OK" />
-                        <option value="一時停止" />
-                        <option value="準備中" />
-                      </datalist>
-                    </div>
-                    <div className="form-group">
-                      <label>入金状況</label>
-                      <select name="payment_status" defaultValue={editingStore?.payment || '未入金'}>
-                        <option value="完了">完了</option>
-                        <option value="未入金">未入金</option>
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>同意書</label>
-                      <input type="text" name="doc_consent" defaultValue={editingStore?.doc_consent || '未提出'} list="doc-status-options" />
-                    </div>
-                    <div className="form-group">
-                      <label>登記簿謄本</label>
-                      <input type="text" name="doc_registry" defaultValue={editingStore?.doc_registry || '未提出'} list="doc-status-options" />
-                    </div>
-                    <div className="form-group">
-                      <label>住民票</label>
-                      <input type="text" name="doc_resident" defaultValue={editingStore?.doc_resident || '未提出'} list="doc-status-options" />
-                      <datalist id="doc-status-options">
-                        <option value="再提出要" />
-                        <option value="提出済み" />
-                        <option value="未提出" />
-                        <option value="両方完了" />
-                        <option value="原本のみ" />
-                      </datalist>
-                    </div>
-                  </div>
-                </section>
-
-                <section>
-                  <h3>契約・プラン・日付</h3>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>契約プラン</label>
-                      <input type="text" name="initial_plan" defaultValue={editingStore?.initial_plan || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>プラン追加</label>
-                      <input type="text" name="plan_addition" defaultValue={editingStore?.plan_addition || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>申込日</label>
-                      <input type="date" name="application_date" defaultValue={editingStore?.application_date || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>初回費用</label>
-                      <input type="text" name="initial_cost" defaultValue={editingStore?.initial_cost || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>更新月 (YYYY-MM)</label>
-                      <input type="text" name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>原本到着日</label>
-                      <input type="date" name="original_arrival_date" defaultValue={editingStore?.original_arrival_date || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>ログイン情報送信日</label>
-                      <input type="date" name="login_info_sent_date" defaultValue={editingStore?.login_info_sent_date || ''} />
-                    </div>
-                  </div>
-                </section>
-
-                <section>
-                  <h3>その他・備考</h3>
-                  <div className="form-group full-width">
-                    <label>備考</label>
-                    <textarea name="remarks" defaultValue={editingStore?.remarks || ''}></textarea>
-                  </div>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>紹介者</label>
-                      <input type="text" name="introducer" defaultValue={editingStore?.introducer || ''} />
-                    </div>
-                    <div className="form-group">
-                      <label>NPセラーID</label>
-                      <input type="text" name="np_seller_id" defaultValue={editingStore?.np_seller_id || ''} />
-                    </div>
-                  </div>
-                </section>
-              </div>
-
-              <div className="modal-actions">
-                <button type="button" className="action-btn cancel-btn" onClick={closeModal} disabled={isLoading}>キャンセル</button>
-                <button type="submit" className="glass-btn" disabled={isLoading}>
-                  {isLoading ? '保存中...' : '保存する'}
-                </button>
-              </div>
-            </form>
+        <div className="stats-grid">
+          <div
+            className={`glass-panel stat-card clickable ${filterMode === 'all' ? 'active' : ''}`}
+            onClick={() => setFilterMode('all')}
+          >
+            <h3>総店舗数</h3>
+            <div className="value">{isLoading && stores.length === 0 ? '-' : stores.length}</div>
+          </div>
+          <div
+            className={`glass-panel stat-card clickable ${filterMode === 'renewal-current' ? 'active' : ''}`}
+            onClick={() => setFilterMode('renewal-current')}
+          >
+            <h3>今月更新 ({currentMonthStr}・販売OK)</h3>
+            <div className="value">
+              {isLoading ? '-' : stores.filter(s => s.salesStatus === '販売OK' && s.yearlyRenewal === currentMonthStr).length}
+            </div>
+          </div>
+          <div
+            className={`glass-panel stat-card clickable ${filterMode === 'document-pending' ? 'active' : ''}`}
+            onClick={() => setFilterMode('document-pending')}
+          >
+            <h3>書類未提出</h3>
+            <div className="value">
+              {isLoading ? '-' : stores.filter(s => !s.isDocComplete).length}
+            </div>
+          </div>
+          <div
+            className={`glass-panel stat-card clickable ${filterMode === 'unpaid' ? 'active' : ''}`}
+            onClick={() => setFilterMode('unpaid')}
+          >
+            <h3>未入金</h3>
+            <div className="value">
+              {isLoading ? '-' : stores.filter(s => s.payment === '未入金').length}
+            </div>
           </div>
         </div>
-      )}
+
+        <div className="glass-panel table-panel">
+          <div className="controls-bar">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="店舗名・ID・代表者名で検索..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              disabled={isLoading}
+            />
+            <button className="glass-btn secondary" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+              CSVインポート
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImportCSV}
+              accept=".csv"
+              style={{ display: 'none' }}
+            />
+          </div>
+
+          <div className="table-container">
+            {isLoading && stores.length === 0 ? (
+              <div className="empty-state">データを読み込み中...</div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th onClick={() => handleSort('storeId')} className="sortable">ID {sortConfig.key === 'storeId' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => handleSort('classification')} className="sortable">区別する {sortConfig.key === 'classification' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => handleSort('storeName')} className="sortable">店舗名 / 法人名 {sortConfig.key === 'storeName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => handleSort('representative')} className="sortable">代表者・担当者 {sortConfig.key === 'representative' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => handleSort('email')} className="sortable">メール/パス {sortConfig.key === 'email' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => handleSort('salesStatus')} className="sortable">販売ステータス {sortConfig.key === 'salesStatus' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => handleSort('plan')} className="sortable">プラン {sortConfig.key === 'plan' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => handleSort('paymentDate')} className="sortable">入金日 {sortConfig.key === 'paymentDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => handleSort('documents')} className="sortable">書類提出 {sortConfig.key === 'documents' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th onClick={() => handleSort('yearlyRenewal')} className="sortable">更新月 {sortConfig.key === 'yearlyRenewal' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                    <th>アクション</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredStores.map(store => (
+                    <tr key={store.storeId}>
+                      <td>{store.storeId}</td>
+                      <td><span className={`badge ${store.classification === 'FD店舗' ? 'success' : (store.classification === '新規店舗' ? 'warning' : 'neutral')}`}>{store.classification}</span></td>
+                      <td style={{ minWidth: '240px' }}>
+                        <strong>{store.storeName}</strong>
+                        {store.corporateName && <span style={{ opacity: 0.7, marginLeft: '8px', fontSize: '0.85rem' }}>({store.corporateName})</span>}
+                      </td>
+                      <td>
+                        {store.representative}
+                        {store.contactPerson && <span style={{ color: 'var(--primary-accent)', marginLeft: '8px', fontSize: '0.85rem' }}>(担: {store.contactPerson})</span>}
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '0.85rem' }}>{store.email || '-'}</span>
+                        {store.password && <span style={{ opacity: 0.6, marginLeft: '8px', fontSize: '0.85rem' }}>[{store.password}]</span>}
+                      </td>
+                      <td><span className={getBadgeClass(store.salesStatus)}>{store.salesStatus}</span></td>
+                      <td>{store.plan}</td>
+                      <td>{store.paymentDate ? new Date(store.paymentDate).toLocaleDateString('ja-JP') : '未確認'}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className={getBadgeClass(store.documents?.consent)} style={{ padding: '4px 8px' }}>同意書: {store.documents?.consent}</span>
+                          <span className={getBadgeClass(store.isDocComplete ? '提出済み' : '未提出')} style={{ padding: '4px 8px' }}>
+                            {store.isDocComplete ? '完備' : '不足'}
+                          </span>
+                        </div>
+                      </td>
+                      <td>{store.yearlyRenewal}</td>
+                      <td>
+                        <button className="action-btn edit-btn" onClick={() => openEditModal(store)}>詳細・編集</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {!isLoading && filteredStores.length === 0 && !error && (
+              <div className="empty-state">該当する店舗が見つからないか、データがありません。</div>
+            )}
+          </div>
+        </div>
+
+        {isModalOpen && (
+          <div className="modal-overlay">
+            <div className="modal-content glass-panel">
+              <h2>{editingStore ? '店舗情報の編集' : '新規店舗の追加'}</h2>
+              <form onSubmit={handleSave} className="modal-form">
+                <div className="modal-scroll-area">
+                  <section>
+                    <h3>基本情報</h3>
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label>店舗ID</label>
+                        <input type="text" name="store_id" readOnly={!!editingStore} defaultValue={editingStore?.store_id || ''} placeholder="自動生成されます" />
+                      </div>
+                      <div className="form-group">
+                        <label>No</label>
+                        <input type="text" name="no" defaultValue={editingStore?.no || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>店舗名</label>
+                        <input type="text" name="store_name" required defaultValue={editingStore?.store_name || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>法人名</label>
+                        <input type="text" name="corporate_name" defaultValue={editingStore?.corporate_name || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>代表者名</label>
+                        <input type="text" name="representative" required defaultValue={editingStore?.representative || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>担当者名</label>
+                        <input type="text" name="contact_person" defaultValue={editingStore?.contact_person || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>メールアドレス</label>
+                        <input type="email" name="email" defaultValue={editingStore?.email || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>パスワード</label>
+                        <input type="text" name="password" defaultValue={editingStore?.password || ''} />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3>ステータス・進捗</h3>
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label>販売ステータス</label>
+                        <input type="text" name="sales_ok" defaultValue={editingStore?.sales_ok || '準備中'} list="sales-status-options" />
+                        <datalist id="sales-status-options">
+                          <option value="販売OK" />
+                          <option value="一時停止" />
+                          <option value="準備中" />
+                        </datalist>
+                      </div>
+                      <div className="form-group">
+                        <label>入金状況</label>
+                        <select name="payment_status" defaultValue={editingStore?.payment || '未入金'}>
+                          <option value="完了">完了</option>
+                          <option value="未入金">未入金</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>同意書</label>
+                        <input type="text" name="doc_consent" defaultValue={editingStore?.doc_consent || '未提出'} list="doc-status-options" />
+                      </div>
+                      <div className="form-group">
+                        <label>登記簿謄本</label>
+                        <input type="text" name="doc_registry" defaultValue={editingStore?.doc_registry || '未提出'} list="doc-status-options" />
+                      </div>
+                      <div className="form-group">
+                        <label>住民票</label>
+                        <input type="text" name="doc_resident" defaultValue={editingStore?.doc_resident || '未提出'} list="doc-status-options" />
+                        <datalist id="doc-status-options">
+                          <option value="再提出要" />
+                          <option value="提出済み" />
+                          <option value="未提出" />
+                          <option value="両方完了" />
+                          <option value="原本のみ" />
+                        </datalist>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3>契約・プラン・日付</h3>
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label>契約プラン</label>
+                        <input type="text" name="initial_plan" defaultValue={editingStore?.initial_plan || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>プラン追加</label>
+                        <input type="text" name="plan_addition" defaultValue={editingStore?.plan_addition || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>申込日</label>
+                        <input type="date" name="application_date" defaultValue={editingStore?.application_date || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>初回費用</label>
+                        <input type="text" name="initial_cost" defaultValue={editingStore?.initial_cost || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>更新月 (YYYY-MM)</label>
+                        <input type="text" name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>原本到着日</label>
+                        <input type="date" name="original_arrival_date" defaultValue={editingStore?.original_arrival_date || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>ログイン情報送信日</label>
+                        <input type="date" name="login_info_sent_date" defaultValue={editingStore?.login_info_sent_date || ''} />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3>その他・備考</h3>
+                    <div className="form-group full-width">
+                      <label>備考</label>
+                      <textarea name="remarks" defaultValue={editingStore?.remarks || ''}></textarea>
+                    </div>
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label>紹介者</label>
+                        <input type="text" name="introducer" defaultValue={editingStore?.introducer || ''} />
+                      </div>
+                      <div className="form-group">
+                        <label>NPセラーID</label>
+                        <input type="text" name="np_seller_id" defaultValue={editingStore?.np_seller_id || ''} />
+                      </div>
+                    </div>
+                  </section>
+                </div>
+
+                <div className="modal-actions">
+                  <button type="button" className="action-btn cancel-btn" onClick={closeModal} disabled={isLoading}>キャンセル</button>
+                  <button type="submit" className="glass-btn" disabled={isLoading}>
+                    {isLoading ? '保存中...' : '保存する'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
