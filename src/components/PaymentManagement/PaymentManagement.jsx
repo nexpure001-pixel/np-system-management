@@ -8,7 +8,20 @@ const PaymentManagement = () => {
         const savedData = localStorage.getItem('np_payments_data');
         if (savedData) {
             try {
-                return JSON.parse(savedData);
+                const parsed = JSON.parse(savedData);
+                if (Array.isArray(parsed)) {
+                    // Safety migration: ensure all fields are strings/primitives to prevent React crash
+                    return parsed.map(p => ({
+                        ...p,
+                        touroku: p.touroku !== null && typeof p.touroku === 'object' ? JSON.stringify(p.touroku) : String(p.touroku || ''),
+                        rankUp: p.rankUp !== null && typeof p.rankUp === 'object' ? JSON.stringify(p.rankUp) : String(p.rankUp || ''),
+                        chuumonbi: p.chuumonbi !== null && typeof p.chuumonbi === 'object' ? (p.chuumonbi.toISOString ? p.chuumonbi.toISOString().split('T')[0] : JSON.stringify(p.chuumonbi)) : String(p.chuumonbi || ''),
+                        shimei: p.shimei !== null && typeof p.shimei === 'object' ? JSON.stringify(p.shimei) : String(p.shimei || ''),
+                        nyuukin: p.nyuukin !== null && typeof p.nyuukin === 'object' ? JSON.stringify(p.nyuukin) : String(p.nyuukin || ''),
+                        bikou: p.bikou !== null && typeof p.bikou === 'object' ? JSON.stringify(p.bikou) : String(p.bikou || '')
+                    }));
+                }
+                return [];
             } catch (e) {
                 console.error('PaymentManagement: Failed to parse saved data', e);
                 return [];
@@ -81,19 +94,29 @@ const PaymentManagement = () => {
 
                 // Skip header row
                 const rows = jsonData.slice(1);
-                const importedPayments = rows.map((row, index) => ({
-                    id: Date.now() + index,
-                    shiharaibi: row[0] === '済' || row[0] === true || row[0] === 'TRUE',
-                    boxIdou: row[1] === '済' || row[1] === true || row[1] === 'TRUE',
-                    touroku: row[2] || '',
-                    soshikizu: row[3] === '済' || row[3] === true || row[3] === 'TRUE',
-                    rankUp: row[4] || '',
-                    chuumonbi: row[5] || '',
-                    shimei: row[6] || '',
-                    nyuukin: String(row[7] || '').replace(/[^\d.-]/g, ''),
-                    bikou: row[8] || '',
-                    kanryou: row[9] === '完了' || row[9] === '済' || row[9] === true || row[9] === 'TRUE'
-                })).filter(p => p.shimei || p.nyuukin);
+                const importedPayments = rows.map((row, index) => {
+                    // Helper to convert any cell value (including Date objects) to string properly
+                    const valToString = (val) => {
+                        if (val instanceof Date) {
+                            return val.toISOString().split('T')[0];
+                        }
+                        return val !== undefined && val !== null ? String(val) : '';
+                    };
+
+                    return {
+                        id: Date.now() + index,
+                        shiharaibi: row[0] === '済' || row[0] === true || row[0] === 'TRUE',
+                        boxIdou: row[1] === '済' || row[1] === true || row[1] === 'TRUE',
+                        touroku: valToString(row[2]),
+                        soshikizu: row[3] === '済' || row[3] === true || row[3] === 'TRUE',
+                        rankUp: valToString(row[4]),
+                        chuumonbi: valToString(row[5]),
+                        shimei: valToString(row[6]),
+                        nyuukin: valToString(row[7]).replace(/[^\d.-]/g, ''),
+                        bikou: valToString(row[8]),
+                        kanryou: row[9] === '完了' || row[9] === '済' || row[9] === true || row[9] === 'TRUE'
+                    };
+                }).filter(p => p.shimei || p.nyuukin);
 
                 if (window.confirm(`${importedPayments.length}件のデータをインポートしますか？既存のデータに追加されます。`)) {
                     setPayments(prev => [...importedPayments, ...prev]);
@@ -106,6 +129,15 @@ const PaymentManagement = () => {
             }
         };
         reader.readAsArrayBuffer(file);
+    };
+
+    const handleClearData = () => {
+        if (window.confirm('すべてのデータを消去しますか？この操作は取り消せません。')) {
+            setPayments([]);
+            localStorage.removeItem('np_payments_data');
+            alert('データを消去しました。');
+            window.location.reload(); // Ensure clean state
+        }
     };
 
     const handleQuickAdd = () => {
@@ -247,6 +279,9 @@ const PaymentManagement = () => {
                     />
                     <button className="secondary-btn" onClick={handleExportExcel}>
                         <i className="fa-solid fa-file-export"></i> Excel保存
+                    </button>
+                    <button className="secondary-btn" onClick={handleClearData} style={{ color: '#ff6b6b' }}>
+                        <i className="fa-solid fa-trash"></i> データをリセット
                     </button>
                 </div>
                 <div style={{ color: 'var(--text-color)', fontSize: '0.9em', opacity: 0.8 }}>
