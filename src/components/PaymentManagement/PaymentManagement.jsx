@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import './PaymentManagement.css';
 
@@ -30,6 +30,9 @@ const PaymentManagement = () => {
         bikou: ''
     });
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 100;
+    const fileInputRef = useRef(null);
 
     // Quick Add State
     const [quickAdd, setQuickAdd] = useState({
@@ -47,12 +50,64 @@ const PaymentManagement = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRecord, setEditingRecord] = useState(null);
 
+    // Reset to page 1 when filters or search change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, filters]);
+
     // --- Lifecycle: Save to LocalStorage ---
     useEffect(() => {
         localStorage.setItem('np_payments_data', JSON.stringify(payments));
     }, [payments]);
 
     // --- Handlers ---
+    const handleImportFile = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                if (jsonData.length <= 1) {
+                    alert('有効なデータが見つかりませんでした。');
+                    return;
+                }
+
+                // Skip header row
+                const rows = jsonData.slice(1);
+                const importedPayments = rows.map((row, index) => ({
+                    id: Date.now() + index,
+                    shiharaibi: row[0] === '済' || row[0] === true || row[0] === 'TRUE',
+                    boxIdou: row[1] === '済' || row[1] === true || row[1] === 'TRUE',
+                    touroku: row[2] || '',
+                    soshikizu: row[3] === '済' || row[3] === true || row[3] === 'TRUE',
+                    rankUp: row[4] || '',
+                    chuumonbi: row[5] || '',
+                    shimei: row[6] || '',
+                    nyuukin: String(row[7] || '').replace(/[^\d.-]/g, ''),
+                    bikou: row[8] || '',
+                    kanryou: row[9] === '完了' || row[9] === '済' || row[9] === true || row[9] === 'TRUE'
+                })).filter(p => p.shimei || p.nyuukin);
+
+                if (window.confirm(`${importedPayments.length}件のデータをインポートしますか？既存のデータに追加されます。`)) {
+                    setPayments(prev => [...importedPayments, ...prev]);
+                }
+            } catch (err) {
+                console.error('Import error:', err);
+                alert('インポートに失敗しました。ファイル形式を確認してください。');
+            } finally {
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
     const handleQuickAdd = () => {
         if (!quickAdd.shimei && !quickAdd.nyuukin) return;
 
@@ -142,7 +197,10 @@ const PaymentManagement = () => {
                 return matchesGlobal && matchesColumns;
             })
             .sort((a, b) => {
-                if (!sortConfig.key) return 0;
+                if (!sortConfig.key) {
+                    // Default Sort: ID Descending (Newest first)
+                    return b.id - a.id;
+                }
                 const aVal = a[sortConfig.key] || '';
                 const bVal = b[sortConfig.key] || '';
                 if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -150,6 +208,13 @@ const PaymentManagement = () => {
                 return 0;
             });
     }, [payments, searchQuery, filters, sortConfig]);
+
+    const paginatedPayments = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredPayments.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredPayments, currentPage, itemsPerPage]);
+
+    const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
 
     return (
         <div className="payment-management-container">
@@ -170,6 +235,16 @@ const PaymentManagement = () => {
                     <button className="primary-btn" onClick={() => alert('ローカル版のためシート連携は無効です。Supabase移行時に有効化されます。')}>
                         <i className="fa-solid fa-cloud"></i> クラウド同期 (準備中)
                     </button>
+                    <button className="secondary-btn" onClick={() => fileInputRef.current?.click()}>
+                        <i className="fa-solid fa-file-import"></i> インポート (CSV/Excel)
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImportFile}
+                        accept=".csv, .xlsx, .xls"
+                        style={{ display: 'none' }}
+                    />
                     <button className="secondary-btn" onClick={handleExportExcel}>
                         <i className="fa-solid fa-file-export"></i> Excel保存
                     </button>
@@ -274,7 +349,7 @@ const PaymentManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredPayments.map(p => (
+                        {paginatedPayments.map(p => (
                             <tr key={p.id} className={p.kanryou ? 'completed-row' : ''}>
                                 <td style={{ textAlign: 'center' }}>
                                     <label className="cute-checkbox">
@@ -342,6 +417,29 @@ const PaymentManagement = () => {
                     </tbody>
                 </table>
             </div>
+
+            {totalPages > 1 && (
+                <div className="pagination-controls glass-panel">
+                    <button
+                        className="glass-btn secondary"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    >
+                        <i className="fa-solid fa-chevron-left"></i> 前へ
+                    </button>
+                    <span className="page-info">
+                        <strong>{currentPage}</strong> / {totalPages} ページ
+                        <span className="total-count">({filteredPayments.length}件)</span>
+                    </span>
+                    <button
+                        className="glass-btn secondary"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    >
+                        次へ <i className="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

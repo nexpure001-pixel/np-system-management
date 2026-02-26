@@ -391,3 +391,63 @@
     padding: 25px;
     box-shadow: var(--shadow);
 }
+
+/* Pagination Controls */
+.payment-management-container .pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+    padding: 15px;
+    border-radius: 50px;
+}
+
+.payment-management-container .page-info {
+    font-size: 1em;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.payment-management-container .page-info strong {
+    color: var(--accent-color);
+    font-size: 1.2em;
+}
+
+.payment-management-container .total-count {
+    font-size: 0.8em;
+    opacity: 0.6;
+    margin-left: 5px;
+}
+
+.payment-management-container .glass-btn {
+    padding: 8px 20px;
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    background: var(--white);
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.payment-management-container .glass-btn:hover:not(:disabled) {
+    background: var(--primary-color);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 182, 193, 0.4);
+}
+
+.payment-management-container .glass-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
