@@ -407,7 +407,7 @@ const StoreManagement = () => {
                                     <td>{store.email || '-'} {store.password && <span style={{ opacity: 0.6, marginLeft: '8px', fontSize: '0.85rem' }}>[{store.password}]</span>}</td>
                                     <td><span className={getBadgeClass(store.salesStatus)}>{store.salesStatus}</span></td>
                                     <td>{store.plan}</td>
-                                    <td>{store.paymentDate ? new Date(store.paymentDate).toLocaleDateString('ja-JP') : '未確認'}</td>
+                                    <td>{store.classification === 'FD店舗' ? '免除' : (store.paymentDate ? new Date(store.paymentDate).toLocaleDateString('ja-JP') : '未確認')}</td>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span className={getBadgeClass(store.documents?.consent)} style={{ padding: '4px 8px' }}>同意書: {store.documents?.consent}</span>
