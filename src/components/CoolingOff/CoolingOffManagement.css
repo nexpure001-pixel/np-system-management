@@ -1,0 +1,193 @@
+:root {
+    --dracula-bg: #0b0707;
+    --dracula-panel: rgba(30, 15, 15, 0.85);
+    --blood-red: #cc0000;
+    --dark-red: #660000;
+    --dracula-gold: #c5a365;
+    --text-color: #e8e8e8;
+    --list-bg: #2a2a2a;
+    --cooling-off: rgba(0, 180, 0, 0.3);
+    --cooling-off-border: #00ea00;
+    --return-90: rgba(220, 160, 0, 0.4);
+    --return-90-border: #ffcc00;
+    --expired: rgba(200, 0, 0, 0.4);
+    --expired-border: #ff3333;
+}
+
+.cooling-off-container {
+    background-color: var(--dracula-bg);
+    color: var(--text-color);
+    font-family: 'Noto Serif JP', serif;
+    margin: 0;
+    padding: 20px;
+    background-image: linear-gradient(rgba(10, 5, 5, 0.6), rgba(0, 0, 0, 0.9));
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 100vh;
+    border-radius: 8px;
+    position: relative;
+    overflow-x: hidden;
+}
+
+.cooling-off-container h1 {
+    font-family: 'Creepster', cursive, sans-serif;
+    color: var(--blood-red);
+    font-size: 2.5rem;
+    letter-spacing: 3px;
+    text-shadow: 2px 2px 4px #000, 0 0 20px var(--dark-red);
+    margin: 0;
+    text-align: center;
+}
+
+.cooling-off-container .subtitle {
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--dracula-gold);
+    margin-bottom: 20px;
+}
+
+.cooling-off-container .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--dracula-panel);
+    padding: 15px 25px;
+    border-radius: 10px;
+    border: 1px solid var(--dark-red);
+    box-shadow: 0 0 15px rgba(200, 0, 0, 0.2);
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.cooling-off-container .btn {
+    background: linear-gradient(to bottom, var(--dark-red), #400000);
+    color: var(--dracula-gold);
+    border: 1px solid var(--blood-red);
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.cooling-off-container .btn:hover {
+    background: linear-gradient(to bottom, var(--blood-red), var(--dark-red));
+    box-shadow: 0 0 15px var(--blood-red);
+    text-shadow: 0 0 5px var(--dracula-gold);
+    scale: 1.05;
+}
+
+.cooling-off-container .table-container {
+    height: 70vh;
+    overflow: auto;
+    background: var(--list-bg);
+    border-radius: 8px;
+    border: 1px solid var(--dark-red);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.cooling-off-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cooling-off-container th,
+.cooling-off-container td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.cooling-off-container th {
+    background: rgba(10, 5, 5, 0.98);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    color: var(--dracula-gold);
+    border-bottom: 2px solid var(--blood-red);
+    cursor: pointer;
+}
+
+.cooling-off-container input[type="text"],
+.cooling-off-container input[type="date"],
+.cooling-off-container select {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #555;
+    color: inherit;
+    padding: 6px;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.cooling-off-container .status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-shadow: 1px 1px 2px #000;
+}
+
+.cooling-off-container .status-cooling {
+    background-color: var(--cooling-off);
+    border: 1px solid var(--cooling-off-border);
+    color: #cfffcf;
+}
+
+.cooling-off-container .status-90 {
+    background-color: var(--return-90);
+    border: 1px solid var(--return-90-border);
+    color: #ffe680;
+}
+
+.cooling-off-container .status-expired {
+    background-color: var(--expired);
+    border: 1px solid var(--expired-border);
+    color: #ffb3b3;
+}
+
+/* Blood screensaver */
+.blood-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(80, 0, 0, 0.98);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.blood-drip {
+    position: absolute;
+    top: -100px;
+    width: 20px;
+    height: 100px;
+    background: linear-gradient(to bottom, #8a0000 0%, #d40000 70%, transparent 100%);
+    border-radius: 0 0 50% 50%;
+    animation: dripDown 4s ease-in infinite;
+}
+
+@keyframes dripDown {
+    0% {
+        transform: translateY(0) scaleY(1);
+    }
+
+    100% {
+        transform: translateY(110vh) scaleY(2);
+        opacity: 0;
+    }
+}

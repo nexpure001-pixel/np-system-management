@@ -192,3 +192,15 @@ CREATE POLICY "Allow all grants" ON public.leave_grants FOR ALL USING (true) WIT
 CREATE POLICY "Allow all requests" ON public.leave_requests FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all consumptions" ON public.leave_consumptions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all payments" ON public.payments FOR ALL USING (true) WITH CHECK (true);
+
+-- 7. COOLING OFF RECORDS Table (クーリングオフ管理)
+CREATE TABLE IF NOT EXISTS public.cooling_off_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    data JSONB NOT NULL,
+    headers JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.cooling_off_records ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all cooling_off" ON public.cooling_off_records;
+CREATE POLICY "Allow all cooling_off" ON public.cooling_off_records FOR ALL USING (true) WITH CHECK (true);

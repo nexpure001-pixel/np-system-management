@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クーリングオフ管理システム - ドラキュラ城</title>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Noto+Serif+JP:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --dracula-bg: #0b0707;
+            --dracula-panel: rgba(30, 15, 15, 0.85);
+            --blood-red: #cc0000;
+            --dark-red: #660000;
+            --dracula-gold: #c5a365;
+            --text-color: #e8e8e8;
+            --list-bg: #2a2a2a;
+            --cooling-off: rgba(0, 180, 0, 0.3);
+            --cooling-off-border: #00ea00;
+            --return-90: rgba(220, 160, 0, 0.4);
+            --return-90-border: #ffcc00;
+            --expired: rgba(200, 0, 0, 0.4);
+            --expired-border: #ff3333;
+        }
+
+        body {
+            background-color: var(--dracula-bg);
+            color: var(--text-color);
+            font-family: 'Noto Serif JP', serif;
+            margin: 0;
+            padding: 10px 20px;
+            background-image:
+                linear-gradient(rgba(10, 5, 5, 0.6), rgba(0, 0, 0, 0.9)),
+                url('bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Creepster', cursive, sans-serif;
+            color: var(--blood-red);
+            font-size: 2.2rem;
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 4px #000, 0 0 20px var(--dark-red);
+            margin: 0;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: var(--dracula-gold);
+            margin-top: 5px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--dracula-panel);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--dark-red);
+            box-shadow: 0 0 15px rgba(200, 0, 0, 0.2);
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        .file-upload {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            font-size: 100px;
+            opacity: 0;
+            right: 0;
+            top: 0;
+            cursor: pointer;
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translate(1px, 1px) rotate(0deg);
+            }
+
+            10% {
+                transform: translate(-1px, -2px) rotate(-1deg);
+            }
+
+            20% {
+                transform: translate(-3px, 0px) rotate(1deg);
+            }
+
+            30% {
+                transform: translate(3px, 2px) rotate(0deg);
+            }
+
+            40% {
+                transform: translate(1px, -1px) rotate(1deg);
+            }
+
+            50% {
+                transform: translate(-1px, 2px) rotate(-1deg);
+            }
+
+            60% {
+                transform: translate(-3px, 1px) rotate(0deg);
+            }
+
+            70% {
+                transform: translate(3px, 1px) rotate(-1deg);
+            }
+
+            80% {
+                transform: translate(-1px, -1px) rotate(1deg);
+            }
+
+            90% {
+                transform: translate(1px, 2px) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(1px, -2px) rotate(-1deg);
+            }
+        }
+
+        .btn {
+            background: linear-gradient(to bottom, var(--dark-red), #400000);
+            color: var(--dracula-gold);
+            border: 1px solid var(--blood-red);
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: linear-gradient(to bottom, var(--blood-red), var(--dark-red));
+            box-shadow: 0 0 15px var(--blood-red);
+            text-shadow: 0 0 5px var(--dracula-gold);
+            animation: shake 0.5s infinite;
+        }
+
+        .btn-add {
+            background: linear-gradient(to bottom, #880000, #440000);
+            font-weight: bold;
+            padding: 4px 10px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 10px;
+            font-size: 0.8rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+        }
+
+        .legend-cooling {
+            background: var(--cooling-off);
+            border-color: var(--cooling-off-border);
+        }
+
+        .legend-90 {
+            background: var(--return-90);
+            border-color: var(--return-90-border);
+        }
+
+        .legend-expired {
+            background: var(--expired);
+            border-color: var(--expired-border);
+        }
+
+        .table-container {
+            height: 75vh;
+            overflow: auto;
+            background: var(--list-bg);
+            border-radius: 10px;
+            border: 1px solid var(--dark-red);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        td:last-child,
+        th:last-child,
+        td:nth-last-child(2),
+        th:nth-last-child(2) {
+            white-space: normal;
+            min-width: 150px;
+            max-width: 300px;
+        }
+
+        th {
+            cursor: pointer;
+            color: var(--dracula-gold);
+            border-bottom: 2px solid var(--blood-red);
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            background: rgba(10, 5, 5, 0.98);
+            z-index: 10;
+            transition: background 0.2s;
+            font-size: 0.85rem;
+        }
+
+        th:hover {
+            background: #200000;
+        }
+
+        th span {
+            font-size: 0.8em;
+            margin-left: 3px;
+            color: #888;
+        }
+
+        th.asc span::after {
+            content: '▲';
+            color: var(--blood-red);
+        }
+
+        th.desc span::after {
+            content: '▼';
+            color: var(--blood-red);
+        }
+
+        tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        .row-card-payment {
+            background-color: rgba(150, 0, 0, 0.3) !important;
+            box-shadow: inset 0 0 10px rgba(200, 0, 0, 0.8);
+            border-top: 2px solid var(--blood-red);
+            border-bottom: 2px solid var(--blood-red);
+        }
+
+        .row-card-payment:hover {
+            background-color: rgba(200, 0, 0, 0.4) !important;
+        }
+
+        .row-card-payment td {
+            color: #ffcccc;
+            font-weight: bold;
+        }
+
+        .add-row {
+            position: sticky;
+            top: 33px;
+            background-color: #1a1a1a;
+            z-index: 5;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            border-bottom: 2px solid var(--blood-red);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px #000;
+            white-space: nowrap;
+        }
+
+        .status-cooling {
+            background-color: var(--cooling-off);
+            border: 1px solid var(--cooling-off-border);
+            color: #cfffcf;
+        }
+
+        .status-90 {
+            background-color: var(--return-90);
+            border: 1px solid var(--return-90-border);
+            color: #ffe680;
+        }
+
+        .status-expired {
+            background-color: var(--expired);
+            border: 1px solid var(--expired-border);
+            color: #ffb3b3;
+        }
+
+        .status-none {
+            background-color: transparent;
+            color: #aaa;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #555;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.85rem;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 4px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--blood-red);
+            background: rgba(0, 0, 0, 0.9);
+            box-shadow: 0 0 5px var(--blood-red);
+        }
+
+        select option {
+            background: var(--dracula-bg);
+            color: var(--text-color);
+        }
+
+        input[type="date"] {
+            max-width: 130px;
+            position: relative;
+        }
+
+        input[type="date"].empty-date {
+            color: transparent;
+        }
+
+        input[type="date"].empty-date:focus {
+            color: inherit;
+        }
+
+        ::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .save-notification {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: var(--dracula-gold);
+            color: #000;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Blood drip idle animation overlay - Screensaver Edition */
+        .blood-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            background-color: transparent;
+            transition: opacity 0.5s ease, background-color 3s ease 1s;
+            /* Elegantly fill red after drips start */
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .blood-overlay.active {
+            opacity: 1;
+            background-color: rgba(80, 0, 0, 0.98);
+            /* Deep thick blood red to hide screen */
+            pointer-events: all;
+            /* Block clicks to table behind it */
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            /* Modern frosted glass effect for extra security */
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .blood-drip {
+            position: absolute;
+            top: -100px;
+            width: 20px;
+            height: 100px;
+            background: linear-gradient(to bottom, #8a0000 0%, #d40000 70%, transparent 100%);
+            border-radius: 0 0 50% 50%;
+            opacity: 0.8;
+            filter: drop-shadow(0px 5px 5px rgba(100, 0, 0, 0.5));
+            transform-origin: top;
+        }
+
+        @keyframes dripDown {
+            0% {
+                transform: scaleY(0);
+            }
+
+            50% {
+                transform: scaleY(1.5);
+            }
+
+            100% {
+                transform: scaleY(3) translateY(100vh);
+                opacity: 0;
+            }
+        }
+
+        .locked-msg {
+            color: #ffcccc;
+            font-family: 'Noto Serif JP', serif;
+            font-size: 2.5rem;
+            text-shadow: 0 0 15px #000, 2px 2px 0px rgba(100, 0, 0, 0.8);
+            opacity: 0;
+            transition: opacity 2s ease 2s;
+            /* Text appears after screen is bleeding */
+            z-index: 10000;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .blood-overlay.active .locked-msg {
+            opacity: 1;
+        }
+
+        .manual-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(to bottom, #333, #000);
+            color: var(--dracula-gold);
+            border: 1px solid #555;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+
+        .manual-btn:hover {
+            background: linear-gradient(to bottom, #555, #222);
+            border-color: var(--dracula-gold);
+            box-shadow: 0 0 10px rgba(197, 163, 101, 0.5);
+            animation: shake 0.5s infinite;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 20000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: var(--dracula-panel);
+            border: 2px solid var(--dark-red);
+            border-radius: 10px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(200, 0, 0, 0.3);
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            color: var(--text-color);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h2 {
+            color: var(--blood-red);
+            font-family: 'Creepster', cursive, 'Noto Serif JP', serif;
+            text-align: center;
+            margin-top: 0;
+            border-bottom: 2px solid var(--dark-red);
+            padding-bottom: 15px;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .modal-content h3 {
+            color: var(--dracula-gold);
+            margin-top: 25px;
+            border-left: 4px solid var(--blood-red);
+            padding-left: 10px;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .modal-content p,
+        .modal-content li {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .modal-content ul {
+            padding-left: 20px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--dracula-gold);
+            font-size: 2.2rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 0;
+            text-shadow: 0 0 5px #000;
+        }
+
+        .close-btn:hover {
+            color: var(--blood-red);
+            text-shadow: 0 0 10px var(--blood-red);
+            transform: scale(1.1);
+        }
+
+        .modal-content li {
+            margin-bottom: 8px;
+        }
+
+        .modal-content strong {
+            color: #ffcccc;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Cooling-Off Castle</h1>
+        <div class="subtitle">クーリングオフ・返品管理システム</div>
+        <button class="manual-btn" id="manualBtn">📜 使い方マニュアル</button>
+    </header>
+
+    <div class="controls">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="file-upload">
+                <button class="btn">🩸 CSV読込</button>
+                <input type="file" id="csvFileInput" accept=".csv">
+            </div>
+            <button class="btn" id="exportBtn">💾 保存 (CSV)</button>
+            <button class="btn" id="exportTransferBtn"
+                style="background: linear-gradient(to bottom, #114411, #002200); border-color: #00aa00; color: #aaffaa; box-shadow: 0 4px 6px rgba(0,0,0,0.5), 0 0 10px rgba(0,255,0,0.1);">💸
+                振込データ出力</button>
+            <button class="btn" id="clearDataBtn" style="background:#333; color:#888; border-color:#555;">🗑️
+                クリア</button>
+        </div>
+
+        <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color legend-cooling"></div> クーリングオフ(20日以内)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-90"></div> 90日ルール(90日以内)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-expired"></div> 期間外
+                </div>
+            </div>
+            <!-- Lock Screen Button -->
+            <button class="btn" id="lockScreenBtn"
+                style="background: linear-gradient(to bottom, #333, #000); border-color: #555; padding: 10px 15px;">🛡️
+                席をはずす</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table id="dataTable">
+            <thead>
+                <tr id="tableHeader">
+                    <th>状態判定</th>
+                    <th>データを読み込んでください</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="2" style="text-align:center; padding: 50px; color: #888;">
+                        CSVファイルを読み込むか、以前のデータがロードされるのをお待ちください。</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="saveNotification" class="save-notification">保存しました 🦇</div>
+
+    <!-- Blood drops container for Screensaver -->
+    <div id="bloodOverlay" class="blood-overlay">
+        <div class="locked-msg">🦇 吸血鬼が監視中...<br><span
+                style="font-size: 1.2rem; font-weight:normal; color:#ccc;">(画面をクリックして封印解除)</span></div>
+    </div>
+
+    <!-- Manual Modal -->
+    <div class="modal-overlay" id="manualModal">
+        <div class="modal-content">
+            <button class="close-btn" id="closeManualBtn">&times;</button>
+            <h2>📜 クーリングオフ管理システム 使い方</h2>
+
+            <h3>1. データの読み込み</h3>
+            <p>画面左側の「🩸 CSV読込」ボタンをクリックし、管理したいCSVファイルを選択してください。<br>一度読み込んだデータはブラウザに自動保存され、次回アクセス時も続きから作業できます。</p>
+
+            <h3>2. データの編集と追加</h3>
+            <ul>
+                <li><strong>直接編集:</strong> 表の各セルをクリックすると直接データを編集・更新できます。変更は「保存しました 🦇」と表示され、自動保存されます。</li>
+                <li><strong>新規追加:</strong> 表の一番上の行（データ入力欄）に新しいデータを入力し、右端の「💀追加」ボタンを押すことで新しい行を追加できます。</li>
+                <li><strong>並び替え:</strong> 各列のタイトル（ヘッダー）をクリックすると、昇順・降順に並べ替えができます。</li>
+            </ul>
+
+            <h3>3. 振込データの出力（入金依頼）</h3>
+            <p>返金処理が必要な顧客の情報を、振込担当者向けのテキストデータとして作成できます。</p>
+            <ul>
+                <li><strong>チェックを入れる:</strong> 表の一番左にある「入金依頼」のチェックボックスにチェックを入れます。</li>
+                <li><strong>データ出力:</strong> 画面上部の「💸
+                    振込データ出力」ボタンを押すと、チェックを入れた行の「お名前」「返金額」「振込口座」が分かりやすくまとまったテキストファイル（.txt）がダウンロードされます。</li>
+            </ul>
+
+            <h3>4. 状態の自動判定</h3>
+            <p>商品到着日（または契約日など）を基に、状態が自動判定されます。</p>
+            <ul>
+                <li><span class="status-badge status-cooling">🦇20日以内</span> : 到着日から20日以内（クーリングオフ期間）</li>
+                <li><span class="status-badge status-90">🕸️90日超過</span> : 到着日から90日以内（90日返品ルール）</li>
+                <li><span class="status-badge status-expired">💀期限切れ</span> : 90日を超過したデータ</li>
+            </ul>
+            <p>※支払方法が「カード」等を含む場合、行全体が赤くハイライトされ、カード決済の取り消し漏れを防ぎます。</p>
+
+            <h3>5. データの保存とクリア</h3>
+            <ul>
+                <li><strong>保存 (CSV):</strong> 「💾 保存 (CSV)」ボタンで、現在の最新データをCSVファイルとしてエクスポート（ダウンロード）できます。</li>
+                <li><strong>クリア:</strong> 「🗑️ クリア」ボタンで、現在ブラウザに保存されている全データを消去して初期状態に戻します。</li>
+            </ul>
+
+            <h3>6. セキュリティ機能（席をはずす）</h3>
+            <p>「🛡️ 席をはずす」ボタンを押すか、PCを10分間操作しないと、画面が吸血鬼の血のカーテンでロックされます。画面のどこかをクリックするまで重要な個人情報は隠蔽されます。</p>
+        </div>
+    </div>
+
+    <script>
+        let headers = [];
+        let tableData = [];
+        let sortCol = -1;
+        let sortAsc = true;
+
+        const TARGET_DATE_COL_NAMES = ['商品到着日', '初回商品到着日', '初回商品発送日', '契約日'];
+        const isDateCol = (name) => name && name.includes('日');
+
+        const PULLDOWN_KEYS = ['種別', '支払方法', '申出方法', '実績月', '実施月'];
+        let pulldownOptions = {
+            '種別': new Set(['', 'クーリングオフ', '90日返品ルール適用解約', '特）中途解約', '退会', '特例2ポジキャンセル', '4ポジキャンセル', '商品キャンセル', 'キャンセル']),
+            '支払方法': new Set(['', 'カード', '振込み', 'カード/振込', '口座振替', '-']),
+            '実績月': new Set(['', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']),
+            '実施月': new Set(['', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']),
+            '申出方法': new Set(['', 'ハガキ', '書面', 'メール', 'カスタマー', 'コンタクト', '電話', '電話・メール', '消費者センター', 'その他'])
+        };
+
+        // Idle timer logic
+        let idleTimer;
+        // production time 10 minutes: 10 * 60 * 1000
+        const IDLE_TIMEOUT = 10 * 60 * 1000;
+
+        let isLocked = false;
+
+        function initIdleTimer() {
+            window.addEventListener('mousemove', handleActivity);
+            window.addEventListener('mousedown', handleActivity);
+            window.addEventListener('keypress', handleActivity);
+            window.addEventListener('DOMMouseScroll', handleActivity);
+            window.addEventListener('mousewheel', handleActivity);
+            window.addEventListener('touchmove', handleActivity);
+            window.addEventListener('MSPointerMove', handleActivity);
+            resetIdleTimer();
+        }
+
+        function handleActivity(e) {
+            // Once screen is locked, only a direct click on the overlay unlocks it
+            if (!isLocked) {
+                resetIdleTimer();
+            }
+        }
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(triggerLockScreen, IDLE_TIMEOUT);
+        }
+
+        function triggerLockScreen() {
+            if (isLocked) return;
+            isLocked = true;
+
+            const overlay = document.getElementById('bloodOverlay');
+
+            // clear old drips except the message
+            const drips = overlay.querySelectorAll('.blood-drip');
+            drips.forEach(d => d.remove());
+
+            // Create random drip effects
+            for (let i = 0; i < 40; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'blood-drip';
+                drop.style.left = Math.random() * 98 + 'vw';
+                drop.style.width = (Math.random() * 25 + 10) + 'px';
+
+                const duration = Math.random() * 4 + 2;
+                const delay = Math.random() * 3;
+
+                drop.style.animation = `dripDown ${duration}s ease-in ${delay}s infinite`;
+                overlay.appendChild(drop);
+            }
+
+            overlay.classList.add('active');
+        }
+
+        document.getElementById('bloodOverlay').addEventListener('click', function () {
+            if (isLocked) {
+                this.classList.remove('active');
+                isLocked = false;
+                resetIdleTimer();
+            }
+        });
+
+        document.getElementById('lockScreenBtn').addEventListener('click', function (e) {
+            e.stopPropagation(); // prevent triggering activity listener immediately
+            triggerLockScreen();
+        });
+
+        initIdleTimer();
+
+        function populatePulldownOptions() {
+            headers.forEach((h, c) => {
+                if (PULLDOWN_KEYS.includes(h)) {
+                    tableData.forEach(row => {
+                        if (row[c]) pulldownOptions[h].add(row[c].trim());
+                    });
+                }
+            });
+        }
+
+        document.getElementById('csvFileInput').addEventListener('change', handleFileSelect);
+        document.getElementById('exportBtn').addEventListener('click', exportCSV);
+        document.getElementById('exportTransferBtn').addEventListener('click', exportTransferData);
+        document.getElementById('clearDataBtn').addEventListener('click', () => {
+            if (confirm('ブラウザの保存データをクリアしますか？')) {
+                localStorage.removeItem('draculaCoolingOffData');
+                localStorage.removeItem('draculaCoolingOffHeaders');
+                tableData = [];
+                headers = [];
+                renderTable();
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedData = localStorage.getItem('draculaCoolingOffData');
+            const savedHeaders = localStorage.getItem('draculaCoolingOffHeaders');
+            if (savedData && savedHeaders) {
+                headers = JSON.parse(savedHeaders);
+                tableData = JSON.parse(savedData);
+
+                if (headers.length > 0 && !headers.includes('入金依頼')) {
+                    headers.unshift('入金依頼');
+                    tableData.forEach(row => row.unshift(false));
+                }
+
+                populatePulldownOptions();
+                renderTable();
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                parseCSV(e.target.result);
+                populatePulldownOptions();
+                saveToLocalStorage();
+                renderTable();
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function standardizeDateStr(dateStr) {
+            if (!dateStr || typeof dateStr !== 'string') return dateStr || '';
+            let s = dateStr.trim();
+            let parts = s.match(/(?:(\d{4})[\/\-\年])?(\d{1,2})[\/\-\月](\d{1,2})/);
+            if (!parts) return s;
+            let year = parts[1] ? parseInt(parts[1]) : new Date().getFullYear();
+            if (year < 100) year += 2000;
+            let month = parseInt(parts[2]);
+            let day = parseInt(parts[3]);
+            return `${year}/${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
+        }
+
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/);
+            tableData = [];
+            headers = [];
+            if (lines.length === 0) return;
+
+            let headerIndex = 0;
+            for (let i = 0; i < Math.min(lines.length, 100); i++) {
+                if (lines[i].includes('種別') || lines[i].includes('お名前') || lines[i].includes('入金依頼')) { headerIndex = i; break; }
+            }
+
+            const rawHeaders = parseCsvLine(lines[headerIndex]);
+            let lastValidCol = rawHeaders.length - 1;
+            while (lastValidCol >= 0 && !rawHeaders[lastValidCol].trim()) lastValidCol--;
+
+            let tempHeaders = rawHeaders.slice(0, lastValidCol + 1);
+            let noIdx = tempHeaders.findIndex(h => h.trim() === 'No.' || h.trim() === 'No');
+            let hasReq = tempHeaders.some(h => h.trim() === '入金依頼');
+
+            headers = tempHeaders.filter((_, i) => i !== noIdx);
+            if (!hasReq) headers.unshift('入金依頼');
+
+            for (let i = headerIndex + 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line && !line.replace(/,/g, '').match(/^$/) && !line.includes('クーリングオフ（コミッション')) {
+                    const row = parseCsvLine(line).slice(0, tempHeaders.length);
+                    while (row.length < tempHeaders.length) row.push('');
+
+                    if (row.join('').trim().length > 0) {
+                        let filteredRow = row.filter((_, i) => i !== noIdx);
+                        if (!hasReq) {
+                            filteredRow.unshift(false);
+                        } else {
+                            const reqIdx = headers.indexOf('入金依頼');
+                            if (reqIdx !== -1) {
+                                filteredRow[reqIdx] = (filteredRow[reqIdx] === 'true' || filteredRow[reqIdx] === true);
+                            }
+                        }
+
+                        headers.forEach((h, c) => {
+                            if (isDateCol(h)) filteredRow[c] = standardizeDateStr(filteredRow[c]);
+                        });
+                        tableData.push(filteredRow);
+                    }
+                }
+            }
+        }
+
+        function parseCsvLine(text) {
+            let result = [], current = '', inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (char === '"') inQuotes = !inQuotes;
+                else if (char === ',' && !inQuotes) { result.push(current); current = ''; }
+                else current += char;
+            }
+            result.push(current);
+            return result;
+        }
+
+        function applySort() {
+            if (sortCol === -1) return;
+            tableData.sort((a, b) => {
+                let valA = a[sortCol] || '', valB = b[sortCol] || '';
+                let numA = parseFloat(valA.replace(/[¥,]/g, ''));
+                let numB = parseFloat(valB.replace(/[¥,]/g, ''));
+                if (!isNaN(numA) && !isNaN(numB)) return sortAsc ? numA - numB : numB - numA;
+                return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+        }
+
+        window.handleSort = function (colIndex) {
+            if (sortCol === colIndex) sortAsc = !sortAsc;
+            else { sortCol = colIndex; sortAsc = true; }
+            renderTable();
+        };
+
+        function getArrivalDateIndex() {
+            for (const name of TARGET_DATE_COL_NAMES) {
+                const idx = headers.findIndex(h => h && h.trim() === name);
+                if (idx !== -1) return idx;
+            }
+            return headers.findIndex(h => h && h.includes('到着'));
+        }
+
+        function calculateStatus(dateStr) {
+            if (!dateStr || dateStr.trim() === '-' || dateStr.trim() === '') return 'unknown';
+            let parts = dateStr.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
+            if (!parts) return 'unknown';
+
+            const arrivalDate = new Date(parseInt(parts[1]), parseInt(parts[2]) - 1, parseInt(parts[3]));
+            if (isNaN(arrivalDate.getTime())) return 'unknown';
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            arrivalDate.setHours(0, 0, 0, 0);
+
+            const diffTime = today.getTime() - arrivalDate.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays <= 0) return 'cooling'; // Future or Today
+            if (diffDays <= 20) return 'cooling';
+            if (diffDays <= 90) return '90days';
+            return 'expired';
+        }
+
+        function toHtmlInput(val, rIdx, cIdx) {
+            const h = headers[cIdx];
+            if (h === '入金依頼') {
+                const checked = (val === true || val === 'true') ? 'checked' : '';
+                return `<input type="checkbox" ${checked} data-row="${rIdx}" data-col="${cIdx}" onchange="updateData(this)" style="transform: scale(1.5); cursor: pointer; margin-left: 10px;">`;
+            } else if (isDateCol(h)) {
+                let yyyymmdd = '';
+                let emptyClass = val ? '' : 'empty-date';
+
+                let parts = (val || '').toString().match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
+                if (parts) yyyymmdd = `${parts[1]}-${parts[2]}-${parts[3]}`;
+
+                return `<input type="date" value="${yyyymmdd}" class="${emptyClass}" data-row="${rIdx}" data-col="${cIdx}" onchange="updateData(this)" onfocus="this.classList.remove('empty-date')" onblur="if(!this.value) this.classList.add('empty-date')">`;
+            } else if (PULLDOWN_KEYS.includes(h)) {
+                let html = `<select data-row="${rIdx}" data-col="${cIdx}" onchange="updateData(this)">`;
+                const options = Array.from(pulldownOptions[h]);
+                if (val && !options.includes(val)) options.push(val); // handle arbitrary old values
+                options.forEach(opt => {
+                    const sel = (opt === val) ? 'selected' : '';
+                    html += `<option value="${(opt || '').toString().replace(/"/g, '&quot;')}" ${sel}>${opt}</option>`;
+                });
+                html += `</select>`;
+                return html;
+            }
+
+            return `<input type="text" value="${(val || '').toString().replace(/"/g, '&quot;')}" data-row="${rIdx}" data-col="${cIdx}" onchange="updateData(this)">`;
+        }
+
+        function renderTable() {
+            const thead = document.getElementById('tableHeader');
+            const tbody = document.getElementById('tableBody');
+
+            if (headers.length === 0) {
+                thead.innerHTML = '<th>ファイルがありません</th>';
+                tbody.innerHTML = '<tr><td style="padding: 30px;">未入力</td></tr>';
+                return;
+            }
+
+            applySort();
+
+            let headHtml = `<th>判定</th>`;
+            headers.forEach((h, i) => {
+                let sClass = sortCol === i ? (sortAsc ? 'class="asc"' : 'class="desc"') : '';
+                headHtml += `<th ${sClass} onclick="handleSort(${i})">${h || '-'} <span></span></th>`;
+            });
+            thead.innerHTML = headHtml;
+
+            tbody.innerHTML = '';
+            const addTr = document.createElement('tr');
+            addTr.className = 'add-row';
+
+            let addHtml = `<td><span class="status-badge status-none">--</span></td>`;
+            headers.forEach((h, i) => {
+                let inputHtml = '';
+                if (h === '入金依頼') {
+                    inputHtml = `<input type="checkbox" id="addInput_${i}" style="transform: scale(1.5); cursor: pointer; margin-left: 10px;">`;
+                } else if (isDateCol(h)) {
+                    inputHtml = `<input type="date" id="addInput_${i}" class="empty-date" onfocus="this.classList.remove('empty-date')" onblur="if(!this.value) this.classList.add('empty-date')">`;
+                } else if (PULLDOWN_KEYS.includes(h)) {
+                    inputHtml = `<select id="addInput_${i}">`;
+                    Array.from(pulldownOptions[h]).forEach(opt => {
+                        inputHtml += `<option value="${opt.replace(/"/g, '&quot;')}">${opt}</option>`;
+                    });
+                    inputHtml += `</select>`;
+                } else {
+                    inputHtml = `<input type="text" id="addInput_${i}" placeholder="入力...">`;
+                }
+
+                if (i === headers.length - 1) {
+                    addHtml += `<td><div style="display:flex; gap:5px; align-items:center; flex-wrap:nowrap;">
+                                    ${inputHtml}
+                                    <button class="btn btn-add" onclick="addNewRecord()">💀追加</button>
+                                 </div></td>`;
+                } else {
+                    addHtml += `<td>${inputHtml}</td>`;
+                }
+            });
+            addTr.innerHTML = addHtml;
+            tbody.appendChild(addTr);
+
+            setTimeout(() => { addTr.style.top = (thead.offsetHeight - 1) + 'px'; }, 10);
+
+            const arrivalDateIdx = getArrivalDateIndex();
+            const paymentIdx = headers.findIndex(h => h === '支払方法');
+
+            tableData.forEach((row, rIdx) => {
+                const tr = document.createElement('tr');
+                let statusHtml = '<span class="status-badge status-none">--</span>';
+
+                if (paymentIdx !== -1 && row[paymentIdx] && row[paymentIdx].includes('カード')) {
+                    tr.classList.add('row-card-payment');
+                }
+
+                if (arrivalDateIdx !== -1 && row[arrivalDateIdx]) {
+                    const status = calculateStatus(row[arrivalDateIdx]);
+                    if (status === 'cooling') { statusHtml = '<span class="status-badge status-cooling">🦇20日以内</span>'; if (!tr.classList.contains('row-card-payment')) tr.style.backgroundColor = 'rgba(0, 180, 0, 0.08)'; }
+                    else if (status === '90days') { statusHtml = '<span class="status-badge status-90">🕸️90日超過</span>'; if (!tr.classList.contains('row-card-payment')) tr.style.backgroundColor = 'rgba(220, 160, 0, 0.08)'; }
+                    else if (status === 'expired') { statusHtml = '<span class="status-badge status-expired">💀期限切れ</span>'; if (!tr.classList.contains('row-card-payment')) tr.style.backgroundColor = 'rgba(200, 0, 0, 0.08)'; }
+                }
+
+                let html = `<td>${statusHtml}</td>`;
+                for (let c = 0; c < headers.length; c++) html += `<td>${toHtmlInput(row[c] || '', rIdx, c)}</td>`;
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.addNewRecord = function () {
+            if (headers.length === 0) return;
+            const newRow = [];
+            for (let i = 0; i < headers.length; i++) {
+                const input = document.getElementById(`addInput_${i}`);
+                let val = '';
+                if (input) {
+                    val = input.type === 'checkbox' ? input.checked : input.value;
+                    if (input.type === 'date' && val) val = val.replace(/-/g, '/'); // Convert back to yyyy/mm/dd natively
+                    if (input.type === 'checkbox') {
+                        input.checked = false;
+                    } else {
+                        input.value = '';
+                    }
+                    if (input.type === 'date') input.classList.add('empty-date');
+                }
+                newRow.push(val);
+            }
+
+            tableData.unshift(newRow);
+            populatePulldownOptions();
+            saveToLocalStorage();
+            renderTable();
+            showSaveNotification();
+        };
+
+        window.updateData = function (input) {
+            const r = parseInt(input.getAttribute('data-row'));
+            const c = parseInt(input.getAttribute('data-col'));
+            let val = input.type === 'checkbox' ? input.checked : input.value;
+            if (input.type === 'date' && val) val = val.replace(/-/g, '/'); // Save as YYYY/MM/DD internally
+
+            tableData[r][c] = val;
+            saveToLocalStorage(); showSaveNotification();
+
+            const arrivalDateIdx = getArrivalDateIndex();
+            // Need re-render to update the status background when date or card changes
+            if (c === arrivalDateIdx || isDateCol(headers[c]) || headers[c] === '支払方法') setTimeout(renderTable, 50);
+        };
+
+        function saveToLocalStorage() {
+            localStorage.setItem('draculaCoolingOffHeaders', JSON.stringify(headers));
+            localStorage.setItem('draculaCoolingOffData', JSON.stringify(tableData));
+        }
+
+        function showSaveNotification() {
+            const notif = document.getElementById('saveNotification');
+            notif.style.opacity = '1'; setTimeout(() => { notif.style.opacity = '0'; }, 1500);
+        }
+
+        function exportTransferData() {
+            if (headers.length === 0 || tableData.length === 0) return alert('データがありません。');
+
+            const reqIdx = headers.indexOf('入金依頼');
+            const nameIdx = headers.findIndex(h => h && (h.includes('お名前') || h.includes('氏名') || h === '名前'));
+            const amountIdx = headers.findIndex(h => h && (h.includes('返金額') || h.includes('金額')));
+            const bankIdx = headers.findIndex(h => h && (h.includes('振込口座') || h.includes('口座') || h.includes('銀行') || h.includes('金融機関')));
+
+            if (reqIdx === -1) return alert('入金依頼の列が見つかりません。');
+
+            const targetRows = tableData.filter(row => row[reqIdx] === true || row[reqIdx] === 'true');
+            if (targetRows.length === 0) return alert('入金依頼にチェックが入っているデータがありません。\n対象のデータの「入金依頼」にチェックを入れてください。');
+
+            let textContent = `【振込依頼データ】\n出力日時: ${new Date().toLocaleString('ja-JP')}\n件数: ${targetRows.length}件\n\n`;
+            textContent += `========================================\n\n`;
+
+            targetRows.forEach((row, idx) => {
+                const name = nameIdx !== -1 ? (row[nameIdx] || '（未登録）') : '（未登録）';
+                const amount = amountIdx !== -1 ? (row[amountIdx] || '（未登録）') : '（未登録）';
+                const bank = bankIdx !== -1 ? (row[bankIdx] || '（未登録）') : '（未登録）';
+
+                textContent += `[${idx + 1}件目]\n`;
+                textContent += `お名前　: ${name}\n`;
+                textContent += `返金額　: ${amount}\n`;
+                textContent += `振込口座:\n${bank.replace(/"/g, '')}\n`; // csv quoting sanitize (just in case)
+                textContent += `\n----------------------------------------\n\n`;
+            });
+
+            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8;' });
+            const link = document.createElement("a");
+            const now = new Date();
+            link.href = URL.createObjectURL(blob);
+            link.download = `振込依頼データ_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.txt`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function exportCSV() {
+            if (headers.length === 0 || tableData.length === 0) return alert('データがありません。');
+            let csvContent = '\uFEFF' + headers.map(v => `"${(v || '').replace(/"/g, '""')}"`).join(',') + '\r\n';
+            tableData.forEach(row => { csvContent += row.map(v => `"${(v || '').replace(/"/g, '""')}"`).join(',') + '\r\n'; });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const now = new Date();
+            link.href = URL.createObjectURL(blob);
+            link.download = `クーリングオフ_更新版_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.csv`;
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        // Manual Modal Logic
+        document.getElementById('manualBtn').addEventListener('click', function () {
+            document.getElementById('manualModal').classList.add('active');
+        });
+
+        document.getElementById('closeManualBtn').addEventListener('click', function () {
+            document.getElementById('manualModal').classList.remove('active');
+        });
+
+        document.getElementById('manualModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+
+</html>

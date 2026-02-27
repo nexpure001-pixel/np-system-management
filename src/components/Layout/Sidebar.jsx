@@ -20,6 +20,12 @@ const Sidebar = ({ activeSystem, setActiveSystem }) => {
                     <span className="nav-icon">💰</span> 入金管理
                 </button>
                 <button
+                    className={`nav-item ${activeSystem === 'cooling-off' ? 'active' : ''}`}
+                    onClick={() => setActiveSystem('cooling-off')}
+                >
+                    <span className="nav-icon">🦇</span> クーリングオフ
+                </button>
+                <button
                     className={`nav-item nav-bottom ${activeSystem === 'leave' ? 'active' : ''}`}
                     onClick={() => setActiveSystem('leave')}
                 >

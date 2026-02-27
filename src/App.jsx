@@ -4,6 +4,7 @@ import Sidebar from './components/Layout/Sidebar';
 import StoreManagement from './components/StoreManagement/StoreManagement';
 import PaymentManagement from './components/PaymentManagement/PaymentManagement';
 import LeaveManagement from './components/LeaveManagement/LeaveManagement';
+import CoolingOffManagement from './components/CoolingOff/CoolingOffManagement';
 
 function App() {
   const [activeSystem, setActiveSystem] = useState('stores');
@@ -13,6 +14,7 @@ function App() {
       case 'stores': return <StoreManagement />;
       case 'payments': return <PaymentManagement />;
       case 'leave': return <LeaveManagement />;
+      case 'cooling-off': return <CoolingOffManagement />;
       default: return <StoreManagement />;
     }
   };
