@@ -58,6 +58,17 @@ const PaymentManagement = () => {
         fetchPayments();
     }, []);
 
+    // --- Utilities ---
+    const normalizeKana = (str) => {
+        if (!str) return '';
+        return str
+            .replace(/[\u3041-\u3096]/g, (s) => String.fromCharCode(s.charCodeAt(0) + 0x60)) // Hiragana to Katakana
+            .replace(/[！-～]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0)) // Full-width to Half-width alphanumeric
+            .replace(/　/g, ' ') // Zenkaku space to Hankaku space
+            .toLowerCase()
+            .trim();
+    };
+
     // --- Handlers ---
     const handleImportFile = (e) => {
         const file = e.target.files[0];
@@ -212,21 +223,33 @@ const PaymentManagement = () => {
 
     // --- Derived Data: Filtered & Sorted ---
     const filteredPayments = useMemo(() => {
-        const lowerQuery = searchQuery.toLowerCase();
+        const normalizedQuery = normalizeKana(searchQuery);
+
+        const normFilters = {
+            touroku: normalizeKana(filters.touroku),
+            shimei: normalizeKana(filters.shimei),
+            nyuukin: normalizeKana(filters.nyuukin)
+        };
+
         return payments
             .filter(p => {
+                const pShimei = normalizeKana(p.shimei);
+                const pBikou = normalizeKana(p.bikou);
+                const pTouroku = normalizeKana(p.touroku_jouhou);
+                const pNyuukin = (p.nyuukin_kingaku || '').toString();
+
                 const matchesGlobal = (
-                    (p.shimei || '').toLowerCase().includes(lowerQuery) ||
-                    (p.bikou || '').toLowerCase().includes(lowerQuery) ||
-                    (p.touroku_jouhou || '').toLowerCase().includes(lowerQuery)
+                    pShimei.includes(normalizedQuery) ||
+                    pBikou.includes(normalizedQuery) ||
+                    pTouroku.includes(normalizedQuery)
                 );
 
                 const matchesColumns = (
                     (!filters.shiharaibi || (p.shiharaibi_nyuuryoku ? '済' : '未') === filters.shiharaibi) &&
                     (!filters.boxIdou || (p.box_idou ? '済' : '未') === filters.boxIdou) &&
-                    (!filters.touroku || (p.touroku_jouhou || '').toLowerCase().includes(filters.touroku.toLowerCase())) &&
-                    (!filters.shimei || (p.shimei || '').toLowerCase().includes(filters.shimei.toLowerCase())) &&
-                    (!filters.nyuukin || (p.nyuukin_kingaku || '').toString().includes(filters.nyuukin))
+                    (!normFilters.touroku || pTouroku.includes(normFilters.touroku)) &&
+                    (!normFilters.shimei || pShimei.includes(normFilters.shimei)) &&
+                    (!normFilters.nyuukin || pNyuukin.includes(normFilters.nyuukin))
                 );
 
                 return matchesGlobal && matchesColumns;
