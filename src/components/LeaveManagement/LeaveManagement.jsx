@@ -14,7 +14,7 @@ import { format, addDays, isAfter, isBefore, parseISO, addMonths } from 'date-fn
 import { calculateGrantDays } from '../../utils/leaveCalculator';
 
 const Card = ({ title, children, icon: Icon }) => (
-    <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-white/50 space-y-4">
+    <div className="bg-white/80 backdrop-blur-md p-6 rounded-xl shadow-sm border border-white/50 space-y-4">
         <div className="flex items-center gap-2 mb-2">
             {Icon && <Icon className="w-5 h-5 text-teal-600" />}
             <h3 className="font-bold text-gray-800">{title}</h3>
@@ -229,7 +229,7 @@ const LeaveManagement = () => {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            <header className="flex justify-between items-center bg-white/30 backdrop-blur-lg p-6 rounded-3xl border border-white/20 shadow-xl">
+            <header className="flex justify-between items-center bg-white/30 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
                 <div>
                     <h1 className="text-3xl font-extrabold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">
                         有給管理システム
@@ -239,13 +239,13 @@ const LeaveManagement = () => {
                 <div className="flex gap-3">
                     <button
                         onClick={() => setView('dashboard')}
-                        className={`px-5 py-2.5 rounded-2xl font-bold transition-all duration-300 ${view === 'dashboard' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
+                        className={`px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${view === 'dashboard' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
                     >
                         ダッシュボード
                     </button>
                     <button
                         onClick={() => setView('employees')}
-                        className={`px-5 py-2.5 rounded-2xl font-bold transition-all duration-300 ${view === 'employees' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
+                        className={`px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${view === 'employees' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
                     >
                         社員一覧
                     </button>
@@ -257,15 +257,15 @@ const LeaveManagement = () => {
                     <Card title="有給消滅アラート (30日以内)" icon={AlertCircle}>
                         <div className="space-y-4">
                             {stats.expiringGrants.length === 0 ? (
-                                <div className="flex items-center text-gray-400 py-6 justify-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                <div className="flex items-center text-gray-400 py-6 justify-center bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
                                     <CheckCircle className="w-5 h-5 mr-3 text-emerald-500" />
                                     <span>直近で消滅する有給はありません</span>
                                 </div>
                             ) : (
                                 stats.expiringGrants.map((item, i) => (
-                                    <div key={i} className="group p-4 bg-white rounded-2xl border border-gray-100 hover:border-red-200 hover:shadow-md transition-all flex justify-between items-center">
+                                    <div key={i} className="group p-4 bg-white rounded-xl border border-gray-100 hover:border-red-200 hover:shadow-md transition-all flex justify-between items-center">
                                         <div className="flex items-center">
-                                            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center mr-4 text-red-500">
+                                            <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center mr-4 text-red-500">
                                                 <Clock className="w-5 h-5" />
                                             </div>
                                             <div>
@@ -285,13 +285,13 @@ const LeaveManagement = () => {
                     <Card title="自動付与予定 (30日以内)" icon={Calendar}>
                         <div className="space-y-4">
                             {stats.upcomingGrants.length === 0 ? (
-                                <div className="flex items-center text-gray-400 py-6 justify-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                <div className="flex items-center text-gray-400 py-6 justify-center bg-gray-50/50 rounded-lg border border-dashed border-gray-200">
                                     <Calendar className="w-5 h-5 mr-3" />
                                     <span>直近の付与予定はありません</span>
                                 </div>
                             ) : (
                                 stats.upcomingGrants.map((item, i) => (
-                                    <div key={i} className="group p-4 bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all flex justify-between items-center">
+                                    <div key={i} className="group p-4 bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all flex justify-between items-center">
                                         <div className="flex items-center">
                                             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mr-4 text-blue-500">
                                                 <Plus className="w-5 h-5" />
@@ -311,7 +311,7 @@ const LeaveManagement = () => {
                     </Card>
 
                     <Card title="全社員 有給消化状況" icon={Users}>
-                        <div className="overflow-hidden rounded-xl border border-gray-100">
+                        <div className="overflow-hidden rounded-lg border border-gray-100">
                             <table className="min-w-full divide-y divide-gray-100">
                                 <thead className="bg-gray-50/80">
                                     <tr>
@@ -350,7 +350,7 @@ const LeaveManagement = () => {
                     </Card>
                 </div>
             ) : view === 'employees' ? (
-                <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl border border-white/50 shadow-sm">
+                <div className="bg-white/80 backdrop-blur-md p-8 rounded-2xl border border-white/50 shadow-sm">
                     <div className="flex justify-between items-center mb-8">
                         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                             <Users className="w-6 h-6 text-teal-600" /> 社員別有給詳細
@@ -362,10 +362,10 @@ const LeaveManagement = () => {
                             <div
                                 key={emp.id}
                                 onClick={() => fetchUserDetail(emp.id)}
-                                className="p-6 bg-white rounded-3xl border border-gray-100 hover:border-teal-200 hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer"
+                                className="p-6 bg-white rounded-2xl border border-gray-100 hover:border-teal-200 hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer"
                             >
                                 <div className="flex justify-between items-start mb-6">
-                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center text-teal-600 font-black text-xl">
+                                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center text-teal-600 font-black text-xl">
                                         {emp.name.charAt(0)}
                                     </div>
                                     <button className="text-gray-300 group-hover:text-teal-600 transition-colors">
@@ -395,7 +395,7 @@ const LeaveManagement = () => {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setView('employees')}
-                            className="bg-white p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500 transition-all"
+                            className="bg-white p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-all"
                         >
                             <ChevronRight className="w-6 h-6 rotate-180" />
                         </button>
@@ -413,7 +413,7 @@ const LeaveManagement = () => {
                                             ...userDetail.grants.map(g => ({ type: 'grant', date: g.valid_from, amount: g.days_granted, label: '付与', bg: 'bg-blue-50', text: 'text-blue-600' })),
                                             ...userDetail.requests.filter(r => r.status === 'approved').map(r => ({ type: 'usage', date: r.date_requested, amount: r.amount_days, label: r.reason || '有給消化', bg: 'bg-orange-50', text: 'text-orange-600' }))
                                         ].sort((a, b) => new Date(b.date) - new Date(a.date)).map((ev, i) => (
-                                            <div key={i} className={`flex items-center justify-between p-4 rounded-2xl border border-gray-100 ${ev.bg}`}>
+                                            <div key={i} className={`flex items-center justify-between p-4 rounded-xl border border-gray-100 ${ev.bg}`}>
                                                 <div className="flex items-center gap-4">
                                                     <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold ${ev.text}`}>
                                                         {ev.type === 'grant' ? '+' : '-'}
@@ -438,17 +438,17 @@ const LeaveManagement = () => {
                                 <form onSubmit={handleConsumeLeave} className="space-y-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-gray-400">使用日</label>
-                                        <input type="date" name="date" required className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-500 outline-none transition-all" />
+                                        <input type="date" name="date" required className="w-full p-3 bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-teal-500 outline-none transition-all" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-gray-400">使用日数</label>
-                                        <input type="number" step="0.1" name="amount" defaultValue="1.0" required className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-500 outline-none transition-all" />
+                                        <input type="number" step="0.1" name="amount" defaultValue="1.0" required className="w-full p-3 bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-teal-500 outline-none transition-all" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-gray-400">備考</label>
-                                        <textarea name="reason" className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-500 outline-none transition-all h-24" />
+                                        <textarea name="reason" className="w-full p-3 bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-teal-500 outline-none transition-all h-24" />
                                     </div>
-                                    <button type="submit" className="w-full py-4 bg-teal-600 text-white rounded-xl font-black hover:bg-teal-700 transition-all shadow-lg shadow-teal-100">実行</button>
+                                    <button type="submit" className="w-full py-4 bg-teal-600 text-white rounded-lg font-black hover:bg-teal-700 transition-all shadow-lg shadow-teal-100">実行</button>
                                 </form>
                             </Card>
 
@@ -456,24 +456,24 @@ const LeaveManagement = () => {
                                 <form onSubmit={handleManualGrant} className="space-y-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-gray-400">付与日数</label>
-                                        <input type="number" step="0.5" name="days" defaultValue="1.0" required className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                        <input type="number" step="0.5" name="days" defaultValue="1.0" required className="w-full p-3 bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-gray-400">有効期限</label>
-                                        <input type="date" name="expiry_date" defaultValue={format(addDays(new Date(), 730), 'yyyy-MM-dd')} required className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                        <input type="date" name="expiry_date" defaultValue={format(addDays(new Date(), 730), 'yyyy-MM-dd')} required className="w-full p-3 bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-gray-400">付与理由 (備考)</label>
-                                        <input type="text" name="reason" placeholder="特別休暇など" className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                        <input type="text" name="reason" placeholder="特別休暇など" className="w-full p-3 bg-white rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                                     </div>
-                                    <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">付与を実行</button>
+                                    <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-lg font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">付与を実行</button>
                                 </form>
                             </Card>
 
                             <Card title="現在の保有内訳" icon={CheckCircle}>
                                 <div className="space-y-3">
                                     {userDetail.grants.filter(g => (g.days_granted - g.days_used) > 0).map((g, i) => (
-                                        <div key={i} className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex justify-between items-center">
+                                        <div key={i} className="p-3 bg-blue-50/50 rounded-lg border border-blue-100 flex justify-between items-center">
                                             <div>
                                                 <p className="text-xs text-blue-400 font-bold">有効期限: {g.expiry_date}</p>
                                                 <p className="text-sm font-bold text-gray-700">{g.days_granted}日中 {g.days_used}日消化</p>
