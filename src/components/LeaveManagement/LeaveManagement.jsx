@@ -14,7 +14,7 @@ import { format, addDays, isAfter, isBefore, parseISO, addMonths } from 'date-fn
 import { calculateGrantDays } from '../../utils/leaveCalculator';
 
 const Card = ({ title, children, icon: Icon }) => (
-    <div className="bg-white/80 backdrop-blur-md p-6 rounded-xl shadow-sm border border-white/50 space-y-4">
+    <div className="bg-white/80 backdrop-blur-md p-8 rounded-lg shadow-sm border border-white/50 space-y-6">
         <div className="flex items-center gap-2 mb-2">
             {Icon && <Icon className="w-5 h-5 text-teal-600" />}
             <h3 className="font-bold text-gray-800">{title}</h3>
@@ -228,8 +228,8 @@ const LeaveManagement = () => {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-            <header className="flex justify-between items-center bg-white/30 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-xl">
+        <div className="space-y-10 animate-in fade-in duration-500">
+            <header className="flex justify-between items-center bg-white/30 backdrop-blur-lg p-8 rounded-lg border border-white/20 shadow-xl">
                 <div>
                     <h1 className="text-3xl font-extrabold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">
                         有給管理システム
@@ -239,13 +239,13 @@ const LeaveManagement = () => {
                 <div className="flex gap-3">
                     <button
                         onClick={() => setView('dashboard')}
-                        className={`px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${view === 'dashboard' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
+                        className={`px-6 py-3 rounded-md font-bold transition-all duration-300 ${view === 'dashboard' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
                     >
                         ダッシュボード
                     </button>
                     <button
                         onClick={() => setView('employees')}
-                        className={`px-5 py-2.5 rounded-xl font-bold transition-all duration-300 ${view === 'employees' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
+                        className={`px-6 py-3 rounded-md font-bold transition-all duration-300 ${view === 'employees' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
                     >
                         社員一覧
                     </button>
@@ -253,7 +253,7 @@ const LeaveManagement = () => {
             </header>
 
             {view === 'dashboard' ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                     <Card title="有給消滅アラート (30日以内)" icon={AlertCircle}>
                         <div className="space-y-4">
                             {stats.expiringGrants.length === 0 ? (
@@ -263,7 +263,7 @@ const LeaveManagement = () => {
                                 </div>
                             ) : (
                                 stats.expiringGrants.map((item, i) => (
-                                    <div key={i} className="group p-4 bg-white rounded-xl border border-gray-100 hover:border-red-200 hover:shadow-md transition-all flex justify-between items-center">
+                                    <div key={i} className="group p-5 bg-white rounded-md border border-gray-100 hover:border-red-200 hover:shadow-md transition-all flex justify-between items-center">
                                         <div className="flex items-center">
                                             <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center mr-4 text-red-500">
                                                 <Clock className="w-5 h-5" />
@@ -291,7 +291,7 @@ const LeaveManagement = () => {
                                 </div>
                             ) : (
                                 stats.upcomingGrants.map((item, i) => (
-                                    <div key={i} className="group p-4 bg-white rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all flex justify-between items-center">
+                                    <div key={i} className="group p-5 bg-white rounded-md border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all flex justify-between items-center">
                                         <div className="flex items-center">
                                             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mr-4 text-blue-500">
                                                 <Plus className="w-5 h-5" />
@@ -350,7 +350,7 @@ const LeaveManagement = () => {
                     </Card>
                 </div>
             ) : view === 'employees' ? (
-                <div className="bg-white/80 backdrop-blur-md p-8 rounded-2xl border border-white/50 shadow-sm">
+                <div className="bg-white/80 backdrop-blur-md p-10 rounded-lg border border-white/50 shadow-sm">
                     <div className="flex justify-between items-center mb-8">
                         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                             <Users className="w-6 h-6 text-teal-600" /> 社員別有給詳細
@@ -362,7 +362,7 @@ const LeaveManagement = () => {
                             <div
                                 key={emp.id}
                                 onClick={() => fetchUserDetail(emp.id)}
-                                className="p-6 bg-white rounded-2xl border border-gray-100 hover:border-teal-200 hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer"
+                                className="p-8 bg-white rounded-lg border border-gray-100 hover:border-teal-200 hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer"
                             >
                                 <div className="flex justify-between items-start mb-6">
                                     <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center text-teal-600 font-black text-xl">
@@ -402,7 +402,7 @@ const LeaveManagement = () => {
                         <h2 className="text-2xl font-black text-gray-800">{userDetail.user?.full_name} さんの有給詳細</h2>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                         <div className="lg:col-span-2 space-y-8">
                             <Card title="有給履歴 (付与・消化)" icon={Clock}>
                                 <div className="space-y-3">
@@ -413,7 +413,7 @@ const LeaveManagement = () => {
                                             ...userDetail.grants.map(g => ({ type: 'grant', date: g.valid_from, amount: g.days_granted, label: '付与', bg: 'bg-blue-50', text: 'text-blue-600' })),
                                             ...userDetail.requests.filter(r => r.status === 'approved').map(r => ({ type: 'usage', date: r.date_requested, amount: r.amount_days, label: r.reason || '有給消化', bg: 'bg-orange-50', text: 'text-orange-600' }))
                                         ].sort((a, b) => new Date(b.date) - new Date(a.date)).map((ev, i) => (
-                                            <div key={i} className={`flex items-center justify-between p-4 rounded-xl border border-gray-100 ${ev.bg}`}>
+                                            <div key={i} className={`flex items-center justify-between p-5 rounded-md border border-gray-100 ${ev.bg}`}>
                                                 <div className="flex items-center gap-4">
                                                     <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold ${ev.text}`}>
                                                         {ev.type === 'grant' ? '+' : '-'}

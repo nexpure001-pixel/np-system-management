@@ -102,7 +102,7 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
+    border-radius: 8px;
     box-shadow: var(--shadow);
 }
 
@@ -175,7 +175,7 @@
     width: 100%;
     padding: 10px 15px 10px 40px;
     border: 2px solid transparent;
-    border-radius: 30px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.9);
     font-family: inherit;
     font-size: 0.95em;
@@ -184,7 +184,7 @@
 }
 
 .payment-management-container textarea {
-    border-radius: 15px;
+    border-radius: 6px;
     padding-left: 15px;
 }
 
@@ -201,7 +201,7 @@
 .payment-management-container .secondary-btn {
     padding: 10px 20px;
     border: none;
-    border-radius: 30px;
+    border-radius: 8px;
     font-family: inherit;
     font-size: 0.9em;
     font-weight: 700;
@@ -227,7 +227,7 @@
 .payment-management-container .table-container {
     overflow: auto;
     max-height: calc(100vh - 300px);
-    border-radius: 15px;
+    border-radius: 6px;
     background: rgba(255, 255, 255, 0.7);
 }
 
@@ -239,7 +239,7 @@
 
 .payment-management-container .cute-table th,
 .payment-management-container .cute-table td {
-    padding: 6px 4px;
+    padding: 10px 12px;
     text-align: left;
     border-bottom: 1px solid rgba(255, 182, 193, 0.3);
     border-right: 2px solid rgba(255, 255, 255, 0.9);
@@ -387,7 +387,7 @@
     width: 90%;
     max-width: 500px;
     background: var(--glass-bg);
-    border-radius: 20px;
+    border-radius: 8px;
     padding: 25px;
     box-shadow: var(--shadow);
 }
@@ -400,7 +400,7 @@
     gap: 20px;
     margin-top: 30px;
     padding: 15px;
-    border-radius: 50px;
+    border-radius: 40px;
 }
 
 .payment-management-container .page-info {
@@ -425,7 +425,7 @@
 .payment-management-container .glass-btn {
     padding: 8px 20px;
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
+    border-radius: 8px;
     background: var(--white);
     color: var(--text-color);
     font-family: inherit;

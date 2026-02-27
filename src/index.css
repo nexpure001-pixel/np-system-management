@@ -37,10 +37,10 @@ body {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  padding: 24px;
+  padding: 32px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -144,7 +144,7 @@ body {
 
 .main-content {
   flex: 1;
-  padding: 40px;
+  padding: 48px;
   max-width: calc(100vw - 260px);
   overflow-x: hidden;
 }
@@ -180,16 +180,21 @@ table {
 
 th {
   text-align: left;
-  padding: 12px 20px;
+  padding: 14px 24px;
   color: var(--text-muted);
   font-weight: 600;
   font-size: 0.9rem;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+th:last-child {
+  border-right: none;
 }
 
 td {
-  padding: 16px 20px;
+  padding: 20px 24px;
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(4px);
   white-space: nowrap;
@@ -208,21 +213,6 @@ tr td:last-child {
   border-right: none;
 }
 
-th {
-  text-align: left;
-  padding: 12px 20px;
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.9rem;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  border-right: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-th:last-child {
-  border-right: none;
-}
-
 tr:hover td {
   background: rgba(255, 255, 255, 0.6);
 }
@@ -230,7 +220,7 @@ tr:hover td {
 /* Badges */
 .badge {
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 600;
   display: inline-block;
