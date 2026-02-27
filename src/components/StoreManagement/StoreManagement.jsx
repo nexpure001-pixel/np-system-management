@@ -159,10 +159,16 @@ const StoreManagement = () => {
 
         const paymentStatus = formData.get('payment_status');
         data.payment_status = paymentStatus;
-        if (paymentStatus === '完了' && !data.payment_date) {
-            data.payment_date = new Date().toISOString();
+        const manualPaymentDate = formData.get('payment_date');
+
+        if (manualPaymentDate) {
+            data.payment_date = manualPaymentDate;
+        } else if (paymentStatus === '完了' && !originalRaw.payment_date) {
+            data.payment_date = new Date().toISOString().split('T')[0];
         } else if (paymentStatus === '未入金') {
             data.payment_date = null;
+        } else {
+            data.payment_date = originalRaw.payment_date;
         }
         data.payment_date = toNullifEmpty(data.payment_date);
 
@@ -628,6 +634,7 @@ const StoreManagement = () => {
                                             </select>
                                         </div>
                                         <div className="form-group"><label>申込日</label><input type="date" name="application_date" defaultValue={editingStore?.application_date || ''} /></div>
+                                        <div className="form-group"><label>入金日</label><input type="date" name="payment_date" defaultValue={editingStore?.raw?.payment_date || ''} /></div>
                                         <div className="form-group"><label>更新月 (レガシー: YYYY-MM)</label><input type="text" name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''} /></div>
                                         <div className="form-group"><label>更新月 (数値のみ: 1-12)</label><input type="text" name="renewal_month" defaultValue={editingStore?.renewal_month || ''} /></div>
                                     </div>
