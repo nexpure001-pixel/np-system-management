@@ -3,20 +3,26 @@ import './App.css';
 import Sidebar from './components/Layout/Sidebar';
 import StoreManagement from './components/StoreManagement/StoreManagement';
 import PaymentManagement from './components/PaymentManagement/PaymentManagement';
+import LeaveManagement from './components/LeaveManagement/LeaveManagement';
 
 function App() {
-  const [activeSystem, setActiveSystem] = useState('stores'); // 'stores' or 'payments'
+  const [activeSystem, setActiveSystem] = useState('stores');
+
+  const renderContent = () => {
+    switch (activeSystem) {
+      case 'stores': return <StoreManagement />;
+      case 'payments': return <PaymentManagement />;
+      case 'leave': return <LeaveManagement />;
+      default: return <StoreManagement />;
+    }
+  };
 
   return (
     <div className={`app-layout theme-${activeSystem}`}>
       <Sidebar activeSystem={activeSystem} setActiveSystem={setActiveSystem} />
 
       <main className="main-content">
-        {activeSystem === 'stores' ? (
-          <StoreManagement />
-        ) : (
-          <PaymentManagement />
-        )}
+        {renderContent()}
       </main>
     </div>
   );

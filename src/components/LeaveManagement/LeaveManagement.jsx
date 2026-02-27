@@ -1,0 +1,302 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
+import {
+    AlertCircle,
+    Calendar,
+    CheckCircle,
+    Users,
+    ChevronRight,
+    Plus,
+    Clock,
+    UserPlus
+} from 'lucide-react';
+import { format, addDays, isAfter, isBefore, parseISO, addMonths } from 'date-fns';
+import { calculateGrantDays } from '../../utils/leaveCalculator';
+
+const Card = ({ title, children, icon: Icon }) => (
+    <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-sm border border-white/50 space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+            {Icon && <Icon className="w-5 h-5 text-teal-600" />}
+            <h3 className="font-bold text-gray-800">{title}</h3>
+        </div>
+        {children}
+    </div>
+);
+
+const LeaveManagement = () => {
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        upcomingGrants: [],
+        expiringGrants: [],
+        employeeStats: []
+    });
+    const [view, setView] = useState('dashboard'); // 'dashboard' or 'employees'
+
+    const fetchStats = async () => {
+        setLoading(true);
+        try {
+            const today = new Date();
+            const nextMonth = addDays(today, 30);
+
+            // 1. Fetch Users
+            const { data: users, error: userError } = await supabase
+                .from('users')
+                .select('id, full_name, joined_at');
+
+            if (userError) throw userError;
+
+            // 2. Fetch Active Grants
+            const { data: grants, error: grantError } = await supabase
+                .from('leave_grants')
+                .select('*, users(full_name)')
+                .gte('expiry_date', format(today, 'yyyy-MM-dd'));
+
+            if (grantError) throw grantError;
+
+            // --- Logic: Upcoming Grants ---
+            const upcoming = [];
+            if (users) {
+                users.forEach(user => {
+                    if (!user.joined_at) return;
+                    const joined = new Date(user.joined_at);
+                    const milestones = [6, 18, 30, 42, 54, 66];
+
+                    milestones.forEach(m => {
+                        const date = addMonths(joined, m);
+                        if (isAfter(date, today) && isBefore(date, nextMonth)) {
+                            upcoming.push({
+                                name: user.full_name,
+                                date: format(date, 'yyyy-MM-dd'),
+                                days: calculateGrantDays(joined, date)
+                            });
+                        }
+                    });
+                });
+            }
+
+            // --- Logic: Expiring Soon ---
+            const expiring = grants?.filter(g => {
+                const expiry = parseISO(g.expiry_date);
+                const remaining = g.days_granted - g.days_used;
+                return isAfter(expiry, today) && isBefore(expiry, nextMonth) && remaining > 0;
+            }).map(g => ({
+                name: g.users?.full_name || '不明',
+                date: g.expiry_date,
+                remaining: g.days_granted - g.days_used
+            })) || [];
+
+            // --- Logic: All Employee Stats ---
+            const empStats = users?.map(user => {
+                const userGrants = grants?.filter(g => g.user_id === user.id) || [];
+                let totalGranted = 0;
+                let totalUsed = 0;
+                let totalRemaining = 0;
+
+                userGrants.forEach(g => {
+                    if (!isBefore(parseISO(g.expiry_date), today)) {
+                        totalGranted += Number(g.days_granted);
+                        totalUsed += Number(g.days_used);
+                        totalRemaining += (Number(g.days_granted) - Number(g.days_used));
+                    }
+                });
+
+                const usageRate = totalGranted > 0 ? ((totalUsed / totalGranted) * 100).toFixed(1) : "0.0";
+
+                return {
+                    id: user.id,
+                    name: user.full_name,
+                    totalGranted,
+                    totalUsed,
+                    totalRemaining,
+                    usageRate
+                };
+            }) || [];
+
+            setStats({
+                upcomingGrants: upcoming,
+                expiringGrants: expiring,
+                employeeStats: empStats
+            });
+        } catch (err) {
+            console.error('Failed to fetch stats:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
+    if (loading) {
+        return <div className="p-8 text-center text-gray-500">データを読み込み中...</div>;
+    }
+
+    return (
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <header className="flex justify-between items-center bg-white/30 backdrop-blur-lg p-6 rounded-3xl border border-white/20 shadow-xl">
+                <div>
+                    <h1 className="text-3xl font-extrabold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">
+                        有給管理システム
+                    </h1>
+                    <p className="text-gray-500 text-sm mt-1">社員の有給休暇の管理と付与・消滅の追跡</p>
+                </div>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => setView('dashboard')}
+                        className={`px-5 py-2.5 rounded-2xl font-bold transition-all duration-300 ${view === 'dashboard' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
+                    >
+                        ダッシュボード
+                    </button>
+                    <button
+                        onClick={() => setView('employees')}
+                        className={`px-5 py-2.5 rounded-2xl font-bold transition-all duration-300 ${view === 'employees' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 scale-105' : 'bg-white hover:bg-gray-50 text-gray-600'}`}
+                    >
+                        社員一覧
+                    </button>
+                </div>
+            </header>
+
+            {view === 'dashboard' ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Card title="有給消滅アラート (30日以内)" icon={AlertCircle}>
+                        <div className="space-y-4">
+                            {stats.expiringGrants.length === 0 ? (
+                                <div className="flex items-center text-gray-400 py-6 justify-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                    <CheckCircle className="w-5 h-5 mr-3 text-emerald-500" />
+                                    <span>直近で消滅する有給はありません</span>
+                                </div>
+                            ) : (
+                                stats.expiringGrants.map((item, i) => (
+                                    <div key={i} className="group p-4 bg-white rounded-2xl border border-gray-100 hover:border-red-200 hover:shadow-md transition-all flex justify-between items-center">
+                                        <div className="flex items-center">
+                                            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center mr-4 text-red-500">
+                                                <Clock className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-gray-900">{item.name}</p>
+                                                <p className="text-xs text-gray-400">期限: {item.date}</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-sm font-black text-red-600 bg-red-50 px-3 py-1 rounded-full">
+                                            残り {item.remaining}日
+                                        </span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </Card>
+
+                    <Card title="自動付与予定 (30日以内)" icon={Calendar}>
+                        <div className="space-y-4">
+                            {stats.upcomingGrants.length === 0 ? (
+                                <div className="flex items-center text-gray-400 py-6 justify-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                    <Calendar className="w-5 h-5 mr-3" />
+                                    <span>直近の付与予定はありません</span>
+                                </div>
+                            ) : (
+                                stats.upcomingGrants.map((item, i) => (
+                                    <div key={i} className="group p-4 bg-white rounded-2xl border border-gray-100 hover:border-blue-200 hover:shadow-md transition-all flex justify-between items-center">
+                                        <div className="flex items-center">
+                                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mr-4 text-blue-500">
+                                                <Plus className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-gray-900">{item.name}</p>
+                                                <p className="text-xs text-gray-400">予定日: {item.date}</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-sm font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                                            +{item.days}日
+                                        </span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </Card>
+
+                    <Card title="全社員 有給消化状況" icon={Users}>
+                        <div className="overflow-hidden rounded-xl border border-gray-100">
+                            <table className="min-w-full divide-y divide-gray-100">
+                                <thead className="bg-gray-50/80">
+                                    <tr>
+                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">氏名</th>
+                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">残日数</th>
+                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">消化率</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-50">
+                                    {stats.employeeStats.map((stat) => (
+                                        <tr key={stat.id} className="hover:bg-teal-50/30 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                                {stat.name}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-black text-teal-600">
+                                                {stat.totalRemaining}日
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                <div className="flex items-center justify-end">
+                                                    <span className={`mr-2 text-xs font-bold ${parseFloat(stat.usageRate) >= 50 ? 'text-emerald-600' : 'text-orange-500'}`}>
+                                                        {stat.usageRate}%
+                                                    </span>
+                                                    <div className="w-16 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                                        <div
+                                                            className={`h-1.5 rounded-full ${parseFloat(stat.usageRate) >= 50 ? 'bg-emerald-500' : 'bg-orange-400'}`}
+                                                            style={{ width: `${Math.min(parseFloat(stat.usageRate), 100)}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+            ) : (
+                <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl border border-white/50 shadow-sm">
+                    <div className="flex justify-between items-center mb-8">
+                        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                            <Users className="w-6 h-6 text-teal-600" /> 社員別有給詳細
+                        </h2>
+                        <button className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2 rounded-2xl hover:bg-teal-700 transition-all font-bold">
+                            <UserPlus className="w-5 h-5" /> 社員の追加
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {stats.employeeStats.map(emp => (
+                            <div key={emp.id} className="p-6 bg-white rounded-3xl border border-gray-100 hover:border-teal-200 hover:shadow-xl hover:-translate-y-1 transition-all group">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center text-teal-600 font-black text-xl">
+                                        {emp.name.charAt(0)}
+                                    </div>
+                                    <button className="text-gray-300 group-hover:text-teal-600 transition-colors">
+                                        <ChevronRight className="w-6 h-6" />
+                                    </button>
+                                </div>
+                                <h3 className="text-lg font-black text-gray-900 mb-1">{emp.name}</h3>
+                                <div className="flex items-end gap-2 mb-4">
+                                    <span className="text-3xl font-black text-teal-600">{emp.totalRemaining}</span>
+                                    <span className="text-gray-400 text-sm mb-1.5">日保有</span>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-xs font-bold">
+                                        <span className="text-gray-400">消化済: {emp.totalUsed}日</span>
+                                        <span className="text-teal-600">{emp.usageRate}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-50 rounded-full h-2">
+                                        <div className="bg-teal-500 h-2 rounded-full" style={{ width: `${Math.min(parseFloat(emp.usageRate), 100)}%` }} />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default LeaveManagement;
