@@ -40,7 +40,6 @@ body {
   border-radius: 8px;
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  padding: 32px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 

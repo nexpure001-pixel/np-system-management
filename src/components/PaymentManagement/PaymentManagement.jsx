@@ -162,16 +162,30 @@ const PaymentManagement = () => {
     };
 
     const handleInlineEdit = async (id, field, value) => {
+        // Update local state immediately for responsiveness
+        setPayments(payments.map(p => p.id === id ? { ...p, [field]: value } : p));
+
+        // Non-text fields (checkboxes, selects) save immediately
+        const immediateFields = ['shiharaibi_nyuuryoku', 'box_idou', 'touroku_jouhou', 'soshikizu_kakunin', 'rank_up_bikou', 'kanryou', 'chuumonbi'];
+        if (immediateFields.includes(field)) {
+            await saveToDatabase(id, { [field]: value === '' ? null : value });
+        }
+    };
+
+    const saveToDatabase = async (id, updates) => {
+        setIsLoading(true);
         try {
-            const finalValue = (field === 'chuumonbi' && value === '') ? null : value;
             const { error } = await supabase
                 .from('payments')
-                .update({ [field]: finalValue })
+                .update(updates)
                 .eq('id', id);
             if (error) throw error;
-            setPayments(payments.map(p => p.id === id ? { ...p, [field]: value } : p));
         } catch (err) {
-            console.error('Inline edit error:', err);
+            console.error('Save error:', err);
+            // Optional: Re-fetch if save fails to ensure UI is in sync with server
+            fetchPayments();
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -263,9 +277,14 @@ const PaymentManagement = () => {
                         <i className="fa-solid fa-file-export"></i> Excel書き出し
                     </button>
                 </div>
-                <div style={{ color: 'var(--text-color)', fontSize: '0.9em', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className={`status-dot ${!isLoading ? 'online' : 'loading'}`}></span>
-                    {isLoading ? '同期中...' : 'クラウド保存済み'}
+                <div style={{ color: 'var(--text-color)', fontSize: '0.9em', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button className="glass-btn" style={{ padding: '4px 12px', fontSize: '0.85em' }} onClick={fetchPayments} disabled={isLoading}>
+                        <i className={`fa-solid fa-rotate ${isLoading ? 'fa-spin' : ''}`}></i> 手動同期
+                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className={`status-dot ${!isLoading ? 'online' : 'loading'}`}></span>
+                        {isLoading ? '保存中...' : 'クラウド保存済み'}
+                    </div>
                 </div>
             </div>
 
@@ -336,9 +355,18 @@ const PaymentManagement = () => {
                             <td>
                                 <select className="filter-input" value={quickAdd.touroku_jouhou} onChange={e => setQuickAdd({ ...quickAdd, touroku_jouhou: e.target.value })}>
                                     <option value=""></option>
+                                    <option value="未注文">未注文</option>
+                                    <option value="未登録">未登録</option>
                                     <option value="新規">新規</option>
                                     <option value="追加">追加</option>
                                     <option value="ランクアップ">ﾗﾝｸｱｯﾌﾟ</option>
+                                    <option value="新規／追加">新規/追加</option>
+                                    <option value="新規／ランクアップ">新規/ﾗﾝｸｱｯﾌﾟ</option>
+                                    <option value="追加／ランクアップ">追加/ﾗﾝｸｱｯﾌﾟ</option>
+                                    <option value="リピート／購入">ﾘﾋﾟｰﾄ/購入</option>
+                                    <option value="救済">救済</option>
+                                    <option value="店舗関連">店舗関連</option>
+                                    <option value="オートシップ">ｵｰﾄｼｯﾌﾟ</option>
                                 </select>
                             </td>
                             <td>
@@ -351,6 +379,8 @@ const PaymentManagement = () => {
                                 <select className="filter-input" value={quickAdd.rank_up_bikou} onChange={e => setQuickAdd({ ...quickAdd, rank_up_bikou: e.target.value })}>
                                     <option value=""></option>
                                     <option value="登録">登録</option>
+                                    <option value="旧登録">旧登録</option>
+                                    <option value="申請日">申請日</option>
                                     <option value="3個ok">3個ok</option>
                                 </select>
                             </td>
@@ -381,9 +411,18 @@ const PaymentManagement = () => {
                                 <td>
                                     <select className="filter-input" value={p.touroku_jouhou || ''} onChange={e => handleInlineEdit(p.id, 'touroku_jouhou', e.target.value)}>
                                         <option value=""></option>
+                                        <option value="未注文">未注文</option>
+                                        <option value="未登録">未登録</option>
                                         <option value="新規">新規</option>
                                         <option value="追加">追加</option>
                                         <option value="ランクアップ">ﾗﾝｸｱｯﾌﾟ</option>
+                                        <option value="新規／追加">新規/追加</option>
+                                        <option value="新規／ランクアップ">新規/ﾗﾝｸｱｯﾌﾟ</option>
+                                        <option value="追加／ランクアップ">追加/ﾗﾝｸｱｯﾌﾟ</option>
+                                        <option value="リピート／購入">ﾘﾋﾟｰﾄ/購入</option>
+                                        <option value="救済">救済</option>
+                                        <option value="店舗関連">店舗関連</option>
+                                        <option value="オートシップ">ｵｰﾄｼｯﾌﾟ</option>
                                     </select>
                                 </td>
                                 <td style={{ textAlign: 'center' }}>
@@ -392,7 +431,15 @@ const PaymentManagement = () => {
                                         <span className="checkmark"></span>
                                     </label>
                                 </td>
-                                <td>{p.rank_up_bikou}</td>
+                                <td>
+                                    <select className="filter-input" value={p.rank_up_bikou || ''} onChange={e => handleInlineEdit(p.id, 'rank_up_bikou', e.target.value)}>
+                                        <option value=""></option>
+                                        <option value="登録">登録</option>
+                                        <option value="旧登録">旧登録</option>
+                                        <option value="申請日">申請日</option>
+                                        <option value="3個ok">3個ok</option>
+                                    </select>
+                                </td>
                                 <td>{p.chuumonbi}</td>
                                 <td>
                                     <input
@@ -400,7 +447,8 @@ const PaymentManagement = () => {
                                         className="filter-input"
                                         style={{ background: 'transparent', border: 'none', fontWeight: 'bold' }}
                                         value={p.shimei || ''}
-                                        onChange={e => handleInlineEdit(p.id, 'shimei', e.target.value)}
+                                        onChange={e => setPayments(payments.map(item => item.id === p.id ? { ...item, shimei: e.target.value } : item))}
+                                        onBlur={e => saveToDatabase(p.id, { shimei: e.target.value })}
                                     />
                                 </td>
                                 <td style={{ textAlign: 'right' }}>
@@ -408,8 +456,9 @@ const PaymentManagement = () => {
                                         type="text"
                                         className="filter-input"
                                         style={{ background: 'transparent', border: 'none', textAlign: 'right' }}
-                                        value={Number(p.nyuukin_kingaku || 0).toLocaleString()}
-                                        onChange={e => handleInlineEdit(p.id, 'nyuukin_kingaku', Number(e.target.value.replace(/,/g, '')))}
+                                        value={p.nyuukin_kingaku ? Number(p.nyuukin_kingaku).toLocaleString() : ''}
+                                        onChange={e => setPayments(payments.map(item => item.id === p.id ? { ...item, nyuukin_kingaku: e.target.value.replace(/,/g, '') } : item))}
+                                        onBlur={e => saveToDatabase(p.id, { nyuukin_kingaku: Number(String(e.target.value).replace(/,/g, '')) || 0 })}
                                     />
                                 </td>
                                 <td>
@@ -418,7 +467,8 @@ const PaymentManagement = () => {
                                         className="filter-input"
                                         style={{ background: 'transparent', border: 'none' }}
                                         value={p.bikou || ''}
-                                        onChange={e => handleInlineEdit(p.id, 'bikou', e.target.value)}
+                                        onChange={e => setPayments(payments.map(item => item.id === p.id ? { ...item, bikou: e.target.value } : item))}
+                                        onBlur={e => saveToDatabase(p.id, { bikou: e.target.value })}
                                     />
                                 </td>
                                 <td style={{ textAlign: 'center' }}>

@@ -174,11 +174,13 @@
 .payment-management-container textarea {
     width: 100%;
     padding: 8px 12px 8px 35px;
-    border: 2px solid transparent;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    /* Improved visibility */
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.9);
     font-family: inherit;
-    font-size: 0.9em;
+    font-size: 0.95rem;
+    /* Increased from 0.9em for better readability */
     color: var(--text-color);
     transition: all 0.3s ease;
 }
@@ -257,8 +259,10 @@
 .payment-management-container .filter-input {
     width: 100%;
     padding: 4px 2px !important;
-    font-size: 0.75em !important;
+    font-size: 0.85rem !important;
     border-radius: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    /* Added border for clarity */
 }
 
 /* Checkbox Styles */
