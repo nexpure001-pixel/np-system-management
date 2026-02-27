@@ -80,6 +80,22 @@ CREATE TABLE IF NOT EXISTS public.leave_consumptions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 6. PAYMENTS Table (入金管理)
+CREATE TABLE IF NOT EXISTS public.payments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shiharaibi_nyuuryoku BOOLEAN DEFAULT FALSE,
+    box_idou BOOLEAN DEFAULT FALSE,
+    touroku_jouhou TEXT,
+    soshikizu_kakunin BOOLEAN DEFAULT FALSE,
+    rank_up_bikou TEXT,
+    chuumonbi DATE,
+    shimei TEXT,
+    nyuukin_kingaku NUMERIC,
+    bikou TEXT,
+    kanryou BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- --- FUNCTIONS ---
 
 -- 有給残数計算
@@ -159,10 +175,20 @@ ALTER TABLE public.stores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leave_grants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leave_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.leave_consumptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 
 -- 簡易ポリシー (デモ・個人利用向けに全て許可。本番運用では適切に制限してください)
+DROP POLICY IF EXISTS "Allow all stores" ON public.stores;
+DROP POLICY IF EXISTS "Allow all users" ON public.users;
+DROP POLICY IF EXISTS "Allow all grants" ON public.leave_grants;
+DROP POLICY IF EXISTS "Allow all requests" ON public.leave_requests;
+DROP POLICY IF EXISTS "Allow all consumptions" ON public.leave_consumptions;
+DROP POLICY IF EXISTS "Allow all payments" ON public.payments;
+
 CREATE POLICY "Allow all stores" ON public.stores FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all users" ON public.users FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all grants" ON public.leave_grants FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all requests" ON public.leave_requests FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all consumptions" ON public.leave_consumptions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all payments" ON public.payments FOR ALL USING (true) WITH CHECK (true);

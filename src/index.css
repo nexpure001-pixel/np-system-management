@@ -103,6 +103,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
+}
+
+.nav-bottom {
+  margin-top: auto;
+  margin-bottom: 20px;
 }
 
 .nav-item {

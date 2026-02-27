@@ -30,7 +30,13 @@ const LeaveManagement = () => {
         expiringGrants: [],
         employeeStats: []
     });
-    const [view, setView] = useState('dashboard'); // 'dashboard' or 'employees'
+    const [view, setView] = useState('dashboard'); // 'dashboard', 'employees', or 'detail'
+    const [selectedUserId, setSelectedUserId] = useState(null);
+    const [userDetail, setUserDetail] = useState({
+        user: null,
+        grants: [],
+        requests: []
+    });
 
     const fetchStats = async () => {
         setLoading(true);
@@ -43,6 +49,9 @@ const LeaveManagement = () => {
                 .from('users')
                 .select('id, full_name, joined_at');
 
+            console.log('Fetched users:', users);
+            if (userError) console.error('User fetch error:', userError);
+
             if (userError) throw userError;
 
             // 2. Fetch Active Grants
@@ -50,6 +59,9 @@ const LeaveManagement = () => {
                 .from('leave_grants')
                 .select('*, users(full_name)')
                 .gte('expiry_date', format(today, 'yyyy-MM-dd'));
+
+            console.log('Fetched grants:', grants);
+            if (grantError) console.error('Grant fetch error:', grantError);
 
             if (grantError) throw grantError;
 
@@ -119,6 +131,89 @@ const LeaveManagement = () => {
             });
         } catch (err) {
             console.error('Failed to fetch stats:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchUserDetail = async (userId) => {
+        setLoading(true);
+        try {
+            const { data: user, error: userError } = await supabase.from('users').select('*').eq('id', userId).single();
+            if (userError) throw userError;
+
+            const { data: grants, error: grantError } = await supabase.from('leave_grants').select('*').eq('user_id', userId).order('expiry_date', { ascending: true });
+            if (grantError) throw grantError;
+
+            const { data: requests, error: reqError } = await supabase.from('leave_requests').select('*, leave_consumptions(*)').eq('user_id', userId).order('date_requested', { ascending: false });
+            if (reqError) throw reqError;
+
+            setUserDetail({ user, grants: grants || [], requests: requests || [] });
+            setView('detail');
+            setSelectedUserId(userId);
+        } catch (err) {
+            console.error('Fetch user detail error:', err);
+            alert('取得失敗');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleConsumeLeave = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const date = formData.get('date');
+        const amount = parseFloat(formData.get('amount'));
+        const reason = formData.get('reason');
+        if (!date || isNaN(amount)) return;
+        setLoading(true);
+        try {
+            const { data: req, error: reqError } = await supabase.from('leave_requests').insert([{ user_id: selectedUserId, date_requested: date, amount_days: amount, reason, status: 'pending' }]).select().single();
+            if (reqError) throw reqError;
+            const { error: processError } = await supabase.rpc('approve_leave_request', { target_request_id: req.id });
+            if (processError) throw processError;
+            alert('完了');
+            fetchUserDetail(selectedUserId);
+            fetchStats();
+        } catch (err) {
+            console.error('Consume error:', err);
+            alert('失敗: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleManualGrant = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const days = parseFloat(formData.get('days'));
+        const expiryDate = formData.get('expiry_date');
+        const reason = formData.get('reason');
+
+        if (isNaN(days) || !expiryDate) return;
+
+        setLoading(true);
+        try {
+            const { error } = await supabase
+                .from('leave_grants')
+                .insert([{
+                    user_id: selectedUserId,
+                    days_granted: days,
+                    days_used: 0,
+                    valid_from: format(new Date(), 'yyyy-MM-dd'),
+                    expiry_date: expiryDate,
+                    reason: reason || '手動付与'
+                }]);
+
+            if (error) throw error;
+
+            alert('付与が完了しました');
+            fetchUserDetail(selectedUserId);
+            fetchStats();
+            e.target.reset();
+        } catch (err) {
+            console.error('Grant error:', err);
+            alert('付与に失敗しました: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -254,20 +349,21 @@ const LeaveManagement = () => {
                         </div>
                     </Card>
                 </div>
-            ) : (
+            ) : view === 'employees' ? (
                 <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl border border-white/50 shadow-sm">
                     <div className="flex justify-between items-center mb-8">
                         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                             <Users className="w-6 h-6 text-teal-600" /> 社員別有給詳細
                         </h2>
-                        <button className="flex items-center gap-2 bg-teal-600 text-white px-5 py-2 rounded-2xl hover:bg-teal-700 transition-all font-bold">
-                            <UserPlus className="w-5 h-5" /> 社員の追加
-                        </button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {stats.employeeStats.map(emp => (
-                            <div key={emp.id} className="p-6 bg-white rounded-3xl border border-gray-100 hover:border-teal-200 hover:shadow-xl hover:-translate-y-1 transition-all group">
+                            <div
+                                key={emp.id}
+                                onClick={() => fetchUserDetail(emp.id)}
+                                className="p-6 bg-white rounded-3xl border border-gray-100 hover:border-teal-200 hover:shadow-xl hover:-translate-y-1 transition-all group cursor-pointer"
+                            >
                                 <div className="flex justify-between items-start mb-6">
                                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center text-teal-600 font-black text-xl">
                                         {emp.name.charAt(0)}
@@ -294,7 +390,106 @@ const LeaveManagement = () => {
                         ))}
                     </div>
                 </div>
-            )}
+            ) : (
+                <div className="space-y-8 animate-in slide-in-from-right duration-500">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setView('employees')}
+                            className="bg-white p-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500 transition-all"
+                        >
+                            <ChevronRight className="w-6 h-6 rotate-180" />
+                        </button>
+                        <h2 className="text-2xl font-black text-gray-800">{userDetail.user?.full_name} さんの有給詳細</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-8">
+                            <Card title="有給履歴 (付与・消化)" icon={Clock}>
+                                <div className="space-y-3">
+                                    {userDetail.requests.length === 0 && userDetail.grants.length === 0 ? (
+                                        <p className="text-center py-8 text-gray-400">記録がありません</p>
+                                    ) : (
+                                        [
+                                            ...userDetail.grants.map(g => ({ type: 'grant', date: g.valid_from, amount: g.days_granted, label: '付与', bg: 'bg-blue-50', text: 'text-blue-600' })),
+                                            ...userDetail.requests.filter(r => r.status === 'approved').map(r => ({ type: 'usage', date: r.date_requested, amount: r.amount_days, label: r.reason || '有給消化', bg: 'bg-orange-50', text: 'text-orange-600' }))
+                                        ].sort((a, b) => new Date(b.date) - new Date(a.date)).map((ev, i) => (
+                                            <div key={i} className={`flex items-center justify-between p-4 rounded-2xl border border-gray-100 ${ev.bg}`}>
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold ${ev.text}`}>
+                                                        {ev.type === 'grant' ? '+' : '-'}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-800">{ev.label}</p>
+                                                        <p className="text-xs text-gray-500">{ev.date}</p>
+                                                    </div>
+                                                </div>
+                                                <span className={`font-black ${ev.text}`}>
+                                                    {ev.amount}日
+                                                </span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </Card>
+                        </div>
+
+                        <div className="space-y-8">
+                            <Card title="有給を消化する" icon={Plus}>
+                                <form onSubmit={handleConsumeLeave} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-400">使用日</label>
+                                        <input type="date" name="date" required className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-500 outline-none transition-all" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-400">使用日数</label>
+                                        <input type="number" step="0.1" name="amount" defaultValue="1.0" required className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-500 outline-none transition-all" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-400">備考</label>
+                                        <textarea name="reason" className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-500 outline-none transition-all h-24" />
+                                    </div>
+                                    <button type="submit" className="w-full py-4 bg-teal-600 text-white rounded-xl font-black hover:bg-teal-700 transition-all shadow-lg shadow-teal-100">実行</button>
+                                </form>
+                            </Card>
+
+                            <Card title="手動で有給を付与する" icon={UserPlus}>
+                                <form onSubmit={handleManualGrant} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-400">付与日数</label>
+                                        <input type="number" step="0.5" name="days" defaultValue="1.0" required className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-400">有効期限</label>
+                                        <input type="date" name="expiry_date" defaultValue={format(addDays(new Date(), 730), 'yyyy-MM-dd')} required className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-400">付与理由 (備考)</label>
+                                        <input type="text" name="reason" placeholder="特別休暇など" className="w-full p-3 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    </div>
+                                    <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-xl font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">付与を実行</button>
+                                </form>
+                            </Card>
+
+                            <Card title="現在の保有内訳" icon={CheckCircle}>
+                                <div className="space-y-3">
+                                    {userDetail.grants.filter(g => (g.days_granted - g.days_used) > 0).map((g, i) => (
+                                        <div key={i} className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex justify-between items-center">
+                                            <div>
+                                                <p className="text-xs text-blue-400 font-bold">有効期限: {g.expiry_date}</p>
+                                                <p className="text-sm font-bold text-gray-700">{g.days_granted}日中 {g.days_used}日消化</p>
+                                            </div>
+                                            <span className="text-lg font-black text-blue-600">
+                                                残{g.days_granted - g.days_used}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+                </div>
+            )
+            }
         </div>
     );
 };

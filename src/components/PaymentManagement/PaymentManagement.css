@@ -451,3 +451,51 @@
     cursor: not-allowed;
     filter: grayscale(1);
 }
+
+/* Cloud Status Indicator */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.online {
+    background-color: #2ecc71;
+    box-shadow: 0 0 8px #2ecc71;
+    animation: statusPulse 2s infinite;
+}
+
+.status-dot.loading {
+    background-color: #f1c40f;
+    box-shadow: 0 0 8px #f1c40f;
+    animation: statusBlink 1s infinite;
+}
+
+@keyframes statusPulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes statusBlink {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

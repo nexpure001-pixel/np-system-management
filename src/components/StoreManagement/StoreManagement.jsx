@@ -15,39 +15,75 @@ const StoreManagement = () => {
 
     // フィールドマッピング定義 (CSV -> DB)
     const fieldMapping = {
-        salesOk: 'sales_ok',
-        yearlyRenewal: 'yearly_renewal_legacy',
-        yearlyRenewalMonth: 'yearly_renewal_month',
-        no: 'no',
-        npSellerId: 'np_seller_id',
-        introducer: 'introducer',
-        storeId: 'store_id',
-        storeName: 'store_name',
-        corporateName: 'corporate_name',
-        representative: 'representative',
-        contactPerson: 'contact_person',
-        email: 'email',
-        password: 'password',
-        initialPlan: 'initial_plan',
-        planAddition: 'plan_addition',
-        applicationForm: 'application_form',
-        applicationDate: 'application_date',
-        initialCost: 'initial_cost',
-        paymentDate: 'payment_date',
-        docConsent: 'doc_consent',
-        docRegistry: 'doc_registry',
-        docResident: 'doc_resident',
-        emailArrivalDate: 'email_arrival_date',
-        originalArrivalDate: 'original_arrival_date',
-        loginInfoSentDate: 'login_info_sent_date',
-        renewalMonth: 'renewal_month',
-        remarks: 'remarks',
-        productSettingPlan: 'product_setting_plan',
-        notPurchasedList: 'not_purchased_list',
-        changedDuringActivity: 'changed_during_activity',
-        shippingDateEntered: 'shipping_date_entered',
-        distinction: 'distinction',
-        paymentStatus: 'payment_status'
+        // 日本語ヘッダー
+        '販売OK': 'sales_ok',
+        '更新案内': 'yearly_renewal_legacy',
+        '更新月': 'yearly_renewal_month',
+        'No.': 'no',
+        'NP店舗ID': 'np_seller_id',
+        '紹介者': 'introducer',
+        '店舗ID': 'store_id',
+        '店名': 'store_name',
+        '法人名': 'corporate_name',
+        '代表者': 'representative',
+        '担当者': 'contact_person',
+        'メールアドレス': 'email',
+        'パスワード': 'password',
+        '初期プラン': 'initial_plan',
+        'プラン追加': 'plan_addition',
+        '申込フォーム': 'application_form',
+        '申込日': 'application_date',
+        '初期費用': 'initial_cost',
+        '振込日': 'payment_date',
+        '承諾書': 'doc_consent',
+        '登記簿': 'doc_registry',
+        '住民票': 'doc_resident',
+        'メール着': 'email_arrival_date',
+        '原本着': 'original_arrival_date',
+        'ログイン情報送付日': 'login_info_sent_date',
+        '次回更新月': 'renewal_month',
+        '備考': 'remarks',
+        '商品設定プラン': 'product_setting_plan',
+        '未購入リスト': 'not_purchased_list',
+        '活動中変更': 'changed_during_activity',
+        '発送日入力済み': 'shipping_date_entered',
+        '区分': 'distinction',
+        '入金ステータス': 'payment_status',
+
+        // 英語ヘッダー (CSVからのインポート用)
+        'salesOk': 'sales_ok',
+        'yearlyRenewal': 'yearly_renewal_legacy',
+        'yearlyRenewalMonth': 'yearly_renewal_month',
+        'no': 'no',
+        'npSellerId': 'np_seller_id',
+        'introducer': 'introducer',
+        'storeId': 'store_id',
+        'storeName': 'store_name',
+        'corporateName': 'corporate_name',
+        'representative': 'representative',
+        'contactPerson': 'contact_person',
+        'email': 'email',
+        'password': 'password',
+        'initialPlan': 'initial_plan',
+        'planAddition': 'plan_addition',
+        'applicationForm': 'application_form',
+        'applicationDate': 'application_date',
+        'initialCost': 'initial_cost',
+        'paymentDate': 'payment_date',
+        'docConsent': 'doc_consent',
+        'docRegistry': 'doc_registry',
+        'docResident': 'doc_resident',
+        'emailArrivalDate': 'email_arrival_date',
+        'originalArrivalDate': 'original_arrival_date',
+        'loginInfoSentDate': 'login_info_sent_date',
+        'renewalMonth': 'renewal_month',
+        'remarks': 'remarks',
+        'productSettingPlan': 'product_setting_plan',
+        'notPurchasedList': 'not_purchased_list',
+        'changedDuringActivity': 'changed_during_activity',
+        'shippingDateEntered': 'shipping_date_entered',
+        'distinction': 'distinction',
+        'paymentStatus': 'payment_status'
     };
 
     // データ表示用のキーに変換 (DB -> UI)
@@ -57,12 +93,21 @@ const StoreManagement = () => {
         const hasResident = item.doc_resident === '提出済み' || item.doc_resident === '両方完了' || item.doc_resident === '原本のみ';
         const isDocComplete = hasConsent && (hasRegistry || hasResident);
 
-        const isFD = item.initial_plan?.includes('ファウンディング');
+        const isFD = item.initial_plan?.includes('ファウンディング') || item.distinction === 'FD店舗';
         const isNew = item.application_date && item.application_date >= '2025-03-01';
+        const classification = item.distinction || (isFD ? 'FD店舗' : (isNew ? '新規店舗' : '通常'));
+
+        // 入金状況の判定ロジックを統一
+        let paymentStatusValue = item.payment_status;
+        if (!paymentStatusValue || paymentStatusValue === '') {
+            paymentStatusValue = item.payment_date ? '完了' : '未入金';
+        }
+        const payment = (classification === 'FD店舗' || classification === '特別店舗') ? '免除' : paymentStatusValue;
 
         return {
             ...item,
             storeId: item.store_id || '',
+            no: item.no || '',
             storeName: item.store_name || '',
             corporateName: item.corporate_name || '',
             representative: item.representative || '',
@@ -71,17 +116,19 @@ const StoreManagement = () => {
             password: item.password || '',
             plan: item.initial_plan || '',
             dateSigned: item.application_date || '',
+            paymentDate: item.payment_date || '',
             salesStatus: item.sales_ok || '準備中',
             yearlyRenewal: item.yearly_renewal_legacy || '',
             renewalMonth: item.renewal_month || '',
-            payment: (item.distinction === 'FD店舗' || item.distinction === '特別店舗') ? '免除' : (item.payment_status || (item.payment_date ? '完了' : '未入金')),
+            payment,
             isDocComplete,
-            classification: item.distinction || (isFD ? 'FD店舗' : (isNew ? '新規店舗' : '通常')),
+            classification,
             documents: {
                 consent: item.doc_consent || '未提出',
                 registry: item.doc_registry || '未提出',
                 residentCard: item.doc_resident || '未提出',
             },
+            remarks: item.remarks || '',
             raw: item
         };
     };
@@ -89,6 +136,8 @@ const StoreManagement = () => {
     // DB保存用の形式に変換 (UI -> DB)
     const mapStoreToDB = (formData, originalRaw = {}) => {
         const data = { ...originalRaw };
+        const toNullifEmpty = (val) => (val === '' || val === undefined || val === null) ? null : val;
+
         data.sales_ok = formData.get('sales_ok');
         data.yearly_renewal_legacy = formData.get('yearly_renewal_legacy');
         data.yearly_renewal_month = formData.get('yearly_renewal_month');
@@ -105,7 +154,7 @@ const StoreManagement = () => {
         data.initial_plan = formData.get('initial_plan');
         data.plan_addition = formData.get('plan_addition');
         data.application_form = formData.get('application_form');
-        data.application_date = formData.get('application_date');
+        data.application_date = toNullifEmpty(formData.get('application_date'));
         data.initial_cost = formData.get('initial_cost');
 
         const paymentStatus = formData.get('payment_status');
@@ -115,13 +164,14 @@ const StoreManagement = () => {
         } else if (paymentStatus === '未入金') {
             data.payment_date = null;
         }
+        data.payment_date = toNullifEmpty(data.payment_date);
 
         data.doc_consent = formData.get('doc_consent');
         data.doc_registry = formData.get('doc_registry');
         data.doc_resident = formData.get('doc_resident');
-        data.email_arrival_date = formData.get('email_arrival_date');
-        data.original_arrival_date = formData.get('original_arrival_date');
-        data.login_info_sent_date = formData.get('login_info_sent_date');
+        data.email_arrival_date = toNullifEmpty(formData.get('email_arrival_date'));
+        data.original_arrival_date = toNullifEmpty(formData.get('original_arrival_date'));
+        data.login_info_sent_date = toNullifEmpty(formData.get('login_info_sent_date'));
         data.renewal_month = formData.get('renewal_month');
         data.remarks = formData.get('remarks');
         data.product_setting_plan = formData.get('product_setting_plan');
@@ -168,9 +218,43 @@ const StoreManagement = () => {
                     const validData = results.data.filter(row => row.storeId && row.storeId !== '店舗ID' && row.storeId !== 'storeId');
                     const bulkData = validData.map(row => {
                         let mapped = {};
+
+                        // Excelシリアル値を日付文字列(YYYY-MM-DD)に変換する関数
+                        const excelDateToJSDate = (serial) => {
+                            if (!serial || isNaN(serial)) return serial;
+                            const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
+                            return date.toISOString().split('T')[0];
+                        };
+
+                        const dateFields = [
+                            'application_date', 'payment_date', 'email_arrival_date',
+                            'original_arrival_date', 'login_info_sent_date'
+                        ];
+
                         Object.keys(fieldMapping).forEach(csvKey => {
-                            if (row[csvKey] !== undefined) {
-                                mapped[fieldMapping[csvKey]] = row[csvKey];
+                            let value = row[csvKey];
+                            if (value !== undefined && value !== null) {
+                                const dbKey = fieldMapping[csvKey];
+
+                                if (dateFields.includes(dbKey)) {
+                                    // 日付型フィールドの正規化
+                                    if (value === '' || value === '-' || value === '未定') {
+                                        value = null;
+                                    } else if (!isNaN(value) && value !== true && value !== false) {
+                                        // 数値（Excelシリアル値）の場合の変換
+                                        value = excelDateToJSDate(Number(value));
+                                    } else if (typeof value === 'string' && value.includes('/')) {
+                                        // "2024/01/01" 形式の変換
+                                        const d = new Date(value);
+                                        value = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : null;
+                                    } else {
+                                        // それ以外の不正な形式（文字列など）をnullにする
+                                        const d = new Date(value);
+                                        if (isNaN(d.getTime())) value = null;
+                                    }
+                                }
+
+                                mapped[dbKey] = value === '' ? null : value;
                             }
                         });
                         if (!mapped.store_id) mapped.store_id = row.storeId || Math.random().toString(36).substr(2, 9);
@@ -243,18 +327,27 @@ const StoreManagement = () => {
             const priB = getDocPriority(b);
             return direction === 'asc' ? priA - priB : priB - priA;
         }
+
         let valA = a[key] ?? '';
         let valB = b[key] ?? '';
-        if (key === 'storeId' || key === 'no') {
-            const numA = parseInt(valA, 10) || 0;
-            const numB = parseInt(valB, 10) || 0;
-            return direction === 'asc' ? numA - numB : numB - numA;
+
+        // 日付・タイムスタンプフィールドの数値的比較
+        const dateKeys = ['dateSigned', 'paymentDate', 'emailArrivalDate', 'originalArrivalDate', 'loginInfoSentDate'];
+        if (dateKeys.includes(key)) {
+            const timeA = valA ? new Date(valA).getTime() : 0;
+            const timeB = valB ? new Date(valB).getTime() : 0;
+            return direction === 'asc' ? timeA - timeB : timeB - timeA;
         }
-        if (key === 'applicationDate' || key === 'paymentDate' || key === 'emailArrivalDate') {
-            const dateA = valA ? new Date(valA).getTime() : 0;
-            const dateB = valB ? new Date(valB).getTime() : 0;
-            return direction === 'asc' ? dateA - dateB : dateB - dateA;
+
+        // 数値フィールドの比較
+        const numKeys = ['storeId', 'no', 'npSellerId', 'yearlyRenewalMonth'];
+        if (numKeys.includes(key)) {
+            const nA = parseInt(String(valA).replace(/\D/g, ''), 10) || 0;
+            const nB = parseInt(String(valB).replace(/\D/g, ''), 10) || 0;
+            return direction === 'asc' ? nA - nB : nB - nA;
         }
+
+        // 文字列の比較 (日本語対応)
         const result = String(valA).localeCompare(String(valB), 'ja');
         return direction === 'asc' ? result : -result;
     });
@@ -385,15 +478,16 @@ const StoreManagement = () => {
                         <thead>
                             <tr>
                                 <th onClick={() => handleSort('storeId')} className="sortable">ID {sortConfig.key === 'storeId' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('classification')} className="sortable">区別する {sortConfig.key === 'classification' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('storeName')} className="sortable">店舗名 / 法人名 {sortConfig.key === 'storeName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('representative')} className="sortable">代表者・担当者 {sortConfig.key === 'representative' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('email')} className="sortable">メール/パス {sortConfig.key === 'email' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('no')} className="sortable">No. {sortConfig.key === 'no' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('classification')} className="sortable">区別 {sortConfig.key === 'classification' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('storeName')} className="sortable">店舗名 {sortConfig.key === 'storeName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('corporateName')} className="sortable">法人名 {sortConfig.key === 'corporateName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('representative')} className="sortable">代表者 {sortConfig.key === 'representative' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                 <th onClick={() => handleSort('salesStatus')} className="sortable">販売ステータス {sortConfig.key === 'salesStatus' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                 <th onClick={() => handleSort('plan')} className="sortable">プラン {sortConfig.key === 'plan' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                 <th onClick={() => handleSort('paymentDate')} className="sortable">入金日 {sortConfig.key === 'paymentDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('documents')} className="sortable">書類提出 {sortConfig.key === 'documents' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('yearlyRenewal')} className="sortable">更新月 {sortConfig.key === 'yearlyRenewal' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('documents')} className="sortable">書類構成 {sortConfig.key === 'documents' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('renewalMonth')} className="sortable">更新月 {sortConfig.key === 'renewalMonth' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                 <th>アクション</th>
                             </tr>
                         </thead>
@@ -401,13 +495,19 @@ const StoreManagement = () => {
                             {filteredStores.map(store => (
                                 <tr key={store.storeId}>
                                     <td>{store.storeId}</td>
+                                    <td>{store.no}</td>
                                     <td><span className={`badge ${store.classification === 'FD店舗' ? 'success' : (store.classification === '新規店舗' ? 'warning' : 'neutral')}`}>{store.classification}</span></td>
-                                    <td><strong>{store.storeName}</strong> {store.corporateName && <span style={{ opacity: 0.7, marginLeft: '8px', fontSize: '0.85rem' }}>({store.corporateName})</span>}</td>
+                                    <td><strong>{store.storeName}</strong></td>
+                                    <td>{store.corporateName || '-'}</td>
                                     <td>{store.representative} {store.contactPerson && <span style={{ color: 'var(--primary-accent)', marginLeft: '8px', fontSize: '0.85rem' }}>(担: {store.contactPerson})</span>}</td>
-                                    <td>{store.email || '-'} {store.password && <span style={{ opacity: 0.6, marginLeft: '8px', fontSize: '0.85rem' }}>[{store.password}]</span>}</td>
                                     <td><span className={getBadgeClass(store.salesStatus)}>{store.salesStatus}</span></td>
                                     <td>{store.plan}</td>
-                                    <td>{store.classification === 'FD店舗' ? '免除' : (store.paymentDate ? new Date(store.paymentDate).toLocaleDateString('ja-JP') : '未確認')}</td>
+                                    <td>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            <span className={getBadgeClass(store.payment)} style={{ padding: '4px 8px' }}>{store.payment}</span>
+                                            {store.paymentDate && <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>{new Date(store.paymentDate).toLocaleDateString('ja-JP')}</span>}
+                                        </div>
+                                    </td>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span className={getBadgeClass(store.documents?.consent)} style={{ padding: '4px 8px' }}>同意書: {store.documents?.consent}</span>
@@ -454,7 +554,7 @@ const StoreManagement = () => {
                                     <div className="form-grid">
                                         <div className="form-group">
                                             <label>販売ステータス</label>
-                                            <select name="sales_ok" defaultValue={editingStore?.sales_ok || '準備中'}>
+                                            <select name="sales_ok" defaultValue={editingStore?.raw?.sales_ok || '準備中'}>
                                                 <option value="準備中">準備中</option>
                                                 <option value="審査中">審査中</option>
                                                 <option value="販売OK">販売OK</option>
@@ -465,7 +565,7 @@ const StoreManagement = () => {
                                             <label>区別</label>
                                             <select
                                                 name="distinction"
-                                                defaultValue={editingStore?.classification || '通常'}
+                                                defaultValue={editingStore?.raw?.distinction || '通常'}
                                                 onChange={(e) => {
                                                     const val = e.target.value;
                                                     if (val === 'FD店舗' || val === '特別店舗') {
@@ -481,7 +581,7 @@ const StoreManagement = () => {
                                         </div>
                                         <div className="form-group">
                                             <label>入金状況</label>
-                                            <select name="payment_status" defaultValue={editingStore?.payment || '未入金'}>
+                                            <select name="payment_status" defaultValue={editingStore?.raw?.payment_status || editingStore?.payment || '未入金'}>
                                                 <option value="完了">完了</option>
                                                 <option value="免除">免除</option>
                                                 <option value="未入金">未入金</option>
@@ -489,7 +589,7 @@ const StoreManagement = () => {
                                         </div>
                                         <div className="form-group">
                                             <label>同意書</label>
-                                            <select name="doc_consent" defaultValue={editingStore?.doc_consent || '未提出'}>
+                                            <select name="doc_consent" defaultValue={editingStore?.raw?.doc_consent || '未提出'}>
                                                 <option value="提出済み">提出済み</option>
                                                 <option value="原本のみ">原本のみ</option>
                                                 <option value="未確認">未確認</option>
@@ -498,7 +598,7 @@ const StoreManagement = () => {
                                         </div>
                                         <div className="form-group">
                                             <label>登記簿謄本</label>
-                                            <select name="doc_registry" defaultValue={editingStore?.doc_registry || '未提出'}>
+                                            <select name="doc_registry" defaultValue={editingStore?.raw?.doc_registry || '未提出'}>
                                                 <option value="提出済み">提出済み</option>
                                                 <option value="原本のみ">原本のみ</option>
                                                 <option value="未確認">未確認</option>
@@ -507,7 +607,7 @@ const StoreManagement = () => {
                                         </div>
                                         <div className="form-group">
                                             <label>住民票</label>
-                                            <select name="doc_resident" defaultValue={editingStore?.doc_resident || '未提出'}>
+                                            <select name="doc_resident" defaultValue={editingStore?.raw?.doc_resident || '未提出'}>
                                                 <option value="提出済み">提出済み</option>
                                                 <option value="原本のみ">原本のみ</option>
                                                 <option value="未確認">未確認</option>
