@@ -247,7 +247,7 @@ const PaymentManagement = () => {
                 <h1><i className="fa-solid fa-cloud header-icon"></i> 入金管理システム (クラウド同期版)</h1>
             </header>
 
-            <div className="file-operations glass-panel" style={{ padding: '15px', display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div className="file-operations glass-panel" style={{ padding: '10px 15px', display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <button className="secondary-btn" onClick={() => fileInputRef.current?.click()}>
                         <i className="fa-solid fa-file-import"></i> インポート (Excel/CSV)

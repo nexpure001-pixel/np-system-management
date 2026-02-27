@@ -144,7 +144,7 @@ body {
 
 .main-content {
   flex: 1;
-  padding: 48px;
+  padding: 24px 32px;
   max-width: calc(100vw - 260px);
   overflow-x: hidden;
 }
