@@ -35,17 +35,17 @@
     margin: 0;
     padding: 15px 25px;
     min-height: 100vh;
+    overflow-x: hidden;
     position: relative;
-    border-radius: 12px;
 }
 
-/* Ambient animated stars background for the white base */
+/* Ambient animated stars background */
 .ambient-stars {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     pointer-events: none;
     z-index: 0;
     background-image:
@@ -77,7 +77,7 @@
     text-align: center;
     margin-bottom: 20px;
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
 .cooling-off-container h1 {
@@ -89,12 +89,11 @@
     text-shadow: 0 2px 10px rgba(255, 255, 255, 0.9), 0 0 20px rgba(125, 211, 252, 0.5);
 }
 
-.cooling-off-container .subtitle {
+.subtitle {
     font-size: 1rem;
     color: #0284c7;
     margin-top: 5px;
     font-weight: 600;
-    text-align: center;
 }
 
 /* Glassmorphism Panels */
@@ -105,11 +104,11 @@
     border: 1px solid var(--border-color);
     border-radius: 20px;
     box-shadow: var(--glass-shadow);
-    z-index: 1;
     position: relative;
+    z-index: 5;
 }
 
-.cooling-off-container .controls {
+.controls {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
@@ -119,7 +118,7 @@
     gap: 15px;
 }
 
-.cooling-off-container .btn {
+.btn {
     background: rgba(255, 255, 255, 0.8);
     color: var(--text-heading);
     border: 1px solid rgba(255, 255, 255, 0.9);
@@ -135,10 +134,9 @@
     align-items: center;
     white-space: nowrap;
     backdrop-filter: blur(5px);
-    gap: 8px;
 }
 
-.cooling-off-container .btn:hover {
+.btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 15px var(--primary-glow);
     background: linear-gradient(135deg, #ffffff, #f0f5ff);
@@ -146,49 +144,116 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #bae6fd 0%, #e0f2fe 100%) !important;
-    color: #0369a1 !important;
-    border: 1px solid #7dd3fc !important;
+    background: linear-gradient(135deg, #bae6fd 0%, #e0f2fe 100%);
+    color: #0369a1;
+    border: 1px solid #7dd3fc;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+    box-shadow: 0 6px 15px rgba(125, 211, 252, 0.4);
+    background: linear-gradient(135deg, #7dd3fc 0%, #bae6fd 100%);
 }
 
 .btn-success {
-    background: linear-gradient(135deg, #bbf7d0 0%, #dcfce7 100%) !important;
-    color: #15803d !important;
-    border: 1px solid #86efac !important;
+    background: linear-gradient(135deg, #bbf7d0 0%, #dcfce7 100%);
+    color: #15803d;
+    border: 1px solid #86efac;
+}
+
+.btn-success:hover {
+    box-shadow: 0 6px 15px rgba(134, 239, 172, 0.4);
+    background: linear-gradient(135deg, #86efac 0%, #bbf7d0 100%);
 }
 
 .btn-danger {
-    background: rgba(255, 255, 255, 0.5) !important;
-    color: #94a3b8 !important;
-    border: 1px solid #cbd5e1 !important;
+    background: rgba(255, 255, 255, 0.5);
+    color: #94a3b8;
+    border: 1px solid #cbd5e1;
+}
+
+.btn-danger:hover {
+    color: #e2e8f0;
+    border-color: #fca5a5;
+    background: #fca5a5;
+    box-shadow: 0 4px 10px rgba(252, 165, 165, 0.3);
 }
 
 .btn-mystic {
-    background: linear-gradient(135deg, #e0f2fe 0%, #fce7f3 100%) !important;
-    border: 1px solid #fbcfe8 !important;
-    color: #db2777 !important;
+    background: linear-gradient(135deg, #e0f2fe 0%, #fce7f3 100%);
+    border: 1px solid #fbcfe8;
+    color: #db2777;
 }
 
-.cooling-off-container .table-container {
+.btn-mystic:hover {
+    background: linear-gradient(135deg, #fce7f3 0%, #e0f2fe 100%);
+    box-shadow: 0 6px 15px rgba(251, 207, 232, 0.4);
+    color: #be185d;
+}
+
+.legend {
+    display: flex;
+    gap: 15px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+    align-items: center;
+    font-weight: 600;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.legend-cooling {
+    background: var(--cooling-bg);
+    border-color: var(--cooling-border);
+}
+
+.legend-90 {
+    background: var(--return-90-bg);
+    border-color: var(--return-90-border);
+}
+
+.legend-expired {
+    background: var(--expired-bg);
+    border-color: var(--expired-border);
+}
+
+.table-container {
     height: 70vh;
     overflow: auto;
     border-radius: 15px;
+    position: relative;
+    z-index: 5;
 }
 
-.cooling-off-container table {
+table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.cooling-off-container th,
-.cooling-off-container td {
+th,
+td {
     padding: 10px 12px;
+    text-align: left;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     font-size: 0.9rem;
     white-space: nowrap;
 }
 
-.cooling-off-container th {
+th {
+    cursor: pointer;
     color: var(--primary-color);
     font-weight: 700;
     position: sticky;
@@ -196,10 +261,21 @@
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     z-index: 10;
+    transition: background 0.2s;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
     border-bottom: 2px solid #e2e8f0;
 }
 
-.cooling-off-container tr:hover {
+th:hover {
+    background: #fdfdff;
+    color: #6c5ce7;
+}
+
+tbody tr {
+    transition: background-color 0.3s ease;
+}
+
+tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.9) !important;
 }
 
@@ -209,13 +285,14 @@
     border-left: 3px solid #ff7979;
 }
 
-.cooling-off-container .status-badge {
+.status-badge {
     display: inline-block;
     padding: 5px 10px;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 700;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
 }
 
 .status-cooling {
@@ -236,15 +313,25 @@
     color: var(--expired-text);
 }
 
-.cooling-off-container input[type="text"],
-.cooling-off-container input[type="date"],
-.cooling-off-container select {
+input[type="text"],
+input[type="date"],
+select {
     background: rgba(255, 255, 255, 0.7);
     border: 1px solid #cbd5e0;
     color: var(--text-main);
     padding: 6px 10px;
     border-radius: 8px;
     width: 100%;
+    transition: all 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+select:focus {
+    outline: none;
+    border-color: #a18cd1;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(161, 140, 209, 0.2);
 }
 
 /* Cosmic Screensaver Overlay */
@@ -270,6 +357,7 @@
 .cosmic-overlay.active {
     opacity: 1;
     pointer-events: all;
+    cursor: pointer;
 }
 
 .shooting-star {
