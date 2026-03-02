@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【新人向け】ネクスピュア はじめての概要書面マスターガイド＆Q&A</title>
+    <!-- Tailwind CSS (標準クラスのみ使用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            scroll-behavior: smooth;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        /* カスタムグラデーション背景 */
+        .hero-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        .premium-bg {
+            background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        }
+        /* ツリー構造の線描画用 */
+        .tree-line::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            width: 2px;
+            height: 20px;
+            background-color: #cbd5e1;
+            transform: translateX(-50%);
+        }
+        .tree-branch::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: calc(25% + 1px);
+            width: 50%;
+            height: 2px;
+            background-color: #cbd5e1;
+        }
+        /* ステップ用の接続線 */
+        .step-connector {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background-color: #e2e8f0;
+            left: 24px;
+            top: 24px;
+            z-index: 0;
+        }
+        @media (min-width: 768px) {
+            .step-connector {
+                width: 100%;
+                height: 2px;
+                left: 24px;
+                top: 24px;
+            }
+        }
+        /* アニメーション */
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .animate-pulse-border {
+            animation: pulse-border 2s infinite;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 flex items-center gap-2">
+                    <span class="text-xl">📖</span>
+                    <span class="font-bold text-xl text-blue-900 tracking-tight">NEXPURE <span class="text-sm text-blue-500 font-medium ml-1">マニュアル</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#qa-section" class="text-sm font-medium text-gray-600 hover:text-blue-600 transition">新人向けQ&A</a>
+                    <a href="#guide-section" class="text-sm font-medium text-gray-600 hover:text-blue-600 transition">図解マスターガイド</a>
+                    <a href="#compliance-section" class="text-sm font-medium text-gray-600 hover:text-blue-600 transition">安心ルール</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero-bg text-white pt-24 pb-16 px-4 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full opacity-10">
+            <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path d="M0,100 L100,0 L100,100 Z" fill="currentColor"/>
+            </svg>
+        </div>
+        <div class="max-w-4xl mx-auto text-center relative z-10 mt-8">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium mb-6">
+                <span>✨</span>
+                新しく参加された皆様へ
+            </div>
+            <h1 class="text-3xl md:text-5xl font-black mb-6 leading-tight">
+                はじめての<br class="md:hidden">概要書面マスターガイド
+            </h1>
+            <p class="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto font-medium leading-relaxed">
+                新しく参加された方が概要書面を読んだ際、あるいは実際に活動を始める際によく抱く疑問やルールを直感的な図解とQ&Aで徹底解説します。
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-12 space-y-20">
+
+        <!-- ==========================================
+             Q&A セクション
+        =========================================== -->
+        <section id="qa-section" class="scroll-mt-24">
+            <div class="text-center mb-10">
+                <h2 class="inline-flex items-center justify-center gap-3 text-2xl md:text-3xl font-bold text-gray-800">
+                    <span class="bg-blue-100 text-blue-700 p-2 rounded-lg text-xl">❓</span>
+                    【新人向けQ&A】ここがわからない！
+                </h2>
+                <p class="text-gray-500 mt-3">よくある疑問を実践的で詳しく解説します</p>
+            </div>
+
+            <!-- アコーディオンコンテナ -->
+            <div class="space-y-4">
+                
+                <!-- Q1 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md">
+                    <button onclick="toggleAccordion('q1')" class="w-full px-6 py-5 text-left flex justify-between items-center focus:outline-none">
+                        <div class="flex items-start gap-4 pr-8">
+                            <span class="flex-shrink-0 text-xl font-black text-blue-500 mt-0.5">Q1.</span>
+                            <span class="font-bold text-gray-800 leading-snug">「アクティブ」になるための50ptは、毎月必ず自分で商品を買わないといけないの？</span>
+                        </div>
+                        <svg id="icon-q1" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="content-q1" class="hidden">
+                        <div class="px-6 pb-6 pt-2 border-t border-gray-50">
+                            <div class="flex items-start gap-4">
+                                <span class="flex-shrink-0 text-xl font-black text-amber-500">A.</span>
+                                <div class="text-gray-600 leading-relaxed space-y-3">
+                                    <p class="font-bold text-gray-800">いいえ、必ずしも自分でお買い物をする必要はありません！</p>
+                                    <p>ボーナスを受け取るための「アクティブ条件」は、『自分自身の購入ポイント』＋『あなたが直接紹介した「愛用会員」の購入ポイント』の合計が<span class="font-bold text-blue-600 bg-blue-50 px-1 rounded">50pt以上</span>であればクリアとなります。</p>
+                                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-2 text-sm">
+                                        💡 <span class="font-semibold text-gray-700">つまり…</span> あなたから商品を紹介された愛用会員の方々がお買い物をしてくれて、その合計が50ptに達していれば、あなたは自分でお金を出して購入しなくてもボーナスを受け取る権利（アクティブ）を得ることができます。
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q2 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md">
+                    <button onclick="toggleAccordion('q2')" class="w-full px-6 py-5 text-left flex justify-between items-center focus:outline-none">
+                        <div class="flex items-start gap-4 pr-8">
+                            <span class="flex-shrink-0 text-xl font-black text-blue-500 mt-0.5">Q2.</span>
+                            <span class="font-bold text-gray-800 leading-snug">発生したボーナス（報酬）は、いつ、どのように支払われるの？</span>
+                        </div>
+                        <svg id="icon-q2" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="content-q2" class="hidden">
+                        <div class="px-6 pb-6 pt-2 border-t border-gray-50">
+                            <div class="flex items-start gap-4">
+                                <span class="flex-shrink-0 text-xl font-black text-amber-500">A.</span>
+                                <div class="text-gray-600 leading-relaxed w-full">
+                                    <p class="font-bold text-gray-800 mb-4">月末締めの「翌月末払い」で、ご自身の銀行口座へ振り込まれます。</p>
+                                    <ul class="space-y-4">
+                                        <li class="flex gap-3">
+                                            <span class="text-xl flex-shrink-0">📅</span>
+                                            <div><strong class="text-gray-800">締め日と支払日:</strong> 毎月1日〜末日までの実績が計算され、翌月の末日（金融機関が休業日の場合は前営業日）に支払われます。</div>
+                                        </li>
+                                        <li class="flex gap-3">
+                                            <span class="text-xl flex-shrink-0">💴</span>
+                                            <div><strong class="text-gray-800">振込の条件:</strong> ボーナスの合計が<span class="text-red-500 font-bold">5,000円以上</span>になった場合にお振込となります。5,000円未満の場合は翌月に繰り越されます。</div>
+                                        </li>
+                                        <li class="flex gap-3">
+                                            <span class="text-xl flex-shrink-0">🧮</span>
+                                            <div><strong class="text-gray-800">手数料と税金:</strong> 1回のお支払いにつき550円（税込）の振込事務手数料がかかります。また、個人の場合、月間のボーナスが12万円を超えると、超過分に対して10.21％の源泉徴収（税引き）が行われます。</div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q3 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md">
+                    <button onclick="toggleAccordion('q3')" class="w-full px-6 py-5 text-left flex justify-between items-center focus:outline-none">
+                        <div class="flex items-start gap-4 pr-8">
+                            <span class="flex-shrink-0 text-xl font-black text-blue-500 mt-0.5">Q3.</span>
+                            <span class="font-bold text-gray-800 leading-snug">なぜ「プレミアムメンバー」や「複数ポジション」を勧められることが多いの？</span>
+                        </div>
+                        <svg id="icon-q3" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="content-q3" class="hidden">
+                        <div class="px-6 pb-6 pt-2 border-t border-gray-50">
+                            <div class="flex items-start gap-4">
+                                <span class="flex-shrink-0 text-xl font-black text-amber-500">A.</span>
+                                <div class="text-gray-600 leading-relaxed w-full">
+                                    <p class="font-bold text-gray-800 mb-4">獲得できるボーナスの「還元率」が圧倒的に高く、会社からの特別な利益分配の対象になるからです。</p>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                                            <h4 class="font-bold text-orange-800 mb-2 flex items-center gap-2"><span>📈</span> 還元率の違い</h4>
+                                            <p class="text-sm">エコノミーのバイナリー還元率は一律8％ですが、プレミアムで「3ポジ以上」を持つと12％、「7ポジ以上＋最高タイトル」だと<strong class="text-red-600 text-lg">最大18％</strong>まで引き上がります。4スター以上を目指すにはプレミアムが必須です。</p>
+                                        </div>
+                                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                            <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2"><span>🎁</span> スペシャルフィー</h4>
+                                            <p class="text-sm">年1回、会社の純利益の5%が分配される特大ボーナスは、「01ポジションを含め合計3ポジション以上を12ヶ月間連続でアクティブにしていること」が絶対条件です。</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 border-l-4 border-amber-500 pl-4 py-1">
+                                        <span class="inline-block bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded mb-1">最新情報</span>
+                                        <p class="text-sm font-semibold text-gray-800">50億円達成キャンペーン</p>
+                                        <p class="text-sm mt-1">2026年からの新施策。毎月150BP（3ポジ分）以上を購入し続けるメンバーには、会社が年商50億円に到達した際、<strong class="text-amber-600">利益の15%または18%が分配</strong>される特別な権利が用意されています。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q4 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md">
+                    <button onclick="toggleAccordion('q4')" class="w-full px-6 py-5 text-left flex justify-between items-center focus:outline-none">
+                        <div class="flex items-start gap-4 pr-8">
+                            <span class="flex-shrink-0 text-xl font-black text-blue-500 mt-0.5">Q4.</span>
+                            <span class="font-bold text-gray-800 leading-snug">新規登録時の「オート配置」はどれを選べばいいの？</span>
+                        </div>
+                        <svg id="icon-q4" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="content-q4" class="hidden">
+                        <div class="px-6 pb-6 pt-2 border-t border-gray-50">
+                            <div class="flex items-start gap-4">
+                                <span class="flex-shrink-0 text-xl font-black text-amber-500">A.</span>
+                                <div class="text-gray-600 leading-relaxed w-full">
+                                    <p class="font-bold text-gray-800 mb-2">迷ったら、まずはバランスよく配置される「オート」がおすすめです。</p>
+                                    <p class="text-sm mb-4">バイナリーボーナスは、左右の組織のうち「ポイントが少ない方（小系列）」を基準に計算されます。</p>
+                                    
+                                    <ul class="space-y-3 bg-gray-50 p-4 rounded-xl">
+                                        <li><strong class="text-gray-800">左オート / 右オート:</strong> 指定した側の「一番外側のいちばん下」に配置されます。意図的に片方のグループを伸ばしたい時に使います。</li>
+                                        <li><strong class="text-blue-600 border-b-2 border-blue-200">オート (おすすめ):</strong> システムが自動的に「左右で登録ポジションが少ない方」のいちばん下へ配置してくれます（同数の場合は左側へ）。組織のバランスを自動で保ってくれるため、新人の方には最も管理がしやすい設定です。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q5 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md">
+                    <button onclick="toggleAccordion('q5')" class="w-full px-6 py-5 text-left flex justify-between items-center focus:outline-none">
+                        <div class="flex items-start gap-4 pr-8">
+                            <span class="flex-shrink-0 text-xl font-black text-blue-500 mt-0.5">Q5.</span>
+                            <span class="font-bold text-gray-800 leading-snug">友達に「もし辞めたくなったらどうするの？」と聞かれました。クーリング・オフはできる？</span>
+                        </div>
+                        <svg id="icon-q5" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="content-q5" class="hidden">
+                        <div class="px-6 pb-6 pt-2 border-t border-gray-50">
+                            <div class="flex items-start gap-4">
+                                <span class="flex-shrink-0 text-xl font-black text-amber-500">A.</span>
+                                <div class="text-gray-600 leading-relaxed w-full">
+                                    <p class="font-bold text-green-600 mb-4 flex items-center gap-2"><span>🛡️</span> はい、法律に基づき確実に全額返金・解約が可能です。安心してお伝えください。</p>
+                                    <div class="space-y-4">
+                                        <div class="pl-4 border-l-2 border-green-500">
+                                            <strong class="text-gray-800 block mb-1">20日以内のクーリング・オフ</strong>
+                                            <p class="text-sm">契約書面を受け取った日、または初回商品を受け取った日のいずれか遅い方から数えて<strong class="text-red-500">「20日以内」</strong>であれば、理由を問わず契約解除と商品の返品が可能です。違約金等の請求は一切なく、全額返金されます。</p>
+                                        </div>
+                                        <div class="pl-4 border-l-2 border-gray-300">
+                                            <strong class="text-gray-800 block mb-1">20日を過ぎた場合（中途解約）</strong>
+                                            <p class="text-sm">登録から1年以内で、購入から90日以内の未使用商品であれば、所定の手数料（購入代金の10%）を引いた額で返品・解約が可能です。</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Q6 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md">
+                    <button onclick="toggleAccordion('q6')" class="w-full px-6 py-5 text-left flex justify-between items-center focus:outline-none">
+                        <div class="flex items-start gap-4 pr-8">
+                            <span class="flex-shrink-0 text-xl font-black text-blue-500 mt-0.5">Q6.</span>
+                            <span class="font-bold text-gray-800 leading-snug">トラブルにならないために、絶対にやってはいけないこと（禁止事項）は？</span>
+                        </div>
+                        <svg id="icon-q6" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div id="content-q6" class="hidden">
+                        <div class="px-6 pb-6 pt-2 border-t border-gray-50">
+                            <div class="flex items-start gap-4">
+                                <span class="flex-shrink-0 text-xl font-black text-amber-500">A.</span>
+                                <div class="text-gray-600 leading-relaxed w-full">
+                                    <p class="font-bold text-red-600 mb-4">「絶対に儲かる」という嘘や、目的を隠した勧誘は法律違反になります。以下のルールを厳守してください。</p>
+                                    
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                                            <strong class="text-red-800 flex items-center gap-1 mb-2"><span>❌</span> ブラインド勧誘の禁止</strong>
+                                            <p>「ご飯行こう」とだけ伝え、いきなりビジネスの話をするのは違法です。必ず事前に「ビジネス（商品）の紹介をしたい」と目的を告げてください。</p>
+                                        </div>
+                                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                                            <strong class="text-red-800 flex items-center gap-1 mb-2"><span>❌</span> 誇大広告・不実告知</strong>
+                                            <p>「何もしなくても絶対儲かる」「病気が治る」といった事実と異なる大げさな説明は絶対にやめましょう。</p>
+                                        </div>
+                                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                                            <strong class="text-red-800 flex items-center gap-1 mb-2"><span>❌</span> 概要書面の未交付</strong>
+                                            <p>ビジネスの話をする前には必ず最新の「概要書面」を相手に直接手渡しして説明する義務があります。</p>
+                                        </div>
+                                        <div class="bg-red-50 p-4 rounded-xl border border-red-100">
+                                            <strong class="text-red-800 flex items-center gap-1 mb-2"><span>❌</span> 不当な価格設定（転売）</strong>
+                                            <p>一般市場で安く売られている商品を、ポイントのためにわざと高額で販売する行為は固く禁じられています。</p>
+                                        </div>
+                                    </div>
+                                    <p class="mt-4 text-sm font-semibold bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100 text-center">
+                                        迷った時は、必ずこのマニュアルや概要書面を読み返し、アップラインのリーダーに相談しましょう！
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 区切り線 -->
+        <div class="flex items-center justify-center gap-4 py-8">
+            <div class="h-px bg-gray-300 w-1/4"></div>
+            <span class="text-amber-400 text-2xl">⭐</span>
+            <div class="h-px bg-gray-300 w-1/4"></div>
+        </div>
+
+        <!-- ==========================================
+             図解マスターガイド セクション
+        =========================================== -->
+        <section id="guide-section" class="scroll-mt-24">
+            <div class="text-center mb-12">
+                <span class="text-sm font-bold tracking-widest text-blue-600 uppercase mb-2 block">Visual Guide</span>
+                <h2 class="text-3xl md:text-4xl font-black text-gray-800 mb-4">
+                    【永久保存版】<br class="md:hidden">概要書面マスターガイド
+                </h2>
+                <p class="text-gray-500 max-w-2xl mx-auto">
+                    新人の皆様が特につまずきやすいポイントを5つのステップに分け、直感的に理解できるよう視覚化しました。これさえ見ればもう迷いません。
+                </p>
+            </div>
+
+            <div class="space-y-16">
+                
+                <!-- STEP 1: アクティブ条件 -->
+                <div class="relative bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
+                    <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white font-black px-6 py-2 rounded-full shadow-md border-4 border-white flex items-center gap-2">
+                        <span>STEP 1</span>
+                    </div>
+                    
+                    <div class="text-center mt-6 mb-8">
+                        <h3 class="text-2xl font-bold text-gray-800 flex justify-center items-center gap-2">
+                            <span class="text-blue-500">✅</span>
+                            報酬をもらうための絶対ルール「アクティブ」
+                        </h3>
+                        <p class="text-gray-500 mt-2">以下の３つの条件を<strong class="text-blue-600">すべてクリア</strong>して初めて報酬発生の権利が得られます。</p>
+                    </div>
+
+                    <!-- CSS フローチャート -->
+                    <div class="flex flex-col items-center relative z-10 w-full max-w-2xl mx-auto">
+                        <!-- START -->
+                        <div class="bg-gray-800 text-white font-bold py-2 px-6 rounded-full text-sm mb-4">
+                            アクティブ判定スタート
+                        </div>
+
+                        <!-- 条件1 -->
+                        <div class="w-full flex justify-center relative">
+                            <div class="bg-white border-2 border-blue-200 shadow-sm rounded-xl p-4 w-64 text-center z-10">
+                                <span class="text-xs font-bold text-gray-400 block mb-1">条件 ①</span>
+                                <span class="font-bold text-gray-800">契約締結</span>
+                                <span class="text-xs text-gray-500 block mt-1">(当月までに完了しているか)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 矢印 -->
+                        <div class="flex items-center justify-center w-full my-2">
+                            <div class="h-6 w-0.5 bg-blue-300 relative">
+                                <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-3 h-3 border-r-2 border-b-2 border-blue-300 rotate-45"></div>
+                                <!-- NO分岐 (横へ) -->
+                                <div class="absolute top-1/2 left-0 w-16 h-0.5 bg-gray-300">
+                                    <span class="absolute -top-5 left-2 text-xs font-bold text-gray-400">NO</span>
+                                    <div class="absolute top-1/2 -right-1 transform -translate-y-1/2 w-2 h-2 border-r-2 border-t-2 border-gray-300 rotate-45"></div>
+                                </div>
+                            </div>
+                            <!-- 非アクティブボックス (右側) -->
+                            <div class="absolute right-0 md:right-16 bg-red-50 border border-red-200 text-red-600 font-bold py-2 px-4 rounded-lg text-sm shadow-sm hidden sm:block opacity-70">
+                                非アクティブ
+                            </div>
+                        </div>
+
+                        <!-- 条件2 -->
+                        <div class="w-full flex justify-center relative">
+                            <div class="bg-white border-2 border-blue-300 shadow-sm rounded-xl p-4 w-64 text-center z-10">
+                                <span class="text-xs font-bold text-gray-400 block mb-1">条件 ②</span>
+                                <span class="font-bold text-gray-800">ビジネス会員であるか</span>
+                                <span class="text-xs text-gray-500 block mt-1">(カスタマー以外)</span>
+                            </div>
+                        </div>
+
+                        <!-- 矢印 -->
+                        <div class="flex items-center justify-center w-full my-2">
+                            <div class="h-6 w-0.5 bg-blue-400 relative">
+                                <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-3 h-3 border-r-2 border-b-2 border-blue-400 rotate-45"></div>
+                                <!-- NO分岐 (横へ) -->
+                                <div class="absolute top-1/2 left-0 w-16 h-0.5 bg-gray-300">
+                                    <span class="absolute -top-5 left-2 text-xs font-bold text-gray-400">NO</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 条件3 -->
+                        <div class="w-full flex justify-center relative">
+                            <div class="bg-blue-50 border-2 border-blue-500 shadow-md rounded-xl p-4 w-72 text-center z-10 animate-pulse-border">
+                                <span class="text-xs font-bold text-blue-600 block mb-1">条件 ③ (最重要!)</span>
+                                <span class="font-bold text-gray-800">当月の購入pt合計</span>
+                                <div class="text-xs text-gray-600 mt-2 bg-white rounded p-2 border border-blue-100">
+                                    【自己購入pt】<br>＋<br>【直紹介の愛用会員購入pt】
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 最終分岐矢印 -->
+                        <div class="flex items-center justify-center w-full mt-2 mb-4 relative">
+                            <div class="w-full max-w-xs flex justify-between px-8">
+                                <!-- NO ルート -->
+                                <div class="flex flex-col items-center">
+                                    <div class="h-8 w-0.5 bg-red-300 relative">
+                                        <span class="absolute top-2 -left-12 text-xs font-bold text-red-400 bg-white px-1">50pt未満</span>
+                                        <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-3 h-3 border-r-2 border-b-2 border-red-300 rotate-45"></div>
+                                    </div>
+                                    <div class="mt-2 bg-red-100 border-2 border-red-400 text-red-700 font-bold py-2 px-4 rounded-xl shadow-sm text-center">
+                                        <span class="block mb-1">❌</span>
+                                        非アクティブ<br><span class="text-xs font-normal">報酬なし</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- YES ルート -->
+                                <div class="flex flex-col items-center">
+                                    <div class="h-8 w-0.5 bg-green-400 relative">
+                                        <span class="absolute top-2 -right-14 text-xs font-bold text-green-500 bg-white px-1">50pt以上</span>
+                                        <div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-3 h-3 border-r-2 border-b-2 border-green-400 rotate-45"></div>
+                                    </div>
+                                    <div class="mt-2 bg-gradient-to-r from-green-400 to-emerald-500 text-white font-black py-3 px-6 rounded-xl shadow-lg border-2 border-white text-center transform scale-110">
+                                        ✨ アクティブ達成 ✨<br><span class="text-xs font-medium opacity-90 block mt-1">報酬獲得の権利発生!</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ワンポイントアドバイス -->
+                    <div class="mt-8 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg flex gap-4 items-start">
+                        <div class="bg-white p-2 rounded-full shadow-sm text-blue-500 flex-shrink-0">
+                            💡
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-sm">新人向けワンポイント</h4>
+                            <p class="text-sm text-gray-600 mt-1">
+                                自分が購入しなくても、あなたが直接紹介した「愛用会員」のお買い物のポイントが合算されます！合計で「50pt」を超えればアクティブになれます。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: オート配置 -->
+                <div class="relative bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
+                    <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white font-black px-6 py-2 rounded-full shadow-md border-4 border-white flex items-center gap-2">
+                        <span>STEP 2</span>
+                    </div>
+                    
+                    <div class="text-center mt-6 mb-8">
+                        <h3 class="text-2xl font-bold text-gray-800 flex justify-center items-center gap-2">
+                            <span class="text-blue-500">🌳</span>
+                            組織の作り方「オート配置」の仕組み
+                        </h3>
+                        <p class="text-gray-500 mt-2">紹介した新規会員の「配置方法」による挙動の違いです。</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- 左オート -->
+                        <div class="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center flex flex-col items-center">
+                            <div class="font-bold text-gray-700 bg-white px-4 py-1 rounded-full shadow-sm mb-6 border border-gray-200">左オート</div>
+                            
+                            <!-- 簡易ツリー -->
+                            <div class="relative w-full h-32 flex justify-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold z-10 border-2 border-white shadow-sm relative">親
+                                    <div class="absolute top-10 w-0.5 h-6 bg-gray-300"></div>
+                                </div>
+                                <div class="absolute top-16 w-32 h-0.5 bg-gray-300 tree-branch"></div>
+                                <!-- 左下 -->
+                                <div class="absolute top-16 left-1/2 -translate-x-16 -ml-5 w-10 h-10 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs z-10">既</div>
+                                <!-- さらに左下へ追加 -->
+                                <div class="absolute top-26 left-1/2 -translate-x-16 -ml-5 w-0.5 h-6 bg-blue-400"></div>
+                                <div class="absolute top-32 left-1/2 -translate-x-16 -ml-5 w-10 h-10 rounded-full bg-pink-500 text-white flex items-center justify-center font-bold z-10 animate-bounce shadow-md">新</div>
+                                <!-- 右下 -->
+                                <div class="absolute top-16 left-1/2 translate-x-16 -ml-5 w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center text-xs z-10"></div>
+                            </div>
+                            <p class="text-sm mt-4 text-gray-600"><strong class="text-gray-800">左外側の最末端</strong>に強制配置されます。</p>
+                        </div>
+
+                        <!-- 右オート -->
+                        <div class="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center flex flex-col items-center">
+                            <div class="font-bold text-gray-700 bg-white px-4 py-1 rounded-full shadow-sm mb-6 border border-gray-200">右オート</div>
+                            
+                            <!-- 簡易ツリー -->
+                            <div class="relative w-full h-32 flex justify-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold z-10 border-2 border-white shadow-sm relative">親
+                                    <div class="absolute top-10 w-0.5 h-6 bg-gray-300"></div>
+                                </div>
+                                <div class="absolute top-16 w-32 h-0.5 bg-gray-300 tree-branch"></div>
+                                <!-- 左下 -->
+                                <div class="absolute top-16 left-1/2 -translate-x-16 -ml-5 w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center text-xs z-10"></div>
+                                <!-- 右下 -->
+                                <div class="absolute top-16 left-1/2 translate-x-16 -ml-5 w-10 h-10 rounded-full bg-gray-300 text-white flex items-center justify-center text-xs z-10">既</div>
+                                <!-- さらに右下へ追加 -->
+                                <div class="absolute top-26 left-1/2 translate-x-16 -ml-5 w-0.5 h-6 bg-blue-400"></div>
+                                <div class="absolute top-32 left-1/2 translate-x-16 -ml-5 w-10 h-10 rounded-full bg-pink-500 text-white flex items-center justify-center font-bold z-10 animate-bounce shadow-md">新</div>
+                            </div>
+                            <p class="text-sm mt-4 text-gray-600"><strong class="text-gray-800">右外側の最末端</strong>に強制配置されます。</p>
+                        </div>
+
+                        <!-- オート (おすすめ) -->
+                        <div class="bg-blue-50 rounded-2xl p-6 border-2 border-blue-300 text-center flex flex-col items-center relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">おすすめ</div>
+                            <div class="font-bold text-blue-700 bg-white px-6 py-1 rounded-full shadow-sm mb-6 border border-blue-200">オート</div>
+                            
+                            <div class="relative w-full h-32 flex justify-center items-center">
+                                <!-- 天秤のイラスト表現 -->
+                                <div class="w-full flex justify-between items-end px-4 border-b-2 border-blue-200 pb-2 relative">
+                                    <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-4 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white z-10">⚖️</div>
+                                    <div class="flex flex-col items-center gap-1">
+                                        <div class="w-6 h-6 rounded-full bg-gray-400"></div>
+                                        <div class="w-6 h-6 rounded-full bg-gray-400"></div>
+                                        <span class="text-xs font-bold text-gray-500 mt-1">多い方</span>
+                                    </div>
+                                    <div class="flex flex-col items-center gap-1 relative">
+                                        <!-- 少ない方に自動配置されるアニメーション -->
+                                        <div class="absolute -top-10 text-pink-500 animate-bounce">⬇️</div>
+                                        <div class="w-6 h-6 rounded-full bg-pink-500 shadow-md"></div>
+                                        <span class="text-xs font-bold text-blue-600 mt-1">少ない方へ!</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-sm mt-4 text-gray-700 font-medium">システムが自動比較し、<strong class="text-blue-600">ポジションが少ない方のいちばん下</strong>へ配置します。<br><span class="text-xs text-gray-500">(同数の場合は左側)</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: タイトル獲得条件 -->
+                <div class="relative bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
+                    <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white font-black px-6 py-2 rounded-full shadow-md border-4 border-white flex items-center gap-2">
+                        <span>STEP 3</span>
+                    </div>
+                    
+                    <div class="text-center mt-6 mb-8">
+                        <h3 class="text-2xl font-bold text-gray-800 flex justify-center items-center gap-2">
+                            <span class="text-amber-500">🏆</span>
+                            タイトル（ランク）の獲得条件
+                        </h3>
+                        <p class="text-gray-500 mt-2 text-sm">タイトルが上がるとボーナス還元率が高くなります。以下は獲得に必要な「当月の小系列ポイント」です。</p>
+                        <div class="flex justify-center gap-4 mt-3 text-sm font-bold text-gray-600 bg-gray-50 inline-block px-4 py-2 rounded-lg">
+                            <span>必須条件:</span>
+                            <span class="text-blue-600">✓ 自身がアクティブ</span>
+                            <span class="text-blue-600">✓ 直紹介アクティブ1名以上</span>
+                        </div>
+                    </div>
+
+                    <!-- 階段状のタイトル表 -->
+                    <div class="w-full overflow-x-auto pb-4">
+                        <div class="min-w-[700px] flex items-end h-64 relative border-b-2 border-gray-800">
+                            
+                            <!-- 背景のメンバー区分帯 -->
+                            <div class="absolute bottom-0 left-0 w-[42%] h-full bg-blue-50/50 -z-10 rounded-t-xl border-t border-l border-blue-100"></div>
+                            <div class="absolute top-2 left-4 text-xs font-bold text-blue-400 bg-white px-2 py-1 rounded shadow-sm">エコノミー・プレミアム登録</div>
+
+                            <div class="absolute bottom-0 right-0 w-[58%] h-full bg-yellow-50/50 -z-10 rounded-t-xl border-t border-r border-yellow-200"></div>
+                            <div class="absolute top-2 right-4 text-xs font-bold text-amber-600 bg-white px-2 py-1 rounded shadow-sm border border-yellow-200 flex items-center gap-1">👑 プレミアム登録 限定！</div>
+                            
+                            <!-- 境界線 -->
+                            <div class="absolute bottom-0 left-[42%] w-px h-full border-l-2 border-dashed border-gray-300"></div>
+
+                            <!-- 各バー -->
+                            <!-- 1スター -->
+                            <div class="w-[14%] flex flex-col items-center justify-end h-[20%] group">
+                                <div class="text-[10px] text-gray-500 mb-1 font-bold">2,700pt</div>
+                                <div class="w-full bg-blue-200 rounded-t-md h-full transition-all group-hover:bg-blue-300 relative">
+                                    <div class="absolute -top-6 left-0 w-full text-center text-xs font-black text-gray-700">1★</div>
+                                </div>
+                            </div>
+                            <!-- 2スター -->
+                            <div class="w-[14%] flex flex-col items-center justify-end h-[30%] group">
+                                <div class="text-[10px] text-gray-500 mb-1 font-bold">8,000pt</div>
+                                <div class="w-full bg-blue-300 rounded-t-md h-full transition-all group-hover:bg-blue-400 relative">
+                                    <div class="absolute -top-6 left-0 w-full text-center text-xs font-black text-gray-700">2★</div>
+                                </div>
+                            </div>
+                            <!-- 3スター -->
+                            <div class="w-[14%] flex flex-col items-center justify-end h-[40%] group">
+                                <div class="text-[10px] text-gray-500 mb-1 font-bold">16,000pt</div>
+                                <div class="w-full bg-blue-400 rounded-t-md h-full transition-all group-hover:bg-blue-500 relative">
+                                    <div class="absolute -top-6 left-0 w-full text-center text-xs font-black text-gray-700">3★</div>
+                                </div>
+                            </div>
+                            <!-- 4スター -->
+                            <div class="w-[14.5%] flex flex-col items-center justify-end h-[55%] group pl-1">
+                                <div class="text-[10px] text-amber-600 mb-1 font-bold">32,500pt</div>
+                                <div class="w-full premium-bg rounded-t-md h-full transition-all shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)] relative">
+                                    <div class="absolute -top-6 left-0 w-full text-center text-xs font-black text-amber-700">4★</div>
+                                </div>
+                            </div>
+                            <!-- 5スター -->
+                            <div class="w-[14.5%] flex flex-col items-center justify-end h-[70%] group">
+                                <div class="text-[10px] text-amber-600 mb-1 font-bold">65,000pt</div>
+                                <div class="w-full premium-bg rounded-t-md h-full transition-all shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)] relative">
+                                    <div class="absolute -top-6 left-0 w-full text-center text-xs font-black text-amber-700">5★</div>
+                                </div>
+                            </div>
+                            <!-- 6スター -->
+                            <div class="w-[14.5%] flex flex-col items-center justify-end h-[85%] group">
+                                <div class="text-[10px] text-amber-600 mb-1 font-bold">130,000pt</div>
+                                <div class="w-full premium-bg rounded-t-md h-full transition-all shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)] relative">
+                                    <div class="absolute -top-6 left-0 w-full text-center text-xs font-black text-amber-700">6★</div>
+                                </div>
+                            </div>
+                            <!-- 7スター -->
+                            <div class="w-[14.5%] flex flex-col items-center justify-end h-[100%] group relative">
+                                <div class="absolute -top-12 text-center w-full">
+                                    <span class="text-2xl animate-pulse inline-block">👑</span>
+                                </div>
+                                <div class="text-[10px] text-red-600 mb-1 font-black">260,000pt</div>
+                                <div class="w-full bg-gradient-to-t from-red-500 to-red-400 rounded-t-md h-full transition-all shadow-lg relative">
+                                    <div class="absolute -top-6 left-0 w-full text-center text-sm font-black text-red-600">7★</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: 5つの特定利益 -->
+                <div class="relative bg-white p-8 rounded-3xl shadow-lg border border-gray-100">
+                    <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white font-black px-6 py-2 rounded-full shadow-md border-4 border-white flex items-center gap-2">
+                        <span>STEP 4</span>
+                    </div>
+                    
+                    <div class="text-center mt-6 mb-8">
+                        <h3 class="text-2xl font-bold text-gray-800 flex justify-center items-center gap-2">
+                            <span class="text-yellow-500">🪙</span>
+                            ５つのボーナス 完全攻略マップ
+                        </h3>
+                        <p class="text-gray-500 mt-2">※「1ポイント＝100円」で計算されます。</p>
+                    </div>
+
+                    <!-- カードグリッド -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        
+                        <!-- 1 -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-blue-100 p-2 rounded-lg text-blue-600 text-xl group-hover:scale-110 transition-transform">👤+</div>
+                                <h4 class="font-bold text-gray-800 text-lg">1. ダイレクト<br><span class="text-sm font-normal text-gray-500">コミッション</span></h4>
+                            </div>
+                            <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                直紹介者が購入したポイントの<strong class="text-blue-600 text-lg ml-1">10%</strong>
+                            </p>
+                        </div>
+
+                        <!-- 2 -->
+                        <div class="bg-white rounded-2xl p-5 border border-blue-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group lg:col-span-2 lg:row-span-2">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                            <div class="absolute -right-4 -bottom-4 opacity-5 text-blue-500 text-9xl">🌳</div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="bg-blue-100 p-3 rounded-xl text-blue-600 text-2xl group-hover:scale-110 transition-transform">📊</div>
+                                <div>
+                                    <h4 class="font-black text-gray-800 text-xl">2. バイナリーボーナス</h4>
+                                    <p class="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded inline-block mt-1">最もメインとなるボーナス</p>
+                                </div>
+                            </div>
+                            <div class="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-blue-100 relative z-10">
+                                <p class="text-sm text-gray-700 mb-3 text-center">小系列のポイント × <strong class="text-blue-700">還元率</strong></p>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between items-center p-2 rounded bg-gray-50 text-sm">
+                                        <span class="text-gray-600">カスタマー</span>
+                                        <span class="font-bold text-gray-800">5%</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-2 rounded bg-blue-50 text-sm border border-blue-100">
+                                        <span class="text-blue-800 font-medium">エコノミー</span>
+                                        <span class="font-bold text-blue-600">8%</span>
+                                    </div>
+                                    <div class="flex justify-between items-center p-3 rounded-lg premium-bg text-white shadow-sm">
+                                        <span class="font-bold flex items-center gap-1">⭐ プレミアム</span>
+                                        <span class="font-black text-lg">最大 18%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-3 flex items-start gap-1 relative z-10">
+                                <span class="flex-shrink-0 mt-0.5">ℹ️</span>
+                                大系列の余ったポイントは最大260,000ptまで翌月繰越可能（※非アクティブになると消滅します）
+                            </p>
+                        </div>
+
+                        <!-- 3 -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-green-100 p-2 rounded-lg text-green-600 text-xl group-hover:scale-110 transition-transform">👥</div>
+                                <h4 class="font-bold text-gray-800 text-lg">3. マッチング<br><span class="text-sm font-normal text-gray-500">ボーナス</span></h4>
+                            </div>
+                            <p class="text-sm text-gray-700 mb-2 font-medium">直紹介者が得たバイナリーの<strong class="text-green-600">10%</strong></p>
+                            <ul class="text-xs text-gray-600 space-y-1 bg-gray-50 p-2 rounded border border-gray-100">
+                                <li class="flex justify-between"><span>直アクティブ 1人</span> <span>1段目まで</span></li>
+                                <li class="flex justify-between"><span>直アクティブ 2人</span> <span>2段目まで</span></li>
+                                <li class="flex justify-between font-bold text-green-700"><span>直アクティブ 3人〜</span> <span>3段目まで</span></li>
+                            </ul>
+                        </div>
+
+                        <!-- 4 -->
+                        <div class="bg-white rounded-2xl p-5 border border-amber-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="bg-yellow-100 p-2 rounded-lg text-amber-600 text-xl group-hover:scale-110 transition-transform">📈</div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-lg leading-tight">4. タイトル差額<br><span class="text-sm font-normal text-gray-500">ボーナス</span></h4>
+                                </div>
+                            </div>
+                            <div class="text-xs font-bold text-amber-700 bg-yellow-50 px-2 py-1 rounded mb-2 inline-block border border-yellow-200">プレミアム ＆ 2スター以上限定</div>
+                            <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded border border-gray-100 text-center">
+                                自身のタイトル%<br><strong class="text-lg text-gray-400">ー</strong><br>直下会員のタイトル%
+                            </p>
+                        </div>
+
+                        <!-- 5 -->
+                        <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 shadow-lg relative overflow-hidden group lg:col-span-2">
+                            <div class="absolute -right-4 -bottom-4 opacity-10 text-yellow-500 text-9xl">💎</div>
+                            <div class="flex items-center justify-between relative z-10">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <div class="bg-yellow-500/20 p-2 rounded-lg text-yellow-400 text-2xl group-hover:scale-110 transition-transform">🎁</div>
+                                    <div>
+                                        <h4 class="font-black text-white text-xl">5. スペシャルフィー</h4>
+                                        <p class="text-xs text-yellow-400">年1回の特大ボーナス</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-black text-yellow-400">5% 分配</div>
+                                    <div class="text-xs text-gray-400">前期の会社純利益から</div>
+                                </div>
+                            </div>
+                            <div class="mt-4 bg-white/10 p-3 rounded-lg backdrop-blur-sm border border-white/20 relative z-10">
+                                <p class="text-xs text-gray-300 font-bold mb-1">【絶対条件】</p>
+                                <p class="text-sm text-white flex items-center gap-2">
+                                    <span>✅</span>
+                                    12ヶ月連続アクティブ ＆ 3ポジション以上を維持
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- STEP 5: クーリング・オフ -->
+                <div id="compliance-section" class="relative bg-white p-8 rounded-3xl shadow-lg border border-gray-100 scroll-mt-24">
+                    <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-green-600 text-white font-black px-6 py-2 rounded-full shadow-md border-4 border-white flex items-center gap-2">
+                        <span>🛡️</span>
+                        <span>STEP 5: 安心ルール</span>
+                    </div>
+                    
+                    <div class="text-center mt-6 mb-8">
+                        <h3 class="text-2xl font-bold text-gray-800">
+                            クーリング・オフ制度
+                        </h3>
+                        <p class="text-gray-500 mt-2 text-sm">法に基づいた安心のルールが整備されています。相手にも堂々とお伝えください。</p>
+                    </div>
+
+                    <!-- タイムライン図解 -->
+                    <div class="relative max-w-3xl mx-auto py-8">
+                        <!-- ベースライン -->
+                        <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -translate-y-1/2 rounded-full hidden md:block"></div>
+                        
+                        <div class="flex flex-col md:flex-row justify-between items-center relative z-10 gap-8 md:gap-0">
+                            
+                            <!-- スタート -->
+                            <div class="flex flex-col items-center bg-white p-2">
+                                <div class="w-12 h-12 rounded-full bg-gray-100 border-4 border-white shadow-md flex items-center justify-center text-xl mb-2">
+                                    📄
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-xs font-bold text-gray-500">起算日（遅い方）</p>
+                                    <p class="text-sm font-bold text-gray-800">契約書面の受領<br><span class="text-gray-400 text-xs">または</span><br>初回商品の受領</p>
+                                </div>
+                            </div>
+
+                            <!-- 20日以内（上ルート） -->
+                            <div class="flex flex-col items-center relative group w-full md:w-auto">
+                                <!-- モバイル用ライン -->
+                                <div class="h-8 w-1 bg-gray-200 md:hidden my-2"></div>
+                                
+                                <div class="bg-green-50 border-2 border-green-500 rounded-xl p-4 shadow-lg transform transition-transform group-hover:scale-105 relative z-10 w-full md:w-64 text-center">
+                                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                                        20日以内
+                                    </div>
+                                    <h4 class="font-black text-green-700 mt-2 mb-1 flex justify-center items-center gap-1">
+                                        <span>✅</span> クーリング・オフ可能
+                                    </h4>
+                                    <p class="text-xs text-gray-600 font-medium">書面や電磁的記録で通知するだけ</p>
+                                    <div class="mt-2 pt-2 border-t border-green-200 text-xs text-green-800 font-bold text-left space-y-1">
+                                        <div>✓ 理由を問わず契約解除</div>
+                                        <div>✓ 違約金・損害賠償なし</div>
+                                        <div>✓ 全額返金</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 20日経過後（下ルート） -->
+                            <div class="flex flex-col items-center relative group w-full md:w-auto md:mt-32">
+                                <!-- PC用分岐線 -->
+                                <svg class="absolute -top-16 left-1/2 -translate-x-1/2 w-8 h-16 hidden md:block text-gray-300" fill="none" viewBox="0 0 24 48" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 0v40m-6-6l6 6 6-6"/>
+                                </svg>
+                                <!-- モバイル用ライン -->
+                                <div class="h-8 w-1 bg-gray-200 md:hidden my-2"></div>
+
+                                <div class="bg-gray-50 border-2 border-gray-300 rounded-xl p-4 shadow-md w-full md:w-56 text-center">
+                                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-gray-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                                        20日経過後
+                                    </div>
+                                    <h4 class="font-bold text-gray-700 mt-2 mb-1 text-sm">中途解約ルール適用</h4>
+                                    <div class="text-xs text-gray-600 text-left mt-2 space-y-1">
+                                        <p>以下の条件で返品可能(手数料10%引)</p>
+                                        <ul class="list-disc pl-4 text-gray-500">
+                                            <li>登録から1年以内</li>
+                                            <li>受取から90日以内</li>
+                                            <li>未使用商品</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <p class="text-xs text-center text-gray-400 mt-4">
+                        ※返金やボーナス支払いに関する振込手数料（550円）は会員負担となります。
+                    </p>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer / Compliance -->
+    <footer class="bg-gray-900 text-gray-300 py-12 px-4 border-t-4 border-blue-500 mt-12">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-6 items-center">
+                <div class="bg-blue-900/50 p-4 rounded-full text-2xl flex-shrink-0">
+                    ⚠️
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-lg mb-2">【重要】コンプライアンスの徹底</h3>
+                    <p class="text-sm leading-relaxed">
+                        ネクスピュアのビジネスを紹介する際は、必ず相手の方が会員登録する・しないに関わらず、<strong class="text-white">事前に最新の「概要書面」を手渡しし、記載内容を詳しく説明することが法律で義務付けられています。</strong><br>
+                        このマニュアルと合わせて概要書面を正しく活用し、クリーンで飛躍的な組織構築を目指してください。
+                    </p>
+                </div>
+            </div>
+            <div class="text-center mt-8 text-xs text-gray-500">
+                &copy; NEXPURE Guide Manual. This is an unofficial illustrative guide based on the summary document.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Q&Aのアコーディオン用スクリプト (外部非依存) -->
+    <script>
+        function toggleAccordion(id) {
+            const content = document.getElementById('content-' + id);
+            const icon = document.getElementById('icon-' + id);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+    </script>
+</body>
+</html>
