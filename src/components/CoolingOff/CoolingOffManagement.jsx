@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import {
     FileUp,
@@ -8,10 +8,11 @@ import {
     Shield,
     BookOpen,
     X,
-    Skull,
-    AlertTriangle,
+    Star,
+    AlertCircle,
     CheckCircle,
-    Clock
+    Clock,
+    Sparkles
 } from 'lucide-react';
 import './CoolingOffManagement.css';
 
@@ -45,13 +46,17 @@ const CoolingOffManagement = () => {
         resetIdleTimer();
 
         const events = ['mousemove', 'mousedown', 'keypress', 'touchstart'];
-        events.forEach(event => window.addEventListener(event, handleActivity));
+        const handleActivityWrapper = () => {
+            if (!isLocked) resetIdleTimer();
+        };
+
+        events.forEach(event => window.addEventListener(event, handleActivityWrapper));
 
         return () => {
-            events.forEach(event => window.removeEventListener(event, handleActivity));
+            events.forEach(event => window.removeEventListener(event, handleActivityWrapper));
             clearTimeout(idleTimerRef.current);
         };
-    }, []);
+    }, [isLocked]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -82,16 +87,12 @@ const CoolingOffManagement = () => {
                 .insert([{ headers: newHeaders, data: newData }]);
 
             if (error) throw error;
-            setSaveStatus('保存しました 🦇');
+            setSaveStatus('記録を星に刻みました 🌟');
             setTimeout(() => setSaveStatus(''), 2000);
         } catch (err) {
             console.error('Save error:', err);
-            setSaveStatus('保存失敗 💀');
+            setSaveStatus('更新失敗 ☄️');
         }
-    };
-
-    const handleActivity = () => {
-        if (!isLocked) resetIdleTimer();
     };
 
     const resetIdleTimer = () => {
@@ -125,7 +126,7 @@ const CoolingOffManagement = () => {
 
             let headerIndex = 0;
             for (let i = 0; i < Math.min(lines.length, 100); i++) {
-                if (lines[i].includes('種別') || lines[i].includes('お名前')) {
+                if (lines[i].includes('種別') || lines[i].includes('お名前') || lines[i].includes('入金依頼')) {
                     headerIndex = i;
                     break;
                 }
@@ -137,11 +138,10 @@ const CoolingOffManagement = () => {
 
             let tempHeaders = rawHeaders.slice(0, lastValidCol + 1);
             let noIdx = tempHeaders.findIndex(h => h.trim() === 'No.' || h.trim() === 'No');
-            let filteredHeaders = tempHeaders.filter((_, i) => i !== noIdx);
+            let hasReq = tempHeaders.some(h => h.trim() === '入金依頼');
 
-            if (!filteredHeaders.includes('入金依頼')) {
-                filteredHeaders.unshift('入金依頼');
-            }
+            let filteredHeaders = tempHeaders.filter((_, i) => i !== noIdx);
+            if (!hasReq) filteredHeaders.unshift('入金依頼');
 
             const newData = [];
             for (let i = headerIndex + 1; i < lines.length; i++) {
@@ -150,8 +150,15 @@ const CoolingOffManagement = () => {
                     const row = parseCsvLine(line).slice(0, tempHeaders.length);
                     if (row.join('').trim().length > 0) {
                         let filteredRow = row.filter((_, idx) => idx !== noIdx);
-                        if (filteredHeaders[0] === '入金依頼' && filteredRow.length < filteredHeaders.length) {
+                        if (!hasReq) {
                             filteredRow.unshift(false);
+                        } else {
+                            const reqColIdx = tempHeaders.findIndex(h => h.trim() === '入金依頼');
+                            // Handle case where we filter out 'No' column - adjust index
+                            let actualReqIdx = noIdx !== -1 && reqColIdx > noIdx ? reqColIdx - 1 : reqColIdx;
+                            if (actualReqIdx !== -1) {
+                                filteredRow[actualReqIdx] = (filteredRow[actualReqIdx] === 'true' || filteredRow[actualReqIdx] === true);
+                            }
                         }
 
                         filteredHeaders.forEach((h, c) => {
@@ -202,6 +209,7 @@ const CoolingOffManagement = () => {
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        arrivalDate.setHours(0, 0, 0, 0);
         const diffDays = Math.ceil((today.getTime() - arrivalDate.getTime()) / (1000 * 60 * 60 * 24));
 
         if (diffDays <= 20) return 'cooling';
@@ -219,10 +227,8 @@ const CoolingOffManagement = () => {
         saveData(headers, newData);
     };
 
-    const addNewRecord = () => {
-        const newRow = Array(headers.length).fill('');
-        if (headers[0] === '入金依頼') newRow[0] = false;
-        const newData = [newRow, ...tableData];
+    const addNewRecord = (formData) => {
+        const newData = [formData, ...tableData];
         setTableData(newData);
         saveData(headers, newData);
     };
@@ -234,8 +240,9 @@ const CoolingOffManagement = () => {
         });
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
+        const now = new Date();
         link.href = URL.createObjectURL(blob);
-        link.download = `クーリングオフ_更新版_${format(new Date(), 'yyyyMMdd')}.csv`;
+        link.download = `Stella_クーリングオフ_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.csv`;
         link.click();
     };
 
@@ -246,22 +253,25 @@ const CoolingOffManagement = () => {
         const targetRows = tableData.filter(row => row[reqIdx] === true || row[reqIdx] === 'true');
         if (targetRows.length === 0) return alert('入金依頼にチェックが入っているデータがありません');
 
-        const nameIdx = headers.findIndex(h => h.includes('お名前') || h.includes('氏名'));
-        const amountIdx = headers.findIndex(h => h.includes('金額'));
-        const bankIdx = headers.findIndex(h => h.includes('口座') || h.includes('銀行'));
+        const nameIdx = headers.findIndex(h => h.includes('お名前') || h.includes('氏名') || h === '名前');
+        const amountIdx = headers.findIndex(h => h.includes('返金額') || h.includes('金額'));
+        const bankIdx = headers.findIndex(h => h.includes('振込口座') || h.includes('口座') || h.includes('銀行') || h.includes('金融機関'));
 
-        let text = `【振込依頼データ】\n出力日時: ${new Date().toLocaleString()}\n件数: ${targetRows.length}件\n\n`;
-        targetRows.forEach((row, i) => {
-            text += `[${i + 1}件目]\n`;
-            text += `お名前: ${row[nameIdx] || '-'}\n`;
-            text += `金額: ${row[amountIdx] || '-'}\n`;
-            text += `口座: ${row[bankIdx] || '-'}\n\n`;
+        let text = `【振込依頼データ】\n出力日時: ${new Date().toLocaleString('ja-JP')}\n件数: ${targetRows.length}件\n\n`;
+        text += `========================================\n\n`;
+        targetRows.forEach((row, idx) => {
+            text += `[${idx + 1}件目]\n`;
+            text += `お名前　: ${row[nameIdx] || '（未登録）'}\n`;
+            text += `返金額　: ${row[amountIdx] || '（未登録）'}\n`;
+            text += `振込口座:\n${(row[bankIdx] || '（未登録）').replace(/"/g, '')}\n\n`;
+            text += `----------------------------------------\n\n`;
         });
 
         const blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
         const link = document.createElement("a");
+        const now = new Date();
         link.href = URL.createObjectURL(blob);
-        link.download = `振込依頼_${format(new Date(), 'yyyyMMdd')}.txt`;
+        link.download = `振込依頼データ_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.txt`;
         link.click();
     };
 
@@ -273,7 +283,7 @@ const CoolingOffManagement = () => {
                     type="checkbox"
                     checked={val === true || val === 'true'}
                     onChange={(e) => updateCell(rIdx, cIdx, e.target.checked)}
-                    className="w-5 h-5 cursor-pointer"
+                    className="w-5 h-5 cursor-pointer accent-sky-400"
                 />
             );
         }
@@ -284,19 +294,20 @@ const CoolingOffManagement = () => {
                     type="date"
                     value={yyyymmdd}
                     onChange={(e) => updateCell(rIdx, cIdx, e.target.value)}
-                    className="bg-transparent border-none text-inherit w-full"
+                    className={`bg-transparent border-none text-inherit w-full outline-none ${!val ? 'opacity-30' : ''}`}
                 />
             );
         }
         if (PULLDOWN_KEYS.includes(h)) {
+            const options = pulldownOptions[h] || [];
             return (
                 <select
                     value={val}
                     onChange={(e) => updateCell(rIdx, cIdx, e.target.value)}
                     className="bg-transparent border-none text-inherit w-full outline-none"
                 >
-                    {(pulldownOptions[h] || []).map(opt => (
-                        <option key={opt} value={opt} className="bg-gray-900">{opt}</option>
+                    {options.map(opt => (
+                        <option key={opt} value={opt} className="bg-white text-slate-700">{opt}</option>
                     ))}
                 </select>
             );
@@ -306,24 +317,106 @@ const CoolingOffManagement = () => {
                 type="text"
                 value={val}
                 onChange={(e) => updateCell(rIdx, cIdx, e.target.value)}
-                className="bg-transparent border-none text-inherit w-full outline-none"
+                className="bg-transparent border-none text-inherit w-full outline-none focus:bg-white/20 px-1 rounded transition-colors"
+                spellCheck="false"
             />
+        );
+    };
+
+    // Component for adding new record
+    const AddRecordRow = () => {
+        const [formData, setFormData] = useState([]);
+
+        useEffect(() => {
+            setFormData(headers.map(h => (h === '入金依頼' ? false : '')));
+        }, [headers]);
+
+        const handleChange = (idx, value) => {
+            const newForm = [...formData];
+            if (headers[idx].includes('日') && value) value = value.replace(/-/g, '/');
+            newForm[idx] = value;
+            setFormData(newForm);
+        };
+
+        const handleAdd = () => {
+            addNewRecord(formData);
+            setFormData(headers.map(h => (h === '入金依頼' ? false : '')));
+        };
+
+        if (headers.length === 0) return null;
+
+        return (
+            <tr className="bg-white/20 sticky top-12 z-10 backdrop-blur-md shadow-sm border-b-2 border-sky-200">
+                <td className="p-4 text-center">
+                    <Sparkles className="w-5 h-5 text-sky-400 inline-block" />
+                </td>
+                {headers.map((h, i) => (
+                    <td key={i} className="p-2">
+                        <div className="flex gap-2 items-center">
+                            {h === '入金依頼' ? (
+                                <input
+                                    type="checkbox"
+                                    checked={formData[i] || false}
+                                    onChange={(e) => handleChange(i, e.target.checked)}
+                                    className="w-5 h-5 cursor-pointer accent-sky-400 mx-auto"
+                                />
+                            ) : h.includes('日') ? (
+                                <input
+                                    type="date"
+                                    value={formData[i] ? formData[i].replace(/\//g, '-') : ''}
+                                    onChange={(e) => handleChange(i, e.target.value)}
+                                    className={`bg-white/50 border border-sky-100 rounded p-1 w-full text-sm ${!formData[i] ? 'opacity-30' : ''}`}
+                                />
+                            ) : PULLDOWN_KEYS.includes(h) ? (
+                                <select
+                                    value={formData[i] || ''}
+                                    onChange={(e) => handleChange(i, e.target.value)}
+                                    className="bg-white/50 border border-sky-100 rounded p-1 w-full text-sm"
+                                >
+                                    {(pulldownOptions[h] || []).map(opt => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <input
+                                    type="text"
+                                    value={formData[i] || ''}
+                                    onChange={(e) => handleChange(i, e.target.value)}
+                                    placeholder="新星を配置..."
+                                    className="bg-white/50 border border-sky-100 rounded p-1 w-full text-sm"
+                                />
+                            )}
+                            {i === headers.length - 1 && (
+                                <button onClick={handleAdd} className="btn-mystic px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">
+                                    ✨ 追加
+                                </button>
+                            )}
+                        </div>
+                    </td>
+                ))}
+            </tr>
         );
     };
 
     if (isLocked) {
         return (
-            <div className="blood-overlay active" onClick={() => setIsLocked(false)}>
+            <div className="cosmic-overlay active" onClick={() => setIsLocked(false)}>
                 <div className="locked-msg">
-                    <Skull className="w-16 h-16 mx-auto mb-4 text-red-600 animate-pulse" />
-                    🦇 吸血鬼が監視中...<br />
-                    <span className="text-xl font-normal text-gray-400">(クリックして封印解除)</span>
+                    ✩ 神秘の魔法で保護中 ✩<br />
+                    <span className="text-xl font-normal text-sky-400 mt-4 block">(クリックしてふたたび目覚める)</span>
                 </div>
-                {[...Array(20)].map((_, i) => (
+                {[...Array(30)].map((_, i) => (
                     <div
                         key={i}
-                        className="blood-drip"
-                        style={{ left: `${Math.random() * 100}%`, animationDelay: `${Math.random() * 5}s`, width: `${Math.random() * 20 + 5}px` }}
+                        className="shooting-star"
+                        style={{
+                            left: `${Math.random() * 150}vw`,
+                            top: `${Math.random() * 100 - 50}vh`,
+                            width: `${Math.random() * 80 + 30}px`,
+                            height: `${Math.random() * 2 + 1}px`,
+                            animationDuration: `${Math.random() * 3 + 1.5}s`,
+                            animationDelay: `${Math.random() * 4}s`
+                        }}
                     />
                 ))}
             </div>
@@ -331,140 +424,132 @@ const CoolingOffManagement = () => {
     }
 
     return (
-        <div className="cooling-off-container bg-dracula-bg min-h-screen text-gray-100 p-6 font-serif">
-            <header className="mb-8">
-                <h1 className="horror-title text-5xl text-center mb-2">Cooling-Off Castle</h1>
-                <p className="text-dracula-gold text-center text-xl italic mb-6">クーリングオフ・返品管理システム</p>
+        <div className="cooling-off-container">
+            <div className="ambient-stars" />
 
-                <div className="flex justify-center gap-4">
-                    <button onClick={() => setIsManualOpen(true)} className="btn bg-gray-800 hover:bg-gray-700">
-                        <BookOpen className="w-4 h-4 mr-2" /> 使い方マニュアル
-                    </button>
-                    <button onClick={() => setIsLocked(true)} className="btn bg-gray-800 hover:bg-gray-700">
-                        <Shield className="w-4 h-4 mr-2" /> 席をはずす
-                    </button>
-                </div>
+            <header>
+                <h1>Stella</h1>
+                <div className="subtitle">✨ クーリングオフ・返品管理 星空システム ✨</div>
+                <button onClick={() => setIsManualOpen(true)} className="btn btn-mystic absolute top-0 right-0">
+                    📖 使い方マニュアル
+                </button>
             </header>
 
-            <div className="controls bg-dracula-panel p-6 rounded-xl border border-red-900 shadow-2xl mb-8 flex flex-wrap justify-between items-center gap-4">
-                <div className="flex gap-3">
+            <div className="glass-panel controls p-6 mb-6">
+                <div className="flex gap-4">
                     <div className="relative">
-                        <button className="btn bg-red-950 border-red-600">
-                            <FileUp className="w-4 h-4 mr-2" /> CSV読込
-                        </button>
+                        <button className="btn btn-primary">🌠 CSV読込</button>
                         <input type="file" onChange={handleFileUpload} className="absolute inset-0 opacity-0 cursor-pointer" accept=".csv" />
                     </div>
-                    <button onClick={exportCSV} className="btn bg-red-900 border-red-600">
-                        <Save className="w-4 h-4 mr-2" /> 保存 (CSV)
-                    </button>
-                    <button onClick={exportTransferData} className="btn bg-green-950 border-green-600 text-green-400">
-                        <Download className="w-4 h-4 mr-2" /> 振込データ出力
+                    <button onClick={exportCSV} className="btn btn-primary">💾 保存 (CSV)</button>
+                    <button onClick={exportTransferData} className="btn btn-success">💸 振込データ出力</button>
+                    <button
+                        onClick={() => { if (confirm('星の記録をクリアしますか？')) { setTableData([]); setHeaders([]); saveData([], []); } }}
+                        className="btn btn-danger"
+                    >
+                        🧹 クリア
                     </button>
                 </div>
 
-                <div className="flex gap-6 items-center">
-                    <div className="flex gap-4 text-sm">
+                <div className="flex gap-8 items-center">
+                    <div className="flex gap-4 text-sm font-semibold">
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_green]" /> クーリングオフ
+                            <div className="w-4 h-4 rounded-full status-cooling" /> 20日以内
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_8px_yellow]" /> 90日経過
+                            <div className="w-4 h-4 rounded-full status-90" /> 90日経過
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_red]" /> 期限切れ
+                            <div className="w-4 h-4 rounded-full status-expired" /> 期限切れ
                         </div>
                     </div>
-                    <button
-                        onClick={() => { if (confirm('データをクリアしますか？')) { setTableData([]); setHeaders([]); saveData([], []); } }}
-                        className="text-gray-500 hover:text-red-500 transition-colors"
-                    >
-                        <Trash2 className="w-5 h-5" />
-                    </button>
+                    <button onClick={() => setIsLocked(true)} className="btn btn-mystic">🌌 宇宙へ出かける</button>
                 </div>
             </div>
 
-            <div className="table-container bg-black/40 backdrop-blur-md rounded-xl border border-red-950 overflow-auto max-h-[70vh]">
+            <div className="glass-panel table-container">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="bg-red-950/40 text-dracula-gold sticky top-0 z-10 box-decoration-clone">
-                            <th className="p-4 border-b border-red-900">判定</th>
+                        <tr className="bg-white/80 sticky top-0 z-20 shadow-sm border-b">
+                            <th className="p-4 w-24">判定</th>
                             {headers.map((h, i) => (
-                                <th key={i} className="p-4 border-b border-red-900 whitespace-nowrap">{h}</th>
+                                <th key={i} className="p-4 whitespace-nowrap cursor-pointer hover:text-sky-600 transition-colors">
+                                    {h} {sortConfig.key === i && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                                </th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
-                        <tr className="bg-white/5 border-b border-red-900/30">
-                            <td className="p-4"><Skull className="w-5 h-5 text-gray-700" /></td>
-                            {headers.map((_, i) => (
-                                <td key={i} className="p-2">
-                                    {i === headers.length - 1 ? (
-                                        <div className="flex items-center gap-2">
-                                            <input type="text" placeholder="新規入力..." className="bg-black/40 border border-gray-800 p-2 rounded w-full" />
-                                            <button onClick={addNewRecord} className="bg-red-900 p-2 rounded hover:bg-red-700 transition-colors">
-                                                追加
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <input type="text" placeholder="..." className="bg-black/40 border border-gray-800 p-2 rounded w-full" />
-                                    )}
+                        <AddRecordRow />
+                        {tableData.length === 0 ? (
+                            <tr>
+                                <td colSpan={headers.length + 1} className="p-20 text-center text-slate-400 italic">
+                                    星の海からCSVファイルを読み込んでください... ✨
                                 </td>
-                            ))}
-                        </tr>
-                        {tableData.map((row, rIdx) => {
-                            const arrivalDateIdx = headers.findIndex(h => TARGET_DATE_COL_NAMES.includes(h));
-                            const status = arrivalDateIdx !== -1 ? calculateStatus(row[arrivalDateIdx]) : 'unknown';
-                            const isCard = row.some(cell => cell?.toString().includes('カード'));
+                            </tr>
+                        ) : (
+                            tableData.map((row, rIdx) => {
+                                const arrivalDateIdx = headers.findIndex(h => TARGET_DATE_COL_NAMES.includes(h) || h.includes('到着'));
+                                const status = arrivalDateIdx !== -1 ? calculateStatus(row[arrivalDateIdx]) : 'unknown';
+                                const isCard = row.some(cell => cell?.toString().includes('カード'));
 
-                            return (
-                                <tr key={rIdx} className={`border-b border-red-900/20 hover:bg-white/5 transition-colors ${isCard ? 'bg-red-900/10' : ''}`}>
-                                    <td className="p-4">
-                                        {status === 'cooling' && <span className="status-badge status-cooling">🦇20日以内</span>}
-                                        {status === '90days' && <span className="status-badge status-90">🕸️90日超過</span>}
-                                        {status === 'expired' && <span className="status-badge status-expired">💀期限切れ</span>}
-                                        {status === 'unknown' && <span className="text-gray-600">--</span>}
-                                    </td>
-                                    {row.map((cell, cIdx) => (
-                                        <td key={cIdx} className="p-4 min-w-[120px]">
-                                            {renderCellInput(cell, rIdx, cIdx)}
+                                return (
+                                    <tr key={rIdx} className={`border-b border-white/40 hover:bg-white/40 transition-colors ${isCard ? 'row-card-payment' : ''}`}>
+                                        <td className="p-4">
+                                            {status === 'cooling' && <span className="status-badge status-cooling">🌟 20日以内</span>}
+                                            {status === '90days' && <span className="status-badge status-90">🌙 90日経過</span>}
+                                            {status === 'expired' && <span className="status-badge status-expired">☄️ 期限切れ</span>}
+                                            {status === 'unknown' && <span className="opacity-20">--</span>}
                                         </td>
-                                    ))}
-                                </tr>
-                            );
-                        })}
+                                        {row.map((cell, cIdx) => (
+                                            <td key={cIdx} className="p-4 min-w-[120px]">
+                                                {renderCellInput(cell, rIdx, cIdx)}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                );
+                            })
+                        )}
                     </tbody>
                 </table>
             </div>
 
             {saveStatus && (
-                <div className="fixed top-24 right-10 bg-dracula-gold text-black px-4 py-2 rounded-lg font-bold shadow-2xl animate-bounce">
+                <div className="fixed bottom-10 right-10 bg-sky-500 text-white px-6 py-3 rounded-full font-bold shadow-2xl animate-bounce z-50">
                     {saveStatus}
                 </div>
             )}
 
             {isManualOpen && (
-                <div className="modal-overlay active flex items-center justify-center bg-black/80 fixed inset-0 z-[1000]" onClick={() => setIsManualOpen(false)}>
-                    <div className="modal-content bg-dracula-panel border-2 border-red-900 p-8 rounded-2xl max-w-2xl text-gray-200 relative m-4" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setIsManualOpen(false)} className="absolute top-4 right-4 text-dracula-gold hover:text-red-500">
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-sky-900/20 backdrop-blur-sm" onClick={() => setIsManualOpen(false)}>
+                    <div className="bg-white/90 glass-panel p-10 rounded-3xl max-w-2xl w-full m-4 shadow-2xl border-2 border-white relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setIsManualOpen(false)} className="absolute top-6 right-6 text-slate-400 hover:text-sky-500 transition-colors">
                             <X className="w-8 h-8" />
                         </button>
-                        <h2 className="text-3xl horror-title text-red-600 mb-6 border-b border-red-900 pb-2">使い方マニュアル</h2>
-                        <div className="space-y-4 max-h-[60vh] overflow-auto pr-4 custom-scrollbar">
+                        <h2 className="text-3xl font-bold text-sky-600 mb-8 border-b-2 border-sky-100 pb-4"> Stella 使い方ガイド</h2>
+                        <div className="space-y-6 text-slate-600 max-h-[60vh] overflow-y-auto pr-4 custom-scrollbar">
                             <section>
-                                <h3 className="text-dracula-gold font-bold text-lg mb-2">1. データの読み込み</h3>
-                                <p>「CSV読込」から管理用CSVを選択します。データは自動的にSupabaseへ保存されます。</p>
+                                <h3 className="text-xl font-bold text-sky-500 mb-3 flex items-center gap-2">
+                                    <Star className="w-5 h-5" /> 1. 星の記録の読み込み
+                                </h3>
+                                <p>「🌠 CSV読込」から管理用CSVを選択します。データはブラウザとクラウド（Supabase）に大切に保存されます。</p>
                             </section>
                             <section>
-                                <h3 className="text-dracula-gold font-bold text-lg mb-2">2. 状態の自動判定</h3>
-                                <ul className="list-disc list-inside space-y-1">
-                                    <li><span className="text-green-400">🦇20日以内</span>: クーリングオフ期間中</li>
-                                    <li><span className="text-yellow-400">🕸️90日超過</span>: 90日返品ルールの対象</li>
-                                    <li><span className="text-red-400">💀期限切れ</span>: 返品・解除期間外</li>
+                                <h3 className="text-xl font-bold text-sky-500 mb-3 flex items-center gap-2">
+                                    <Sparkles className="w-5 h-5" /> 2. 記録の編集と追加
+                                </h3>
+                                <p>各セルをクリックして数値を修正、または一番上の虹色の行から新しい記録を追加できます。修正は即座に反映されます。</p>
+                            </section>
+                            <section>
+                                <h3 className="text-xl font-bold text-sky-500 mb-3 flex items-center gap-2">
+                                    <AlertCircle className="w-5 h-5" /> 3. 状態の自動判定
+                                </h3>
+                                <ul className="space-y-3">
+                                    <li className="flex items-center gap-2 pt-2"><span className="status-badge status-cooling">🌟 20日以内</span> <span>クーリングオフ期間中</span></li>
+                                    <li className="flex items-center gap-2"><span className="status-badge status-90">🌙 90日経過</span> <span>90日返品ルールの対象</span></li>
+                                    <li className="flex items-center gap-2"><span className="status-badge status-expired">☄️ 期限切れ</span> <span>期間外の記録</span></li>
                                 </ul>
-                            </section>
-                            <section>
-                                <h3 className="text-dracula-gold font-bold text-lg mb-2">3. 振込データ出力</h3>
-                                <p>「入金依頼」にチェックを入れた顧客の情報を、送金用のテキスト形式でまとめてダウンロードできます。</p>
+                                <p className="mt-4 text-sm text-pink-500 font-bold">※支払方法に「カード」を含む行はローズ色に染まり、処理忘れを防ぎます。</p>
                             </section>
                         </div>
                     </div>
