@@ -26,13 +26,13 @@ const Sidebar = ({ activeSystem, setActiveSystem }) => {
                     <span className="nav-icon">🌟</span> クーリングオフ
                 </button>
                 <button
-                    className={`nav-item ${activeSystem === 'manual' ? 'active' : ''}`}
+                    className={`nav-item nav-bottom ${activeSystem === 'manual' ? 'active' : ''}`}
                     onClick={() => setActiveSystem('manual')}
                 >
                     <span className="nav-icon">📖</span> マニュアル
                 </button>
                 <button
-                    className={`nav-item nav-bottom ${activeSystem === 'leave' ? 'active' : ''}`}
+                    className={`nav-item ${activeSystem === 'leave' ? 'active' : ''}`}
                     onClick={() => setActiveSystem('leave')}
                 >
                     <span className="nav-icon">📅</span> 有給管理
