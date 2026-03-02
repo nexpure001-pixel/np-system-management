@@ -22,6 +22,7 @@ const PaymentManagement = () => {
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedIds, setSelectedIds] = useState(new Set());
+    const [isGlobalSelected, setIsGlobalSelected] = useState(false);
     const itemsPerPage = 100;
     const fileInputRef = useRef(null);
 
@@ -58,7 +59,22 @@ const PaymentManagement = () => {
 
     useEffect(() => {
         fetchPayments();
+        // Load selection from localStorage
+        const savedSelection = localStorage.getItem('payment_selection');
+        if (savedSelection) {
+            try {
+                const ids = JSON.parse(savedSelection);
+                setSelectedIds(new Set(ids));
+            } catch (e) {
+                console.error('Failed to parse saved selection');
+            }
+        }
     }, []);
+
+    // Save selection to localStorage
+    useEffect(() => {
+        localStorage.setItem('payment_selection', JSON.stringify([...selectedIds]));
+    }, [selectedIds]);
 
     // --- Utilities ---
     const normalizeKana = (str) => {
@@ -284,6 +300,7 @@ const PaymentManagement = () => {
         const newSelected = new Set(selectedIds);
         if (newSelected.has(id)) {
             newSelected.delete(id);
+            if (isGlobalSelected) setIsGlobalSelected(false);
         } else {
             newSelected.add(id);
         }
@@ -297,10 +314,22 @@ const PaymentManagement = () => {
         const newSelected = new Set(selectedIds);
         if (isAllSelected) {
             allOnPageIds.forEach(id => newSelected.delete(id));
+            setIsGlobalSelected(false);
         } else {
             allOnPageIds.forEach(id => newSelected.add(id));
         }
         setSelectedIds(newSelected);
+    };
+
+    const handleSelectAllFiltered = () => {
+        const allFilteredIds = filteredPayments.map(p => p.id);
+        setSelectedIds(new Set(allFilteredIds));
+        setIsGlobalSelected(true);
+    };
+
+    const handleClearSelection = () => {
+        setSelectedIds(new Set());
+        setIsGlobalSelected(false);
     };
 
     const handleExportExcel = () => {
@@ -517,6 +546,26 @@ const PaymentManagement = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+                {selectedIds.size > 0 && (
+                    <div className="selection-banner glass-panel">
+                        <i className="fa-solid fa-check-double"></i>
+                        <span>
+                            {isGlobalSelected ? (
+                                `全 ${selectedIds.size} 件を選択中`
+                            ) : (
+                                `${selectedIds.size} 件を選択中`
+                            )}
+                        </span>
+                        {!isGlobalSelected && filteredPayments.length > paginatedPayments.length && (
+                            <button className="text-link-btn" onClick={handleSelectAllFiltered}>
+                                検索結果の全 {filteredPayments.length} 件を選択する
+                            </button>
+                        )}
+                        <button className="text-link-btn danger" onClick={handleClearSelection}>
+                            選択解除
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className="table-container glass-panel">

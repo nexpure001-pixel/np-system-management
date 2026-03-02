@@ -233,6 +233,56 @@
     background: rgba(255, 255, 255, 0.7);
 }
 
+.payment-management-container .selection-banner {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 20px;
+    background: rgba(255, 182, 193, 0.15);
+    border: 1px solid var(--primary-color);
+    font-size: 0.9em;
+    color: var(--text-color);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.payment-management-container .text-link-btn {
+    background: none;
+    border: none;
+    color: #3498db;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1em;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.payment-management-container .text-link-btn:hover {
+    color: #2980b9;
+}
+
+.payment-management-container .text-link-btn.danger {
+    color: #e74c3c;
+    margin-left: auto;
+}
+
+.payment-management-container .text-link-btn.danger:hover {
+    color: #c0392b;
+}
+
 .payment-management-container .cute-table {
     width: 100%;
     border-collapse: collapse;
