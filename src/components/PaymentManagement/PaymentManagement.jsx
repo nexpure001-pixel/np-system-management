@@ -281,7 +281,8 @@ const PaymentManagement = () => {
 
     const handleExportExcel = () => {
         const header = ["支払日入力", "BOX移動", "登録情報", "組織図確認", "ランクアップ", "振込日", "氏名", "入金金額", "備考", "完了"];
-        const data = payments.map(p => [
+        // 画面に表示されている並び順（filteredPayments）で書き出すように修正
+        const data = filteredPayments.map(p => [
             p.shiharaibi_nyuuryoku ? '済' : '未',
             p.box_idou ? '済' : '未',
             p.touroku_jouhou,
