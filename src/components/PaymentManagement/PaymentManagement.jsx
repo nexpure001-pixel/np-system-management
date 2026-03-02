@@ -21,6 +21,7 @@ const PaymentManagement = () => {
     });
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     const [currentPage, setCurrentPage] = useState(1);
+    const [selectedIds, setSelectedIds] = useState(new Set());
     const itemsPerPage = 100;
     const fileInputRef = useRef(null);
 
@@ -279,10 +280,42 @@ const PaymentManagement = () => {
         }
     };
 
+    const toggleSelectRow = (id) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
+    const toggleSelectAll = () => {
+        const allOnPageIds = paginatedPayments.map(p => p.id);
+        const isAllSelected = allOnPageIds.every(id => selectedIds.has(id));
+
+        const newSelected = new Set(selectedIds);
+        if (isAllSelected) {
+            allOnPageIds.forEach(id => newSelected.delete(id));
+        } else {
+            allOnPageIds.forEach(id => newSelected.add(id));
+        }
+        setSelectedIds(newSelected);
+    };
+
     const handleExportExcel = () => {
         const header = ["支払日入力", "BOX移動", "登録情報", "組織図確認", "ランクアップ", "振込日", "氏名", "入金金額", "備考", "完了"];
-        // 画面に表示されている並び順（filteredPayments）で書き出すように修正
-        const data = filteredPayments.map(p => [
+
+        // Use selected rows if any are checked, otherwise use all filtered results
+        const targets = selectedIds.size > 0
+            ? filteredPayments.filter(p => selectedIds.has(p.id))
+            : filteredPayments;
+
+        if (selectedIds.size === 0 && !window.confirm('何も選択されていません。表示中のすべての行（全' + filteredPayments.length + '件）を書き出しますか？')) {
+            return;
+        }
+
+        const data = targets.map(p => [
             p.shiharaibi_nyuuryoku ? '済' : '未',
             p.box_idou ? '済' : '未',
             p.touroku_jouhou,
@@ -490,6 +523,16 @@ const PaymentManagement = () => {
                 <table className="cute-table">
                     <thead>
                         <tr>
+                            <th style={{ width: '40px', textAlign: 'center' }}>
+                                <label className="cute-checkbox">
+                                    <input
+                                        type="checkbox"
+                                        checked={paginatedPayments.length > 0 && paginatedPayments.every(p => selectedIds.has(p.id))}
+                                        onChange={toggleSelectAll}
+                                    />
+                                    <span className="checkmark"></span>
+                                </label>
+                            </th>
                             <th onClick={() => setSortConfig({ key: 'shiharaibi_nyuuryoku', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>支払日入力</th>
                             <th onClick={() => setSortConfig({ key: 'box_idou', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>BOX移動</th>
                             <th onClick={() => setSortConfig({ key: 'touroku_jouhou', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>登録情報</th>
@@ -502,6 +545,7 @@ const PaymentManagement = () => {
                             <th style={{ textAlign: 'center' }}>完了</th>
                         </tr>
                         <tr className="filter-row">
+                            <th></th>
                             <th>
                                 <select className="filter-input" value={filters.shiharaibi} onChange={e => setFilters({ ...filters, shiharaibi: e.target.value })}>
                                     <option value="">すべて</option>
@@ -526,6 +570,7 @@ const PaymentManagement = () => {
                             <th></th>
                         </tr>
                         <tr className="quick-add-row">
+                            <td></td>
                             <td style={{ textAlign: 'center' }}>
                                 <label className="cute-checkbox">
                                     <input type="checkbox" checked={quickAdd.shiharaibi_nyuuryoku} onChange={e => setQuickAdd({ ...quickAdd, shiharaibi_nyuuryoku: e.target.checked })} />
@@ -581,7 +626,17 @@ const PaymentManagement = () => {
                     </thead>
                     <tbody>
                         {paginatedPayments.map(p => (
-                            <tr key={p.id} className={p.kanryou ? 'completed-row' : ''}>
+                            <tr key={p.id} className={`${p.kanryou ? 'completed-row' : ''} ${selectedIds.has(p.id) ? 'selected-row' : ''}`}>
+                                <td style={{ textAlign: 'center' }}>
+                                    <label className="cute-checkbox">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.has(p.id)}
+                                            onChange={() => toggleSelectRow(p.id)}
+                                        />
+                                        <span className="checkmark"></span>
+                                    </label>
+                                </td>
                                 <td style={{ textAlign: 'center' }}>
                                     <label className="cute-checkbox">
                                         <input type="checkbox" checked={p.shiharaibi_nyuuryoku} onChange={e => handleInlineEdit(p.id, 'shiharaibi_nyuuryoku', e.target.checked)} />

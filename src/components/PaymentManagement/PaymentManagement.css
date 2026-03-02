@@ -245,6 +245,19 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 0.8rem;
+    padding: 8px 4px;
+}
+
+.payment-management-container .cute-table td {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.payment-management-container tr.selected-row {
+    background-color: rgba(255, 182, 193, 0.25) !important;
+}
+
+.payment-management-container tr:hover:not(.quick-add-row) {
+    background-color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .payment-management-container .cute-table th {
@@ -366,6 +379,7 @@
 
 .payment-management-container .quick-add-row td {
     border-top: 2px dashed #ffb6c1 !important;
+    background-color: rgba(255, 240, 245, 1) !important;
 }
 
 /* Modal and Overlays */
