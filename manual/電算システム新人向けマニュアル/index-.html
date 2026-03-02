@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新人向けシステム仕様図解マニュアル</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- 【修正パッチ】lucide-reactのUMDビルドが window.react (小文字) を参照してしまうバグを回避 -->
+  <script>window.react = window.React;</script>
+  
+  <!-- Babel (JSXをブラウザで解釈するため) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Lucide Icons (React UMD) -->
+  <script src="https://unpkg.com/lucide-react@0.292.0/dist/umd/lucide-react.min.js"></script>
+
+  <style>
+    /* --- Custom Styles for Animations --- */
+    @keyframes fade-in-up {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up {
+      animation: fade-in-up 0.5s ease-out forwards;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+      100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+    }
+    .animate-pulse-ring {
+      animation: pulse-ring 2s infinite;
+    }
+    .flow-line {
+      stroke-dasharray: 8;
+      animation: dash 1s linear infinite;
+    }
+    @keyframes dash {
+      to { stroke-dashoffset: -16; }
+    }
+    /* スクロールバー非表示用 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 selection:bg-indigo-200 selection:text-indigo-900">
+  
+  <!-- Reactの描画先 -->
+  <div id="root"></div>
+
+  <!-- アプリケーションのコード -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    
+    // 【修正】lucideライブラリの読み込みが失敗・遅延した場合でもエラーにならないようにフォールバックを追加
+    const lucideIcons = window.lucide || window.Lucide || window.lucideReact || window.LucideReact || {};
+    
+    // アイコンが読み込めなかった場合の代替アイコン（画面クラッシュ回避用）
+    const FallbackIcon = ({ size = 24, className = "", ...props }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    );
+
+    const { 
+      Users = FallbackIcon, Zap = FallbackIcon, DollarSign = FallbackIcon, Settings = FallbackIcon, 
+      Rocket = FallbackIcon, Crown = FallbackIcon, Medal = FallbackIcon, User = FallbackIcon, 
+      ShoppingBag = FallbackIcon, Smartphone = FallbackIcon, Store = FallbackIcon, Check = FallbackIcon, 
+      AlertCircle = FallbackIcon, ArrowRight = FallbackIcon, Server = FallbackIcon, Database = FallbackIcon, 
+      Globe = FallbackIcon, RefreshCcw = FallbackIcon, Activity = FallbackIcon, Play = FallbackIcon, 
+      CheckCircle2 = FallbackIcon, Gift = FallbackIcon, TrendingUp = FallbackIcon, Plane = FallbackIcon, 
+      Ticket = FallbackIcon, Building2 = FallbackIcon, ChevronRight = FallbackIcon, Share2 = FallbackIcon, 
+      MousePointerClick = FallbackIcon, Target = FallbackIcon
+    } = lucideIcons;
+
+    // ==========================================
+    // 1. 全体像＆登場人物 セクション
+    // ==========================================
+    const SectionOverview = () => {
+      const characters = [
+        { title: 'プレミアム', icon: Crown, type: 'ビジネス', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', pt: '最大', desc: '全てのボーナスを最大還元率で受け取れる主役。' },
+        { title: 'エコノミー', icon: Medal, type: 'ビジネス', color: 'bg-blue-100 text-blue-800 border-blue-300', pt: '中', desc: 'プレミアムより還元率に制限があるビジネス会員。' },
+        { title: 'カスタマー', icon: User, type: 'ビジネス', color: 'bg-green-100 text-green-800 border-green-300', pt: '低', desc: '最低水準のボーナス。タイトルの獲得はできない。' },
+        { title: '愛用会員', icon: ShoppingBag, type: '買い物専用', color: 'bg-pink-100 text-pink-800 border-pink-400 border-2 shadow-md relative', pt: 'なし', desc: '買い物だけを楽しむ会員。購入ポイントは紹介者の実績になる！' },
+        { title: 'モニター', icon: Smartphone, type: 'お試し', color: 'bg-slate-100 text-slate-600 border-slate-300', pt: 'なし', desc: 'サンプル商品などをもらうお試し会員。' },
+        { title: '出店者', icon: Store, type: '事業者', color: 'bg-slate-100 text-slate-600 border-slate-300', pt: 'なし', desc: '商品を出品する事業者。ボーナス権利はなし。' },
+      ];
+
+      return (
+        <div className="space-y-10 animate-fade-in-up">
+          <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+              <Globe size={300} className="transform translate-x-1/4 -translate-y-1/4" />
+            </div>
+            <div className="relative z-10">
+              <h2 className="text-3xl font-extrabold mb-4 flex items-center gap-3">
+                <Database className="text-indigo-400" size={36}/>
+                ネクスピュア・システム全体像
+              </h2>
+              <p className="text-indigo-100 text-lg mb-8 max-w-2xl">
+                このシステムは、ECサイトでの<strong className="text-pink-300 font-bold">「日常の買い物」</strong>と、
+                ネットワークの<strong className="text-yellow-300 font-bold">「報酬計算」</strong>を、全自動で直結させる巨大なプラットフォームです。
+              </p>
+              
+              <div className="flex flex-col md:flex-row items-center justify-center gap-4 bg-white/10 p-6 rounded-2xl backdrop-blur-sm">
+                <div className="flex flex-col items-center p-4 bg-white/10 rounded-xl w-48 text-center">
+                  <ShoppingBag size={48} className="text-pink-300 mb-2" />
+                  <span className="font-bold">ネクスプレイス</span>
+                  <span className="text-xs text-indigo-200">ECサイト (買い物・決済)</span>
+                </div>
+                
+                <div className="flex flex-col items-center px-4">
+                  <div className="flex items-center text-indigo-200 mb-1"><RefreshCcw size={16} className="mr-1 animate-spin-slow"/> リアルタイム連携</div>
+                  <div className="h-2 w-32 bg-gradient-to-r from-pink-400 to-yellow-400 rounded-full"></div>
+                  <div className="text-xs text-yellow-200 mt-1 font-bold">API通信</div>
+                </div>
+
+                <div className="flex flex-col items-center p-4 bg-white/10 rounded-xl w-48 text-center">
+                  <Server size={48} className="text-yellow-300 mb-2" />
+                  <span className="font-bold">ネクスピュア</span>
+                  <span className="text-xs text-indigo-200">管理側 (自動ボーナス計算)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-bold border-b-2 border-slate-200 pb-2 mb-6 flex items-center gap-2">
+              <Users className="text-indigo-600" />
+              STEP 1: 登場人物（会員タイプ）を覚えよう！
+            </h3>
+            <p className="mb-6 text-slate-600">
+              システムには大きく分けて「ボーナスをもらう権利がある人（ビジネス）」と「それ以外の人」がいます。
+              特に<strong className="text-pink-600 bg-pink-50 px-2 py-1 rounded">愛用会員</strong>の存在がこのシステムのキーポイントです。
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {characters.map((char, idx) => (
+                <div key={idx} className={`border rounded-xl p-5 ${char.color} transition-transform hover:-translate-y-1`}>
+                  {char.title === '愛用会員' && (
+                    <span className="absolute -top-3 -right-3 bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full animate-bounce">
+                      重要キーマン！
+                    </span>
+                  )}
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-2 font-bold text-lg">
+                      <char.icon size={24} /> {char.title}
+                    </div>
+                    <span className="text-xs font-bold px-2 py-1 bg-white/50 rounded-md">
+                      {char.type}
+                    </span>
+                  </div>
+                  <div className="mb-2 text-sm font-semibold bg-white/40 px-2 py-1 rounded inline-block">
+                    ボーナス還元率: {char.pt}
+                  </div>
+                  <p className="text-sm leading-relaxed">{char.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 2. アクティブ条件 セクション
+    // ==========================================
+    const SectionActive = () => {
+      const [contract, setContract] = useState(true);
+      const [bizMember, setBizMember] = useState(true);
+      const [selfPt, setSelfPt] = useState(15);
+      const [fanPt, setFanPt] = useState(10);
+
+      const totalPt = selfPt + fanPt;
+      const isPtOk = totalPt >= 50;
+      const isActive = contract && bizMember && isPtOk;
+
+      return (
+        <div className="space-y-8 animate-fade-in-up">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+            <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Activity className="text-emerald-500" />
+              STEP 2: 超重要！「アクティブ」になるには？
+            </h3>
+            <p className="mb-8 text-slate-600">
+              報酬をもらうためには、計算のタイミングで<strong className="text-emerald-600">「アクティブ（報酬獲得の権利がある状態）」</strong>である必要があります。
+              以下のシミュレーターを動かして、3つの条件をクリアしてみましょう！
+            </p>
+
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="flex-1 space-y-6">
+                <div className={`p-4 rounded-xl border-2 transition-colors ${contract ? 'bg-emerald-50 border-emerald-400' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold flex items-center gap-2">
+                        {contract ? <CheckCircle2 className="text-emerald-500"/> : <AlertCircle className="text-slate-400"/>}
+                        条件1: 契約日がある
+                      </h4>
+                      <p className="text-sm text-slate-500 mt-1">当月末までに契約締結日が登録されている</p>
+                    </div>
+                    <button onClick={() => setContract(!contract)} className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${contract ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                      {contract ? 'クリア済み' : '未クリア'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className={`p-4 rounded-xl border-2 transition-colors ${bizMember ? 'bg-emerald-50 border-emerald-400' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold flex items-center gap-2">
+                        {bizMember ? <CheckCircle2 className="text-emerald-500"/> : <AlertCircle className="text-slate-400"/>}
+                        条件2: ビジネス会員である
+                      </h4>
+                      <p className="text-sm text-slate-500 mt-1">プレミアム・エコノミー・カスタマーのいずれか</p>
+                    </div>
+                    <button onClick={() => setBizMember(!bizMember)} className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${bizMember ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                      {bizMember ? 'クリア済み' : '未クリア'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className={`p-5 rounded-xl border-2 transition-colors ${isPtOk ? 'bg-emerald-50 border-emerald-400' : 'bg-rose-50 border-rose-300'}`}>
+                  <h4 className="font-bold flex items-center gap-2 mb-4">
+                    {isPtOk ? <CheckCircle2 className="text-emerald-500"/> : <AlertCircle className="text-rose-500"/>}
+                    条件3: 当月合計 50pt以上
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm font-semibold mb-1">
+                        <span className="text-indigo-700">自分の購入ポイント</span>
+                        <span>{selfPt} pt</span>
+                      </div>
+                      <input type="range" min="0" max="60" value={selfPt} onChange={(e)=>setSelfPt(Number(e.target.value))} className="w-full accent-indigo-600" />
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between text-sm font-semibold mb-1">
+                        <span className="text-pink-600">直紹介した愛用会員の購入ポイント</span>
+                        <span>{fanPt} pt</span>
+                      </div>
+                      <input type="range" min="0" max="60" value={fanPt} onChange={(e)=>setFanPt(Number(e.target.value))} className="w-full accent-pink-500" />
+                      <p className="text-xs text-slate-500 mt-1">💡 新人ポイント: 自分が買わなくても、紹介した愛用会員が買ってくれれば合算されます！</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 rounded-2xl border border-slate-200 p-8 text-center relative overflow-hidden">
+                {isActive && <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>}
+                
+                <div className="mb-4">
+                  <div className="text-slate-500 font-bold mb-2">当月合計ポイント</div>
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className={`text-6xl font-black ${isPtOk ? 'text-emerald-500' : 'text-slate-700'}`}>{totalPt}</span>
+                    <span className="text-xl font-bold text-slate-400">/ 50 pt</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 mt-2 text-sm font-bold">
+                    <span className="text-indigo-600 bg-indigo-100 px-2 py-1 rounded">自分: {selfPt}pt</span>
+                    <span>+</span>
+                    <span className="text-pink-600 bg-pink-100 px-2 py-1 rounded">愛用会員: {fanPt}pt</span>
+                  </div>
+                </div>
+
+                <div className="h-px w-full bg-slate-200 my-6"></div>
+
+                <div className="mb-4">
+                  <div className="text-slate-500 font-bold mb-2">現在の状態</div>
+                  {isActive ? (
+                    <div className="relative">
+                      <div className="animate-pulse-ring absolute inset-0 rounded-full"></div>
+                      <div className="bg-emerald-500 text-white text-3xl font-black px-8 py-4 rounded-full shadow-lg relative z-10 flex items-center gap-3 transform transition-transform hover:scale-105">
+                        <Zap size={32} />
+                        ACTIVE !!
+                      </div>
+                      <p className="mt-4 text-emerald-600 font-bold">おめでとうございます！報酬獲得の権利があります。</p>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-200 text-slate-500 text-xl font-bold px-8 py-4 rounded-full inline-flex items-center gap-3">
+                      <AlertCircle size={24} />
+                      非アクティブ (権利なし)
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 3. ボーナス大解剖 セクション
+    // ==========================================
+    const SectionBonus = () => {
+      return (
+        <div className="space-y-8 animate-fade-in-up">
+          <h3 className="text-2xl font-bold flex items-center gap-2 mb-2">
+            <DollarSign className="text-amber-500" />
+            STEP 3: 報酬（ボーナス）の仕組み 大解剖
+          </h3>
+          <p className="text-slate-600 mb-6">ネクスピュアには複数のボーナスが存在します。それぞれ「何に対して」「いくら」支払われるのかを整理しました。</p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl shadow-sm border-2 border-indigo-200 p-6 lg:col-span-2 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-indigo-500 text-white text-xs font-bold px-4 py-1 rounded-bl-lg">最も重要</div>
+              <h4 className="text-xl font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                <Share2 className="text-indigo-500"/>
+                ② バイナリーボーナス（左右の小さい方で計算）
+              </h4>
+              <p className="text-slate-600 mb-6 text-sm">自分の組織を「左」と「右」に分け、<strong>ポイントが少ない方（小系列）</strong>を基準に支払われます。</p>
+
+              <div className="flex flex-col md:flex-row items-center justify-center gap-8 bg-slate-50 p-6 rounded-xl">
+                <div className="flex flex-col items-center">
+                  <div className="w-32 h-40 bg-slate-200 rounded-t-xl flex items-center justify-center relative border border-slate-300">
+                    <div className="absolute -top-3 bg-slate-600 text-white text-xs px-3 py-1 rounded-full font-bold">左グループ</div>
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-slate-700">26,000</div>
+                      <div className="text-sm font-bold text-slate-500">pt</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-2">余った分は翌月繰越</div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="text-sm font-bold text-slate-400">比較</div>
+                  <ChevronRight size={32} className="text-indigo-300" />
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <div className="w-32 h-28 bg-pink-100 rounded-t-xl flex items-center justify-center relative shadow-[0_0_15px_rgba(236,72,153,0.3)] ring-4 ring-pink-300 border border-pink-400">
+                    <div className="absolute -top-3 bg-pink-500 text-white text-xs px-3 py-1 rounded-full font-bold animate-bounce">右グループ (少ない方!)</div>
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-pink-600">8,000</div>
+                      <div className="text-sm font-bold text-pink-500">pt</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-pink-600 font-bold mt-2 flex items-center gap-1"><Check size={14}/>ここが計算基準！</div>
+                </div>
+              </div>
+              
+              <div className="mt-6 bg-indigo-50 border border-indigo-100 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                 <div className="font-bold text-indigo-900">
+                    計算式: <span className="bg-white px-2 py-1 rounded text-pink-600 mx-1">8,000 pt</span> × <span className="bg-white px-2 py-1 rounded text-indigo-600 mx-1">あなたの還元率(%)</span>
+                 </div>
+                 <div className="flex gap-2 text-sm font-semibold">
+                    <span className="bg-white px-2 py-1 rounded border border-slate-200 text-slate-600">カス: 5%</span>
+                    <span className="bg-white px-2 py-1 rounded border border-blue-200 text-blue-700">エコ: 8%</span>
+                    <span className="bg-white px-2 py-1 rounded border border-yellow-300 text-yellow-700 shadow-sm">プレ: 12〜18%</span>
+                 </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <h4 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <Target className="text-blue-500"/>
+                ① ダイレクトコミッション
+              </h4>
+              <p className="text-slate-600 text-sm mb-3">一番シンプル！<strong>「10%」</strong>と覚えましょう。</p>
+              <ul className="space-y-2 text-sm bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <li className="flex items-start gap-2"><Check size={16} className="text-emerald-500 mt-0.5 shrink-0"/><strong>直紹介:</strong> 直接紹介した人が買った商品のpt × 10%</li>
+                <li className="flex items-start gap-2"><Check size={16} className="text-emerald-500 mt-0.5 shrink-0"/><strong>自己購入:</strong> 自分自身が買った商品のpt × 10%</li>
+              </ul>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <h4 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <Users className="text-purple-500"/>
+                ③ マッチングボーナス
+              </h4>
+              <p className="text-slate-600 text-sm mb-3">自分が直接紹介した人が「②バイナリーボーナス」を獲得すると、その額の<strong>10%</strong>が自分にも入ります。</p>
+              <ul className="space-y-2 text-sm bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <li><strong>アクティブ1人:</strong> 子（1段目）のボーナスの10%</li>
+                <li><strong>アクティブ2人:</strong> 孫（2段目）まで</li>
+                <li><strong>アクティブ3人以上:</strong> ひ孫（3段目）まで！</li>
+              </ul>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <h4 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <Medal className="text-orange-500"/>
+                ④ タイトル差額ボーナス
+              </h4>
+              <p className="text-slate-600 text-sm mb-3">プレミアム＆2スター以上の特権。「自分のタイトルの％」から「すぐ下の人の％」を引いた差額がもらえます。</p>
+              <div className="flex flex-wrap gap-2 text-xs font-bold mt-2">
+                 <span className="bg-slate-100 px-2 py-1 rounded">2★: 2%</span>
+                 <span className="bg-slate-100 px-2 py-1 rounded">3★: 4%</span>
+                 <span className="bg-slate-100 px-2 py-1 rounded">...</span>
+                 <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">7★: 12%</span>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl shadow-sm border border-amber-200 p-6">
+              <h4 className="text-lg font-bold text-amber-900 mb-2 flex items-center gap-2">
+                <Gift className="text-amber-500"/>
+                ⑤ スペシャルフィー (年1回)
+              </h4>
+              <p className="text-amber-800 text-sm mb-3">会社の「純利益の5%」を、厳しい条件を満たした人で山分けする特大ボーナスです。</p>
+              <div className="bg-white/60 p-3 rounded-lg border border-amber-100 text-sm text-amber-900">
+                 <strong>厳しい条件:</strong> 12ヶ月連続で「01ポジション」がアクティブ、かつ「合計3ポジション以上」がアクティブであること。
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 4. システム連携の裏側 セクション
+    // ==========================================
+    const SectionSystem = () => {
+      const [step, setStep] = useState(0);
+
+      const handleNextStep = () => {
+        if (step < 3) setStep(step + 1);
+        else setStep(0);
+      };
+
+      return (
+        <div className="space-y-8 animate-fade-in-up">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+            <h3 className="text-2xl font-bold flex items-center gap-2">
+              <Settings className="text-slate-600" />
+              STEP 4: システムはどう動いている？ (API連携)
+            </h3>
+            <button 
+              onClick={handleNextStep}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full font-bold transition-colors shadow-md"
+            >
+              {step === 3 ? <RefreshCcw size={18} /> : <Play size={18} />}
+              {step === 0 ? 'シミュレーション開始' : step === 3 ? 'リセット' : '次へ進む'}
+            </button>
+          </div>
+
+          <p className="text-slate-600 mb-6">
+            このシステムの最大の秘密は、ECサイトと管理システムが裏側で自動通信（API連携）していることです。<br/>
+            特に重要な<strong>「愛用会員の買い物が、どうやって紹介者のポイントになるのか？」</strong>を図解します。
+          </p>
+
+          <div className="bg-slate-900 rounded-2xl p-6 lg:p-10 shadow-2xl text-slate-200 relative overflow-hidden min-h-[400px] flex flex-col border-4 border-slate-800">
+            <div className="flex justify-center mb-8 relative z-10">
+              <div className="flex gap-2">
+                {[0,1,2,3].map(s => (
+                  <div key={s} className={`h-2 rounded-full transition-all duration-500 ${step >= s ? 'w-8 bg-pink-500' : 'w-4 bg-slate-700'}`}></div>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-center mb-10 h-16 relative z-10">
+              <p className={`text-lg font-bold transition-opacity duration-300 ${step === 0 ? 'opacity-100 text-white' : 'opacity-0 hidden'}`}>
+                初期状態：愛用会員がECサイトでお買い物をしようとしています。
+              </p>
+              <p className={`text-lg font-bold transition-opacity duration-300 ${step === 1 ? 'opacity-100 text-pink-400' : 'opacity-0 hidden'}`}>
+                ステップ1：愛用会員が商品を購入！ECサイトから管理システムへAPIで注文データが送信されます。
+              </p>
+              <p className={`text-lg font-bold transition-opacity duration-300 ${step === 2 ? 'opacity-100 text-yellow-400' : 'opacity-0 hidden'}`}>
+                ステップ2：管理側で自動的に「本人の0pt伝票」と「紹介者宛ての特殊伝票(c1000)」が生成されます。
+              </p>
+              <p className={`text-lg font-bold transition-opacity duration-300 ${step === 3 ? 'opacity-100 text-emerald-400' : 'opacity-0 hidden'}`}>
+                ステップ3：結果、人手を一切介さずに紹介者へボーナスポイント（50pt）が付与されました！全自動完了です。
+              </p>
+            </div>
+
+            <div className="flex-1 flex items-center justify-between relative z-10">
+              <div className={`flex flex-col items-center z-20 transition-transform duration-500 ${step > 0 ? 'transform scale-105' : ''}`}>
+                <div className="bg-slate-800 p-4 rounded-xl border-2 border-slate-600 mb-4 w-48 text-center shadow-lg relative">
+                  <div className="text-pink-400 font-bold mb-2 flex items-center justify-center gap-2"><ShoppingBag size={18}/> ECサイト</div>
+                  <div className="bg-slate-700 p-3 rounded-lg">
+                    <div className="text-sm font-bold text-white mb-1">愛用会員 Aさん</div>
+                    {step === 0 ? (
+                      <button className="mt-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold px-4 py-2 rounded-full w-full flex items-center justify-center gap-1 cursor-default">
+                        <MousePointerClick size={14}/> 買い物する
+                      </button>
+                    ) : (
+                      <div className="mt-2 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full w-full flex items-center justify-center gap-1">
+                        <Check size={14}/> 購入完了 (1万円)
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1 flex items-center justify-center relative h-32">
+                <svg width="100%" height="40" className="absolute">
+                  <line x1="0" y1="20" x2="100%" y2="20" stroke="#334155" strokeWidth="4" strokeDasharray="8" />
+                  {step >= 1 && (
+                    <line x1="0" y1="20" x2="100%" y2="20" stroke="#f472b6" strokeWidth="4" className="flow-line" />
+                  )}
+                </svg>
+                
+                <div className={`absolute transition-all duration-1000 ease-in-out ${step === 0 ? 'left-0 opacity-0' : step === 1 ? 'left-1/2 -translate-x-1/2 opacity-100 scale-125' : 'left-full opacity-0'}`}>
+                  <div className="bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.5)] flex items-center gap-1">
+                    <Database size={12}/> 注文データ送信 (API)
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center z-20">
+                <div className="bg-slate-800 p-4 rounded-xl border-2 border-slate-600 mb-4 w-64 shadow-lg relative">
+                  <div className="text-indigo-400 font-bold mb-2 flex items-center justify-center gap-2"><Server size={18}/> 管理システム</div>
+                  
+                  <div className="space-y-3 relative">
+                    <div className={`bg-slate-700 p-2 rounded-lg border border-slate-600 transition-all duration-500 transform ${step >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 absolute w-full'}`}>
+                      <div className="text-xs text-slate-400">愛用会員本人の伝票</div>
+                      <div className="flex justify-between items-center mt-1 text-sm">
+                        <span>購入額: 10,000円</span>
+                        <span className="bg-slate-800 px-2 py-0.5 rounded text-slate-400 font-bold">0 pt</span>
+                      </div>
+                    </div>
+
+                    <div className={`bg-indigo-900/50 p-2 rounded-lg border border-indigo-500 transition-all duration-500 delay-300 transform ${step >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 absolute w-full'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-indigo-300 font-bold flex items-center gap-1"><Zap size={12} className="text-yellow-400"/> c1000特殊伝票</div>
+                        <span className="text-[10px] bg-indigo-800 px-1 rounded text-indigo-200">システム自動生成</span>
+                      </div>
+                      <div className="flex justify-between items-center mt-1 text-sm">
+                        <span className="text-slate-400">金額: 0円</span>
+                        <span className="bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded font-bold border border-yellow-500/50">+50 pt</span>
+                      </div>
+                    </div>
+
+                    <div className={`bg-slate-700 p-3 rounded-lg border-2 transition-all duration-500 mt-4 ${step === 3 ? 'border-emerald-500 bg-emerald-900/30' : 'border-slate-600'}`}>
+                      <div className="text-sm font-bold text-white flex items-center gap-2">
+                        <User size={16}/> 紹介者 (あなた)
+                      </div>
+                      <div className="flex justify-end mt-2">
+                        <div className={`font-black transition-all duration-500 ${step === 3 ? 'text-2xl text-emerald-400 scale-110' : 'text-lg text-slate-500'}`}>
+                          {step === 3 ? '+ 50 pt 獲得!' : '待機中...'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 5. マイページ＆新施策 セクション
+    // ==========================================
+    const SectionFuture = () => {
+      return (
+        <div className="space-y-10 animate-fade-in-up">
+          <div>
+            <h3 className="text-2xl font-bold flex items-center gap-2 mb-6 border-b-2 border-slate-200 pb-2">
+              <Smartphone className="text-indigo-600" />
+              STEP 5: 会員マイページでできること
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                <RefreshCcw size={32} className="text-blue-500 mb-3" />
+                <h4 className="font-bold mb-2">ポイントの移動</h4>
+                <p className="text-xs text-slate-600">「01ポジション」の人は、同月内に限り別ポジションへptを移動させ、アクティブ条件を調整可能。</p>
+              </div>
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                <Share2 size={32} className="text-emerald-500 mb-3" />
+                <h4 className="font-bold mb-2">紹介URL発行</h4>
+                <p className="text-xs text-slate-600">プレ/エコ会員で「システム利用料」支払済みの人だけが新規勧誘URLを発行できます。</p>
+              </div>
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                <TrendingUp size={32} className="text-pink-500 mb-3" />
+                <h4 className="font-bold mb-2">アップグレード・退会</h4>
+                <p className="text-xs text-slate-600">愛用会員からのビジネス会員へのUPGや、ボタン一つの退会（オートシップ停止）が可能です。</p>
+              </div>
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                <MousePointerClick size={32} className="text-purple-500 mb-3" />
+                <h4 className="font-bold mb-2">シームレス切替</h4>
+                <p className="text-xs text-slate-600">全ポジションを同パスワードにすれば、ログアウト不要でサクサク画面を切り替えられます。</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-slate-900 to-indigo-900 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+              <Rocket size={400} className="transform translate-x-1/3 -translate-y-1/3" />
+            </div>
+            
+            <div className="relative z-10">
+              <div className="inline-block bg-indigo-500/30 border border-indigo-400 text-indigo-200 px-3 py-1 rounded-full text-sm font-bold mb-4">
+                NEW UPDATE
+              </div>
+              <h3 className="text-2xl font-bold flex items-center gap-2 mb-2">
+                <Rocket className="text-indigo-400" />
+                2026年 新施策ロードマップ
+              </h3>
+              <p className="text-indigo-200 mb-8 text-sm">2026年1月より集計開始される、システムの新たな拡張機能です。</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-xl relative overflow-hidden group hover:bg-white/20 transition-colors">
+                  <Plane className="absolute -right-4 -bottom-4 text-indigo-500/30 group-hover:text-indigo-400/40 transition-colors" size={100} />
+                  <div className="relative z-10">
+                    <h4 className="font-bold text-lg mb-2 flex items-center gap-2 text-indigo-200">
+                      <span className="bg-indigo-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                      マイレージプログラム
+                    </h4>
+                    <p className="text-sm text-slate-300 mb-3">年間実績(BP)でランクが確定するマイレージ制度。<br/><span className="text-xs bg-slate-800 px-1 rounded">1MP = 50BP換算</span></p>
+                    <div className="text-xs space-y-1 font-mono text-indigo-100">
+                      <div>Diamond: 288 MP</div>
+                      <div>Platinum: 144 MP</div>
+                      <div className="text-slate-400">... Bronze: 18 MP</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-xl relative overflow-hidden group hover:bg-white/20 transition-colors">
+                  <Ticket className="absolute -right-4 -bottom-4 text-pink-500/30 group-hover:text-pink-400/40 transition-colors" size={100} />
+                  <div className="relative z-10">
+                    <h4 className="font-bold text-lg mb-2 flex items-center gap-2 text-pink-200">
+                      <span className="bg-pink-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                      役務(エキム)サービス
+                    </h4>
+                    <p className="text-sm text-slate-300 mb-3">商品だけでなく、実店舗でのサービス利用チケットなどをシステム内で扱えるようになります。</p>
+                    <ul className="text-xs space-y-1 text-pink-100 list-disc list-inside">
+                      <li>実店舗必須・転売NG</li>
+                      <li>チケット有効期限3ヶ月</li>
+                      <li>購入後、予約システムへ連携</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-xl relative overflow-hidden group hover:bg-white/20 transition-colors">
+                  <Building2 className="absolute -right-4 -bottom-4 text-yellow-500/30 group-hover:text-yellow-400/40 transition-colors" size={100} />
+                  <div className="relative z-10">
+                    <h4 className="font-bold text-lg mb-2 flex items-center gap-2 text-yellow-200">
+                      <span className="bg-yellow-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                      3ポジ/7ポジ会
+                    </h4>
+                    <p className="text-sm text-slate-300 mb-3">年商50億円到達時に利益分配を受けられる特別会員制度です。</p>
+                    <div className="text-xs bg-black/30 p-2 rounded mb-2 text-yellow-100">
+                      条件: 毎月150BP購入の継続<br/>
+                      ※途中で継続不可になると退会失効
+                    </div>
+                    <div className="flex gap-2 text-xs font-bold">
+                      <span className="bg-yellow-600 text-white px-2 py-1 rounded">3ポジ: 15%分配</span>
+                      <span className="bg-yellow-500 text-white px-2 py-1 rounded">7ポジ: 18%分配</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+
+    // ==========================================
+    // Main App Component
+    // ==========================================
+    function App() {
+      const [activeTab, setActiveTab] = useState('overview');
+
+      const tabs = [
+        { id: 'overview', icon: Globe, label: '1. 全体像と登場人物' },
+        { id: 'active', icon: Activity, label: '2. アクティブ条件' },
+        { id: 'bonus', icon: DollarSign, label: '3. ボーナス大解剖' },
+        { id: 'system', icon: Server, label: '4. システムの裏側 (API)' },
+        { id: 'future', icon: Rocket, label: '5. マイページ & 新施策' },
+      ];
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20 selection:bg-indigo-200 selection:text-indigo-900">
+          {/* Header */}
+          <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-indigo-700 font-black text-xl tracking-tight">
+                <Database size={24} className="text-indigo-500" />
+                NEX-PURE <span className="text-sm font-medium text-slate-400 ml-2 hidden sm:inline">システム完全理解マニュアル</span>
+              </div>
+              <div className="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                🔰 新人向け研修資料
+              </div>
+            </div>
+            
+            {/* Navigation Tabs (Scrollable on mobile) */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-2 overflow-x-auto no-scrollbar">
+              <div className="flex space-x-2 border-b border-slate-200 min-w-max">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-3 font-bold text-sm transition-all border-b-2 rounded-t-lg
+                      ${activeTab === tab.id 
+                        ? 'bg-indigo-50 text-indigo-700 border-indigo-600 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]' 
+                        : 'text-slate-500 border-transparent hover:bg-slate-100 hover:text-slate-700'
+                      }`}
+                  >
+                    <tab.icon size={18} className={activeTab === tab.id ? 'text-indigo-600' : 'text-slate-400'} />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          {/* Main Content Area */}
+          <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {activeTab === 'overview' && <SectionOverview />}
+            {activeTab === 'active' && <SectionActive />}
+            {activeTab === 'bonus' && <SectionBonus />}
+            {activeTab === 'system' && <SectionSystem />}
+            {activeTab === 'future' && <SectionFuture />}
+          </main>
+
+          {/* Footer */}
+          <footer className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 text-center text-sm text-slate-400">
+            <p>このマニュアルは、システムの全体像を直感的に理解するための学習用ダッシュボードです。</p>
+            <p className="mt-1">© 2026 NEX-PURE System Architecture Overview.</p>
+          </footer>
+        </div>
+      );
+    }
+
+    // Render the React application
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

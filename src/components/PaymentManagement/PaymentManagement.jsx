@@ -43,7 +43,8 @@ const PaymentManagement = () => {
             const { data, error } = await supabase
                 .from('payments')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false })
+                .order('id', { ascending: true }); // Stable tie-breaker
 
             if (error) throw error;
             setPayments(data || []);
@@ -143,18 +144,58 @@ const PaymentManagement = () => {
                     return;
                 }
 
-                const confirmMsg = duplicateCount > 0
-                    ? `${newPayments.length}件の新規データをインポートしますか？（${duplicateCount}件の重複はスキップされます）`
-                    : `${newPayments.length}件のデータをインポート（クラウド保存）しますか？`;
+                let finalToInsert = newPayments;
+                let confirmMsg = `${newPayments.length}件の新規データをインポートしますか？`;
 
-                if (window.confirm(confirmMsg)) {
-                    setIsLoading(true);
-                    // 最終行を先頭に表示させるため、配列を反転させてからインポートする
-                    const reversedPayments = [...newPayments].reverse();
+                if (duplicateCount > 0) {
+                    if (window.confirm(`${duplicateCount}件の重複データが見つかりました。これらをスキップして${newPayments.length}件のみインポートしますか？\n（キャンセルを押すと、重複分も含めて全件取り込みます）`)) {
+                        // Skip duplicates (default behavior)
+                    } else {
+                        // Include duplicates - we need to re-process all rows
+                        finalToInsert = rows.map(row => {
+                            const valToString = (val) => {
+                                if (val instanceof Date) return val.toISOString().split('T')[0];
+                                return val !== undefined && val !== null ? String(val) : '';
+                            };
+                            const isChecked = (val) => val === '済' || val === true || val === 'TRUE' || val === '1' || val === 1;
+                            return {
+                                shiharaibi_nyuuryoku: isChecked(row[0]),
+                                box_idou: isChecked(row[1]),
+                                touroku_jouhou: valToString(row[2]),
+                                soshikizu_kakunin: isChecked(row[3]),
+                                rank_up_bikou: valToString(row[4]),
+                                chuumonbi: valToString(row[5]) || null,
+                                shimei: valToString(row[6]),
+                                nyuukin_kingaku: row[7] ? Number(String(row[7]).replace(/[^\d.-]/g, '')) : 0,
+                                bikou: valToString(row[8]),
+                                kanryou: row[9] === '完了' || row[9] === '済' || isChecked(row[9])
+                            };
+                        }).filter(p => p.shimei || p.nyuukin_kingaku);
+                        confirmMsg = `${finalToInsert.length}件のデータを全件インポートしますか？`;
+                        if (!window.confirm(confirmMsg)) return;
+                    }
+                } else {
+                    if (!window.confirm(confirmMsg)) return;
+                }
+
+                setIsLoading(true);
+                try {
+                    // 最終行を先頭に表示させるため、配列を反転させつつ、
+                    // 作成日時にミリ秒の差をつけて並び順を固定する
+                    const baseTime = new Date().getTime();
+                    const reversedPayments = [...finalToInsert].reverse().map((p, index) => ({
+                        ...p,
+                        created_at: new Date(baseTime + index).toISOString()
+                    }));
+
                     const { error } = await supabase.from('payments').insert(reversedPayments);
                     if (error) throw error;
                     alert('インポートが完了しました。');
                     fetchPayments();
+                } catch (err) {
+                    alert('インポートに失敗しました: ' + err.message);
+                } finally {
+                    setIsLoading(false);
                 }
             } catch (err) {
                 console.error('Import error:', err);
@@ -369,7 +410,12 @@ const PaymentManagement = () => {
                 const bVal = b[sortConfig.key] || '';
                 if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
                 if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
-                return 0;
+
+                // Tie-breaker for stable sort
+                const timeA = new Date(a.created_at).getTime();
+                const timeB = new Date(b.created_at).getTime();
+                if (timeA !== timeB) return timeB - timeA; // Newer first
+                return (a.id || '').localeCompare(b.id || '');
             });
     }, [payments, searchQuery, filters, sortConfig]);
 
