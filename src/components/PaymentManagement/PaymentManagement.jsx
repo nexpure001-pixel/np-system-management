@@ -89,7 +89,24 @@ const PaymentManagement = () => {
                 }
 
                 const rows = jsonData.slice(1);
-                const importedPayments = rows.map((row) => {
+                const existingKeys = new Set(payments.map(p => JSON.stringify({
+                    shiharaibi_nyuuryoku: p.shiharaibi_nyuuryoku,
+                    box_idou: p.box_idou,
+                    touroku_jouhou: p.touroku_jouhou,
+                    soshikizu_kakunin: p.soshikizu_kakunin,
+                    rank_up_bikou: p.rank_up_bikou,
+                    chuumonbi: p.chuumonbi,
+                    shimei: p.shimei,
+                    nyuukin_kingaku: Number(p.nyuukin_kingaku) || 0,
+                    bikou: p.bikou,
+                    kanryou: p.kanryou
+                })));
+
+                const newPayments = [];
+                const duplicatesInImport = new Set();
+                let duplicateCount = 0;
+
+                rows.forEach((row) => {
                     const valToString = (val) => {
                         if (val instanceof Date) return val.toISOString().split('T')[0];
                         return val !== undefined && val !== null ? String(val) : '';
@@ -97,7 +114,7 @@ const PaymentManagement = () => {
 
                     const isChecked = (val) => val === '済' || val === true || val === 'TRUE' || val === '1' || val === 1;
 
-                    return {
+                    const p = {
                         shiharaibi_nyuuryoku: isChecked(row[0]),
                         box_idou: isChecked(row[1]),
                         touroku_jouhou: valToString(row[2]),
@@ -109,11 +126,32 @@ const PaymentManagement = () => {
                         bikou: valToString(row[8]),
                         kanryou: row[9] === '完了' || row[9] === '済' || isChecked(row[9])
                     };
-                }).filter(p => p.shimei || p.nyuukin_kingaku);
 
-                if (window.confirm(`${importedPayments.length}件のデータをインポート（クラウド保存）しますか？`)) {
+                    if (!p.shimei && !p.nyuukin_kingaku) return;
+
+                    const key = JSON.stringify(p);
+                    if (existingKeys.has(key) || duplicatesInImport.has(key)) {
+                        duplicateCount++;
+                    } else {
+                        newPayments.push(p);
+                        duplicatesInImport.add(key);
+                    }
+                });
+
+                if (newPayments.length === 0) {
+                    alert(duplicateCount > 0 ? `${duplicateCount}件の重複データのみが見つかりました（新規データなし）。` : '有効なデータが見つかりませんでした。');
+                    return;
+                }
+
+                const confirmMsg = duplicateCount > 0
+                    ? `${newPayments.length}件の新規データをインポートしますか？（${duplicateCount}件の重複はスキップされます）`
+                    : `${newPayments.length}件のデータをインポート（クラウド保存）しますか？`;
+
+                if (window.confirm(confirmMsg)) {
                     setIsLoading(true);
-                    const { error } = await supabase.from('payments').insert(importedPayments);
+                    // 最終行を先頭に表示させるため、配列を反転させてからインポートする
+                    const reversedPayments = [...newPayments].reverse();
+                    const { error } = await supabase.from('payments').insert(reversedPayments);
                     if (error) throw error;
                     alert('インポートが完了しました。');
                     fetchPayments();
@@ -221,6 +259,78 @@ const PaymentManagement = () => {
         XLSX.writeFile(wb, `入金管理_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
+    const handleDeleteAll = async () => {
+        if (!window.confirm('全ての入金データを削除してもよろしいですか？この操作は取り消せません。')) return;
+        setIsLoading(true);
+        try {
+            // Delete all records (RLS is "Allow all" so this works if we target a non-existent condition or just delete all)
+            const { error } = await supabase
+                .from('payments')
+                .delete()
+                .neq('shimei', '___NON_EXISTENT_NAME___'); // Efficient way to target all rows
+
+            if (error) throw error;
+            setPayments([]);
+            alert('全てのデータを削除しました。');
+        } catch (err) {
+            alert('削除に失敗しました: ' + err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCleanupDuplicates = async () => {
+        if (!window.confirm('重複データを検知して削除しますか？（全く同じ内容のデータが複数ある場合、1つだけ残して削除します）')) return;
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase.from('payments').select('*');
+            if (error) throw error;
+
+            const seen = new Set();
+            const toDelete = [];
+
+            data.forEach(p => {
+                const key = JSON.stringify({
+                    shiharaibi_nyuuryoku: p.shiharaibi_nyuuryoku,
+                    box_idou: p.box_idou,
+                    touroku_jouhou: p.touroku_jouhou,
+                    soshikizu_kakunin: p.soshikizu_kakunin,
+                    rank_up_bikou: p.rank_up_bikou,
+                    chuumonbi: p.chuumonbi,
+                    shimei: p.shimei,
+                    nyuukin_kingaku: p.nyuukin_kingaku,
+                    bikou: p.bikou,
+                    kanryou: p.kanryou
+                });
+
+                if (seen.has(key)) {
+                    toDelete.push(p.id);
+                } else {
+                    seen.add(key);
+                }
+            });
+
+            if (toDelete.length === 0) {
+                alert('重複データは見つかりませんでした。');
+                return;
+            }
+
+            if (window.confirm(`${toDelete.length}件の重複が見つかりました。削除しますか？`)) {
+                const { error: delError } = await supabase
+                    .from('payments')
+                    .delete()
+                    .in('id', toDelete);
+                if (delError) throw delError;
+                alert(`${toDelete.length}件の重複データを削除しました。`);
+                fetchPayments();
+            }
+        } catch (err) {
+            alert('クリーンアップに失敗しました: ' + err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     // --- Derived Data: Filtered & Sorted ---
     const filteredPayments = useMemo(() => {
         const normalizedQuery = normalizeKana(searchQuery);
@@ -298,6 +408,12 @@ const PaymentManagement = () => {
                     />
                     <button className="secondary-btn" onClick={handleExportExcel}>
                         <i className="fa-solid fa-file-export"></i> Excel書き出し
+                    </button>
+                    <button className="secondary-btn" style={{ borderColor: '#ff7979', color: '#ff7979' }} onClick={handleCleanupDuplicates}>
+                        <i className="fa-solid fa-wand-magic-sparkles"></i> 重複クリーンアップ
+                    </button>
+                    <button className="secondary-btn" style={{ borderColor: '#ff4757', color: '#ff4757' }} onClick={handleDeleteAll}>
+                        <i className="fa-solid fa-trash-can"></i> 全データ削除
                     </button>
                 </div>
                 <div style={{ color: 'var(--text-color)', fontSize: '0.9em', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '12px' }}>
