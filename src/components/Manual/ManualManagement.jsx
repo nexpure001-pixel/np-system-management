@@ -21,7 +21,7 @@ const ManualManagement = () => {
         { id: 3, title: 'マニュアル 03', file: 'manualのmanual03.html', date: '2026-01-20' },
         { id: 4, title: '概要書面マニュアル新人向け', file: '概要書面マニュアル新人向け/index.html', date: '2026-03-02' },
         { id: 5, title: '電産システム新人向けマニュアル', file: '電算システム新人向けマニュアル/index-.html', date: '2026-03-02' },
-        { id: 6, title: 'サービスマニュアル (Servicesmanual)', file: 'Servicesmanual.html', date: '2026-03-03' },
+        { id: 6, title: 'サービスマニュアル (Servicemanual)', file: 'Servicemanual.html', date: '2026-03-03' },
     ];
 
     const selectedHotspot = hotspots.find(h => h.id === selectedHotspotId);
