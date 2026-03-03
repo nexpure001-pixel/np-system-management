@@ -1,28 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Eye, Layout, Settings, Save, Link as LinkIcon, Plus, FileText, ChevronRight, ExternalLink } from 'lucide-react';
+import { Download, Eye, Layout, Settings, Save, Link as LinkIcon, Plus, FileText, ChevronRight, ExternalLink, Trash2, CloudUpload } from 'lucide-react';
 import EditorCanvas from './EditorCanvas';
 import TooltipEditor from './TooltipEditor';
 import LinkEditor from './LinkEditor';
 import { generateDownload } from './utils/export';
+import { supabase } from '../../lib/supabase';
 
 const ManualManagement = () => {
     const [view, setView] = useState('list'); // 'list' or 'editor'
     const [imageSrc, setImageSrc] = useState(null);
     const [hotspots, setHotspots] = useState([]);
     const [links, setLinks] = useState([]);
+    const [manualTitle, setManualTitle] = useState('新規マニュアル');
+    const [editingManualId, setEditingManualId] = useState(null);
+    const [managedManuals, setManagedManuals] = useState([]);
     const [selectedHotspotId, setSelectedHotspotId] = useState(null);
     const [selectedLinkId, setSelectedLinkId] = useState(null);
     const [isPreviewMode, setIsPreviewMode] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Existing manuals (Hardcoded based on the 'manual' folder content)
     const existingManuals = [
-        { id: 1, title: 'マニュアル 01', file: 'manualのmanual01.html', date: '2025-10-01' },
-        { id: 2, title: 'マニュアル 02', file: 'manualのmanual02.html', date: '2025-11-15' },
-        { id: 3, title: 'マニュアル 03', file: 'manualのmanual03.html', date: '2026-01-20' },
-        { id: 4, title: '概要書面マニュアル新人向け', file: '概要書面マニュアル新人向け/index.html', date: '2026-03-02' },
-        { id: 5, title: '電産システム新人向けマニュアル', file: '電算システム新人向けマニュアル/index-.html', date: '2026-03-02' },
-        { id: 6, title: 'サービスマニュアル (Servicemanual)', file: 'Servicemanual.html', date: '2026-03-03' },
+        { id: 'm1', title: 'マニュアル 01', file: 'manualのmanual01.html', date: '2025-10-01' },
+        { id: 'm2', title: 'マニュアル 02', file: 'manualのmanual02.html', date: '2025-11-15' },
+        { id: 'm3', title: 'マニュアル 03', file: 'manualのmanual03.html', date: '2026-01-20' },
+        { id: 'm4', title: '概要書面マニュアル新人向け', file: '概要書面マニュアル新人向け/index.html', date: '2026-03-02' },
+        { id: 'm5', title: '電算システム新人向けマニュアル', file: '電算システム新人向けマニュアル/index-.html', date: '2026-03-02' },
+        { id: 'm6', title: 'サービスマニュアル (Servicemanual)', file: 'Servicemanual.html', date: '2026-03-03' },
     ];
+
+    useEffect(() => {
+        if (view === 'list') {
+            fetchManagedManuals();
+        }
+    }, [view]);
+
+    const fetchManagedManuals = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('manuals')
+                .select('*')
+                .order('updated_at', { ascending: false });
+            if (error) throw error;
+            setManagedManuals(data || []);
+        } catch (err) {
+            console.error('Failed to fetch manuals:', err);
+        }
+    };
 
     const selectedHotspot = hotspots.find(h => h.id === selectedHotspotId);
     const selectedLink = links.find(l => l.id === selectedLinkId);
@@ -71,14 +95,76 @@ const ManualManagement = () => {
     };
 
     const handleSaveProject = () => {
-        const projectData = { version: '1.1.0', imageSrc, hotspots, links };
+        const projectData = { version: '1.1.0', imageSrc, hotspots, links, title: manualTitle };
         const blob = new Blob([JSON.stringify(projectData)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'manual-project.json';
+        a.download = `${manualTitle || 'manual-project'}.json`;
         a.click();
         URL.revokeObjectURL(url);
+    };
+
+    const handleSaveToServer = async () => {
+        if (!imageSrc) return alert('画像をアップロードしてください。');
+        if (!manualTitle) return alert('タイトルを入力してください。');
+
+        setIsSaving(true);
+        try {
+            const projectData = { imageSrc, hotspots, links };
+            const { data, error } = await supabase
+                .from('manuals')
+                .upsert({
+                    id: editingManualId || crypto.randomUUID(),
+                    title: manualTitle,
+                    project_data: projectData,
+                    updated_at: new Date().toISOString()
+                })
+                .select();
+
+            if (error) throw error;
+            if (data && data[0]) setEditingManualId(data[0].id);
+            alert('サーバーに保存しました。');
+            setView('list');
+        } catch (err) {
+            alert('サーバーへの保存に失敗しました: ' + err.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleEditManual = (manual) => {
+        setEditingManualId(manual.id);
+        setManualTitle(manual.title);
+        setImageSrc(manual.project_data.imageSrc);
+        setHotspots(manual.project_data.hotspots || []);
+        setLinks(manual.project_data.links || []);
+        setView('editor');
+    };
+
+    const handleDeleteManagedManual = async (e, id) => {
+        e.stopPropagation();
+        if (!window.confirm('このマニュアルを完全に削除してもよろしいですか？')) return;
+
+        try {
+            const { error } = await supabase
+                .from('manuals')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+            setManagedManuals(managedManuals.filter(m => m.id !== id));
+        } catch (err) {
+            alert('削除に失敗しました: ' + err.message);
+        }
+    };
+
+    const handleNewManual = () => {
+        setEditingManualId(null);
+        setManualTitle('新規マニュアル');
+        setImageSrc(null);
+        setHotspots([]);
+        setLinks([]);
+        setView('editor');
     };
 
     const handleExportHtml = () => {
@@ -133,12 +219,22 @@ const ManualManagement = () => {
 
                 {view === 'editor' && (
                     <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-lg mr-4">
+                            <span className="text-xs font-bold text-slate-400">タイトル:</span>
+                            <input
+                                type="text"
+                                value={manualTitle}
+                                onChange={(e) => setManualTitle(e.target.value)}
+                                className="bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 min-w-[200px]"
+                                placeholder="マニュアルタイトルを入力..."
+                            />
+                        </div>
                         <label className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-all border border-slate-200">
                             <Settings size={14} /> 読込 (JSON)
                             <input type="file" className="hidden" accept=".json" onChange={handleLoadProject} />
                         </label>
-                        <button onClick={handleSaveProject} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-all border border-slate-200">
-                            <Save size={14} /> 保存 (JSON)
+                        <button onClick={handleSaveToServer} disabled={isSaving} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all border border-indigo-200">
+                            <CloudUpload size={14} /> {isSaving ? '保存中...' : 'サーバー保存'}
                         </button>
                         <button onClick={handleExportHtml} className="flex items-center gap-2 px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg shadow-indigo-200 transition-all">
                             <Download size={14} /> HTML書出
@@ -154,6 +250,35 @@ const ManualManagement = () => {
                         <p className="text-slate-500 text-sm mb-6">既存のマニュアルを閲覧したり、新しいマニュアルを作成することができます。</p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Managed Manuals (from DB) */}
+                            {managedManuals.map(manual => (
+                                <div
+                                    key={manual.id}
+                                    className="group bg-white p-5 rounded-xl border border-indigo-100 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer flex items-center justify-between"
+                                >
+                                    <div className="flex items-center gap-4 flex-1" onClick={() => handleEditManual(manual)}>
+                                        <div className="w-12 h-12 bg-indigo-600 text-white rounded-lg flex items-center justify-center transition-all">
+                                            <CloudUpload size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-slate-800 tracking-tight">{manual.title}</h3>
+                                            <p className="text-xs text-slate-400 mt-1">最終更新: {new Date(manual.updated_at).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                        <button
+                                            onClick={(e) => handleDeleteManagedManual(e, manual.id)}
+                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                            title="削除"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                        <ChevronRight className="text-indigo-600" />
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Existing Manuals (Static HTML) */}
                             {existingManuals.map(manual => (
                                 <div
                                     key={manual.id}
@@ -166,7 +291,7 @@ const ManualManagement = () => {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-slate-800 tracking-tight">{manual.title}</h3>
-                                            <p className="text-xs text-slate-400 mt-1">最終更新: {manual.date}</p>
+                                            <p className="text-xs text-slate-400 mt-1">一式フォルダ格納済み ({manual.date})</p>
                                         </div>
                                     </div>
                                     <ChevronRight className="text-slate-300 group-hover:text-indigo-600 transition-all" />
@@ -174,7 +299,7 @@ const ManualManagement = () => {
                             ))}
 
                             <div
-                                onClick={() => setView('editor')}
+                                onClick={handleNewManual}
                                 className="bg-slate-50 p-5 rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all cursor-pointer flex items-center justify-center gap-3 text-slate-400 hover:text-indigo-600"
                             >
                                 <Plus size={24} />

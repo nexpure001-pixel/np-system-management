@@ -204,3 +204,16 @@ CREATE TABLE IF NOT EXISTS public.cooling_off_records (
 ALTER TABLE public.cooling_off_records ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow all cooling_off" ON public.cooling_off_records;
 CREATE POLICY "Allow all cooling_off" ON public.cooling_off_records FOR ALL USING (true) WITH CHECK (true);
+
+-- 8. MANUALS Table (マニュアル管理)
+CREATE TABLE IF NOT EXISTS public.manuals (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    project_data JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.manuals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all manuals" ON public.manuals;
+CREATE POLICY "Allow all manuals" ON public.manuals FOR ALL USING (true) WITH CHECK (true);
