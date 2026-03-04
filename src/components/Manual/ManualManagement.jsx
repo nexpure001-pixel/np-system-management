@@ -105,11 +105,11 @@ const ManualManagement = () => {
         URL.revokeObjectURL(url);
     };
 
-    const handleSaveToServer = async () => {
-        if (!imageSrc) return alert('画像をアップロードしてください。');
-        if (!manualTitle) return alert('タイトルを入力してください。');
+    const handleSaveToServer = async (silent = false) => {
+        if (!imageSrc) return;
+        if (!manualTitle) return;
 
-        setIsSaving(true);
+        if (!silent) setIsSaving(true);
         try {
             const projectData = { imageSrc, hotspots, links };
             const { data, error } = await supabase
@@ -123,15 +123,29 @@ const ManualManagement = () => {
                 .select();
 
             if (error) throw error;
-            if (data && data[0]) setEditingManualId(data[0].id);
-            alert('サーバーに保存しました。');
-            setView('list');
+            if (data && data[0]) {
+                if (!editingManualId) setEditingManualId(data[0].id);
+            }
+            if (!silent) {
+                alert('サーバーに保存しました。');
+                setView('list');
+            }
         } catch (err) {
-            alert('サーバーへの保存に失敗しました: ' + err.message);
+            if (!silent) alert('サーバーへの保存に失敗しました: ' + err.message);
         } finally {
-            setIsSaving(false);
+            if (!silent) setIsSaving(false);
         }
     };
+
+    // Auto-save logic
+    useEffect(() => {
+        if (view === 'editor' && imageSrc) {
+            const timer = setTimeout(() => {
+                handleSaveToServer(true);
+            }, 3000); // Auto-save after 3s of no changes
+            return () => clearTimeout(timer);
+        }
+    }, [imageSrc, hotspots, links, manualTitle]);
 
     const handleEditManual = (manual) => {
         setEditingManualId(manual.id);
@@ -246,64 +260,92 @@ const ManualManagement = () => {
             {/* Content Area */}
             <div className="flex-1 overflow-hidden relative">
                 {view === 'list' ? (
-                    <div className="p-8 max-w-4xl mx-auto space-y-4">
-                        <p className="text-slate-500 text-sm mb-6">既存のマニュアルを閲覧したり、新しいマニュアルを作成することができます。</p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Managed Manuals (from DB) */}
-                            {managedManuals.map(manual => (
-                                <div
-                                    key={manual.id}
-                                    className="group bg-white p-5 rounded-xl border border-indigo-100 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer flex items-center justify-between"
+                    <div className="p-8 max-w-6xl mx-auto space-y-12 pb-20 overflow-y-auto h-full">
+                        <div>
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                        <Layout className="text-indigo-600" /> 編集中のプロジェクト
+                                    </h3>
+                                    <p className="text-slate-400 text-sm mt-1">サーバーに保存され、いつでも再編集可能な下書きや進行中のマニュアルです。</p>
+                                </div>
+                                <button
+                                    onClick={handleNewManual}
+                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-200 transition-all"
                                 >
-                                    <div className="flex items-center gap-4 flex-1" onClick={() => handleEditManual(manual)}>
-                                        <div className="w-12 h-12 bg-indigo-600 text-white rounded-lg flex items-center justify-center transition-all">
-                                            <CloudUpload size={24} />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-800 tracking-tight">{manual.title}</h3>
-                                            <p className="text-xs text-slate-400 mt-1">最終更新: {new Date(manual.updated_at).toLocaleDateString()}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                        <button
-                                            onClick={(e) => handleDeleteManagedManual(e, manual.id)}
-                                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                            title="削除"
-                                        >
-                                            <Trash2 size={18} />
+                                    <Plus size={18} /> 新規作成開始
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {managedManuals.length === 0 ? (
+                                    <div className="col-span-full py-12 text-center bg-white rounded-2xl border-2 border-dashed border-slate-200">
+                                        <p className="text-slate-400 font-medium">保存されたプロジェクトはまだありません。</p>
+                                        <button onClick={handleNewManual} className="mt-4 text-indigo-600 font-bold hover:underline">
+                                            新しくマニュアルを作成する
                                         </button>
-                                        <ChevronRight className="text-indigo-600" />
                                     </div>
-                                </div>
-                            ))}
+                                ) : (
+                                    managedManuals.map(manual => (
+                                        <div
+                                            key={manual.id}
+                                            className="group bg-white p-5 rounded-2xl border border-indigo-100 hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all cursor-pointer relative"
+                                        >
+                                            <div className="flex items-start gap-4" onClick={() => handleEditManual(manual)}>
+                                                <div className="w-14 h-14 bg-indigo-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">
+                                                    <CloudUpload size={28} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Project</span>
+                                                    </div>
+                                                    <h3 className="font-bold text-slate-800 tracking-tight mt-1 truncate">{manual.title}</h3>
+                                                    <p className="text-[10px] text-slate-400 mt-1">最終更新: {new Date(manual.updated_at).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+                                            <div className="absolute top-4 right-4 flex items-center gap-1">
+                                                <button
+                                                    onClick={(e) => handleDeleteManagedManual(e, manual.id)}
+                                                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                    title="削除"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                                <ChevronRight className="text-slate-300 group-hover:text-indigo-600 transition-all translate-x-1 group-hover:translate-x-2" />
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
 
-                            {/* Existing Manuals (Static HTML) */}
-                            {existingManuals.map(manual => (
-                                <div
-                                    key={manual.id}
-                                    onClick={() => openManual(manual.file)}
-                                    className="group bg-white p-5 rounded-xl border border-slate-200 hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-500/10 transition-all cursor-pointer flex items-center justify-between"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                            <FileText size={24} />
+                        <div className="pt-8 border-t border-slate-200">
+                            <div className="mb-6">
+                                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <FileText className="text-slate-500" /> 完成済みのマニュアル
+                                </h3>
+                                <p className="text-slate-400 text-sm mt-1">HTMLファイルとして構成済みの一括閲覧用マニュアルです。</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {existingManuals.map(manual => (
+                                    <div
+                                        key={manual.id}
+                                        onClick={() => openManual(manual.file)}
+                                        className="group bg-white p-5 rounded-2xl border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all cursor-pointer flex items-center justify-between"
+                                    >
+                                        <div className="flex items-center gap-4 min-w-0">
+                                            <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-all shrink-0">
+                                                <FileText size={24} />
+                                            </div>
+                                            <div className="truncate">
+                                                <h3 className="font-bold text-slate-800 tracking-tight truncate">{manual.title}</h3>
+                                                <p className="text-[10px] text-slate-400 mt-1">一式フォルダ格納済み ({manual.date})</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-800 tracking-tight">{manual.title}</h3>
-                                            <p className="text-xs text-slate-400 mt-1">一式フォルダ格納済み ({manual.date})</p>
-                                        </div>
+                                        <ExternalLink size={16} className="text-slate-300 group-hover:text-slate-600 transition-all shrink-0" />
                                     </div>
-                                    <ChevronRight className="text-slate-300 group-hover:text-indigo-600 transition-all" />
-                                </div>
-                            ))}
-
-                            <div
-                                onClick={handleNewManual}
-                                className="bg-slate-50 p-5 rounded-xl border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all cursor-pointer flex items-center justify-center gap-3 text-slate-400 hover:text-indigo-600"
-                            >
-                                <Plus size={24} />
-                                <span className="font-bold">新しいマニュアルを作成</span>
+                                ))}
                             </div>
                         </div>
                     </div>
