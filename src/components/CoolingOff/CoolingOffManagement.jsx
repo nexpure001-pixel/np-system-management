@@ -69,10 +69,10 @@ const CoolingOffManagement = () => {
 
             if (error) throw error;
 
-            if (data) {
-                setHeaders(data.headers || DEFAULT_HEADERS);
+            if (data && data.headers && data.headers.length > 0) {
+                setHeaders(data.headers);
                 setTableData(data.data || []);
-                updatePulldownOptions(data.headers || DEFAULT_HEADERS, data.data || []);
+                updatePulldownOptions(data.headers, data.data || []);
             } else {
                 setHeaders(DEFAULT_HEADERS);
             }
@@ -356,65 +356,113 @@ const CoolingOffManagement = () => {
             setFormData(headers.map(h => (h === '入金依頼' ? false : '')));
         };
 
-        if (headers.length === 0) return null;
+        if (!headers || headers.length === 0) return (
+            <div style={{ padding: '20px', border: '5px solid black', background: 'white', color: 'black', fontWeight: 'bold' }}>
+                エラー: 項目設定が読み込めません。管理者に連絡してください。
+            </div>
+        );
 
         return (
-            <div className="glass-panel p-6 mb-6 border-2 border-sky-200 shadow-lg shadow-sky-100/50">
-                <div className="flex items-center justify-between mb-8 border-b-4 border-black pb-4">
-                    <h2 className="text-2xl font-black text-black flex items-center gap-3">
-                        <Sparkles className="w-8 h-8 text-sky-500" />
-                        新規レコードの追加
+            <div style={{
+                background: 'white',
+                border: '6px solid black',
+                padding: '30px',
+                marginBottom: '40px',
+                boxShadow: '12px 12px 0px 0px rgba(0,0,0,1)',
+                position: 'relative',
+                zIndex: 100,
+                width: '100%'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '5px solid black', paddingBottom: '15px' }}>
+                    <h2 style={{ fontSize: '28px', fontWeight: '900', color: 'black', margin: 0, display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <Plus size={32} /> 新規データの登録
                     </h2>
-                    <span className="text-sm text-black font-black bg-sky-100 px-4 py-2 rounded-full border-2 border-black">
-                        以下の項目を入力して「保存」ボタンを押してください ✨
-                    </span>
+                    <div style={{ background: '#FFD700', border: '3px solid black', padding: '10px 20px', fontWeight: '900', color: 'black', fontSize: '16px' }}>
+                        こちらに入力してください ↓
+                    </div>
                 </div>
 
-                <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
-                        {headers.map((h, i) => {
-                            if (h === '入金依頼') return null;
-                            return (
-                                <div key={i} className="flex flex-col gap-1.5 focus-within:scale-[1.01] transition-transform">
-                                    <label className="text-[13px] font-black text-black ml-1 uppercase tracking-wider !opacity-100">{h}</label>
-                                    {h.includes('日') ? (
-                                        <input
-                                            type="date"
-                                            value={formData[i] ? formData[i].replace(/\//g, '-') : ''}
-                                            onChange={(e) => handleChange(i, e.target.value)}
-                                            className="bg-white border-2 border-black rounded-lg p-3 text-sm text-black font-bold focus:ring-4 focus:ring-sky-200 outline-none transition-all"
-                                        />
-                                    ) : PULLDOWN_KEYS.includes(h) ? (
-                                        <select
-                                            value={formData[i] || ''}
-                                            onChange={(e) => handleChange(i, e.target.value)}
-                                            className="bg-white border-2 border-black rounded-lg p-3 text-sm text-black font-bold focus:ring-4 focus:ring-sky-200 outline-none transition-all appearance-none"
-                                        >
-                                            {(pulldownOptions[h] || []).map(opt => (
-                                                <option key={opt} value={opt} className="text-black">{opt}</option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <input
-                                            type="text"
-                                            value={formData[i] || ''}
-                                            onChange={(e) => handleChange(i, e.target.value)}
-                                            placeholder={h === 'No.' ? '(自動採番)' : `${h}を入力...`}
-                                            className="bg-white border-2 border-black rounded-lg p-3 text-sm text-black font-bold focus:ring-4 focus:ring-sky-200 outline-none transition-all placeholder:text-slate-400"
-                                        />
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <div className="pt-4 flex justify-end gap-3">
-                        <button
-                            onClick={handleAdd}
-                            className="px-8 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-sky-200 transition-all flex items-center gap-2"
-                        >
-                            <Sparkles size={18} /> この内容で星に刻む
-                        </button>
-                    </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                    {headers.map((h, i) => {
+                        if (h === '入金依頼') return null;
+                        return (
+                            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '15px', fontWeight: '900', color: 'black', textTransform: 'uppercase' }}>{h}</label>
+                                {h.includes('日') ? (
+                                    <input
+                                        type="date"
+                                        value={formData[i] ? formData[i].replace(/\//g, '-') : ''}
+                                        onChange={(e) => handleChange(i, e.target.value)}
+                                        style={{
+                                            background: 'white',
+                                            border: '3px solid black',
+                                            padding: '12px',
+                                            fontSize: '17px',
+                                            color: 'black',
+                                            fontWeight: 'bold',
+                                            outline: 'none'
+                                        }}
+                                    />
+                                ) : PULLDOWN_KEYS.includes(h) ? (
+                                    <select
+                                        value={formData[i] || ''}
+                                        onChange={(e) => handleChange(i, e.target.value)}
+                                        style={{
+                                            background: 'white',
+                                            border: '3px solid black',
+                                            padding: '12px',
+                                            fontSize: '17px',
+                                            color: 'black',
+                                            fontWeight: 'bold',
+                                            outline: 'none',
+                                            appearance: 'auto'
+                                        }}
+                                    >
+                                        {(pulldownOptions[h] || []).map(opt => (
+                                            <option key={opt} value={opt}>{opt}</option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value={formData[i] || ''}
+                                        onChange={(e) => handleChange(i, e.target.value)}
+                                        placeholder={h === 'No.' ? '(自動)' : `${h}を入力...`}
+                                        style={{
+                                            background: 'white',
+                                            border: '3px solid black',
+                                            padding: '12px',
+                                            fontSize: '17px',
+                                            color: 'black',
+                                            fontWeight: 'bold',
+                                            outline: 'none'
+                                        }}
+                                        spellCheck="false"
+                                    />
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+                <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '5px solid black', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                        onClick={handleAdd}
+                        style={{
+                            background: 'black',
+                            color: 'white',
+                            padding: '15px 50px',
+                            fontSize: '22px',
+                            fontWeight: '900',
+                            border: '4px solid black',
+                            cursor: 'pointer',
+                            boxShadow: '6px 6px 0px 0px #38bdf8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '15px'
+                        }}
+                    >
+                        <Sparkles size={28} /> この内容で保存する
+                    </button>
                 </div>
             </div>
         );
@@ -457,6 +505,8 @@ const CoolingOffManagement = () => {
                 </button>
             </header>
 
+            <AddRecordForm />
+
             <div className="glass-panel controls p-6 mb-6">
                 <div className="flex gap-4">
                     <div className="relative">
@@ -489,8 +539,6 @@ const CoolingOffManagement = () => {
                 </div>
             </div>
 
-            <AddRecordForm />
-
             <div className="glass-panel table-container">
                 <table className="w-full text-left">
                     <thead>
@@ -518,8 +566,7 @@ const CoolingOffManagement = () => {
                                 <td colSpan={headers.length + 1} className="p-20 text-center text-slate-400 italic leading-loose">
                                     <div className="flex flex-col items-center gap-4">
                                         <Sparkles className="w-8 h-8 text-sky-300 animate-pulse" />
-                                        <p>上の入力欄から直接データを記入するか、<br />CSVファイルを読み込んでください... ✨</p>
-                                        <p className="text-xs opacity-60 font-noto">（入力後に右端の「追加」ボタンを押すと記録が作成されます）</p>
+                                        <p>データがありません。画面上部の入力欄から記入するか、<br />CSVファイルを読み込んでください。</p>
                                     </div>
                                 </td>
                             </tr>
