@@ -21,6 +21,11 @@ const INITIAL_PULLDOWN_OPTIONS = {
     '申出方法': ['', 'ハガキ', '書面', 'メール', 'カスタマー', 'コンタクト', '電話', '電話・メール', '消費者センター', 'その他']
 };
 
+const DEFAULT_HEADERS = [
+    'No.', '種別', '支払方法', 'お名前', '実績月', '契約日', '初回商品発送日', '解約申出日', '申出方法',
+    '登録情報・伝票処理', 'カードキャンセル', '返信メール', '商品到着日', '返金処理日', '返金額', '振込口座', 'リジョン発送', '備考', '入金依頼'
+];
+
 const CoolingOffManagement = () => {
     const [headers, setHeaders] = useState([]);
     const [tableData, setTableData] = useState([]);
@@ -62,9 +67,11 @@ const CoolingOffManagement = () => {
                 .single();
 
             if (data) {
-                setHeaders(data.headers || []);
+                setHeaders(data.headers || DEFAULT_HEADERS);
                 setTableData(data.data || []);
-                updatePulldownOptions(data.headers, data.data);
+                updatePulldownOptions(data.headers || DEFAULT_HEADERS, data.data || []);
+            } else {
+                setHeaders(DEFAULT_HEADERS);
             }
         } catch (err) {
             console.error('Fetch error:', err);
@@ -220,7 +227,15 @@ const CoolingOffManagement = () => {
     };
 
     const addNewRecord = (formData) => {
-        const newData = [formData, ...tableData];
+        // Auto-increment No. if it's empty
+        const newForm = [...formData];
+        const noIdx = headers.indexOf('No.');
+        if (noIdx !== -1 && (!newForm[noIdx] || newForm[noIdx] === '')) {
+            const lastNo = tableData.length > 0 ? parseInt(tableData[0][noIdx]) : 0;
+            newForm[noIdx] = isNaN(lastNo) ? tableData.length + 1 : lastNo + 1;
+        }
+
+        const newData = [newForm, ...tableData];
         setTableData(newData);
         saveData(headers, newData);
     };
