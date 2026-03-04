@@ -360,12 +360,14 @@ const CoolingOffManagement = () => {
 
         return (
             <div className="glass-panel p-6 mb-6 border-2 border-sky-200 shadow-lg shadow-sky-100/50">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-sky-600 flex items-center gap-2">
-                        <Sparkles className="w-6 h-6" />
-                        新規レコードを記入する
+                <div className="flex items-center justify-between mb-8 border-b-4 border-black pb-4">
+                    <h2 className="text-2xl font-black text-black flex items-center gap-3">
+                        <Sparkles className="w-8 h-8 text-sky-500" />
+                        新規レコードの追加
                     </h2>
-                    <span className="text-sm text-sky-400 font-medium">指定された項目を入力して保存してください ✨</span>
+                    <span className="text-sm text-black font-black bg-sky-100 px-4 py-2 rounded-full border-2 border-black">
+                        以下の項目を入力して「保存」ボタンを押してください ✨
+                    </span>
                 </div>
 
                 <div className="space-y-6">
@@ -373,23 +375,23 @@ const CoolingOffManagement = () => {
                         {headers.map((h, i) => {
                             if (h === '入金依頼') return null;
                             return (
-                                <div key={i} className="flex flex-col gap-1.5">
-                                    <label className="text-[11px] font-bold text-slate-400 ml-1 uppercase tracking-wider">{h}</label>
+                                <div key={i} className="flex flex-col gap-1.5 focus-within:scale-[1.01] transition-transform">
+                                    <label className="text-[13px] font-black text-black ml-1 uppercase tracking-wider !opacity-100">{h}</label>
                                     {h.includes('日') ? (
                                         <input
                                             type="date"
                                             value={formData[i] ? formData[i].replace(/\//g, '-') : ''}
                                             onChange={(e) => handleChange(i, e.target.value)}
-                                            className="bg-white/70 border border-sky-100 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-200 outline-none transition-all"
+                                            className="bg-white border-2 border-black rounded-lg p-3 text-sm text-black font-bold focus:ring-4 focus:ring-sky-200 outline-none transition-all"
                                         />
                                     ) : PULLDOWN_KEYS.includes(h) ? (
                                         <select
                                             value={formData[i] || ''}
                                             onChange={(e) => handleChange(i, e.target.value)}
-                                            className="bg-white/70 border border-sky-100 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-200 outline-none transition-all"
+                                            className="bg-white border-2 border-black rounded-lg p-3 text-sm text-black font-bold focus:ring-4 focus:ring-sky-200 outline-none transition-all appearance-none"
                                         >
                                             {(pulldownOptions[h] || []).map(opt => (
-                                                <option key={opt} value={opt}>{opt}</option>
+                                                <option key={opt} value={opt} className="text-black">{opt}</option>
                                             ))}
                                         </select>
                                     ) : (
@@ -398,7 +400,7 @@ const CoolingOffManagement = () => {
                                             value={formData[i] || ''}
                                             onChange={(e) => handleChange(i, e.target.value)}
                                             placeholder={h === 'No.' ? '(自動採番)' : `${h}を入力...`}
-                                            className="bg-white/70 border border-sky-100 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-200 outline-none transition-all"
+                                            className="bg-white border-2 border-black rounded-lg p-3 text-sm text-black font-bold focus:ring-4 focus:ring-sky-200 outline-none transition-all placeholder:text-slate-400"
                                         />
                                     )}
                                 </div>
