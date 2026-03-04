@@ -365,29 +365,30 @@ const CoolingOffManagement = () => {
         return (
             <div style={{
                 background: 'white',
-                border: '6px solid black',
-                padding: '30px',
-                marginBottom: '40px',
-                boxShadow: '12px 12px 0px 0px rgba(0,0,0,1)',
+                border: '2px solid black',
+                padding: '20px',
+                marginBottom: '30px',
+                boxShadow: '6px 6px 0px 0px rgba(56, 189, 248, 0.2)',
                 position: 'relative',
                 zIndex: 100,
-                width: '100%'
+                width: '100%',
+                borderRadius: '12px'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '5px solid black', paddingBottom: '15px' }}>
-                    <h2 style={{ fontSize: '28px', fontWeight: '900', color: 'black', margin: 0, display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <Plus size={32} /> 新規データの登録
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0369a1', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Sparkles size={24} className="text-sky-500" /> 新規レコードの記入
                     </h2>
-                    <div style={{ background: '#FFD700', border: '3px solid black', padding: '10px 20px', fontWeight: '900', color: 'black', fontSize: '16px' }}>
-                        こちらに入力してください ↓
+                    <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '6px 15px', fontWeight: '700', color: '#0369a1', fontSize: '13px', borderRadius: '20px' }}>
+                        必要な項目を入力してください ✨
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '15px' }}>
                     {headers.map((h, i) => {
                         if (h === '入金依頼') return null;
                         return (
-                            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '15px', fontWeight: '900', color: 'black', textTransform: 'uppercase' }}>{h}</label>
+                            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '12px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginLeft: '4px' }}>{h}</label>
                                 {h.includes('日') ? (
                                     <input
                                         type="date"
@@ -395,12 +396,13 @@ const CoolingOffManagement = () => {
                                         onChange={(e) => handleChange(i, e.target.value)}
                                         style={{
                                             background: 'white',
-                                            border: '3px solid black',
-                                            padding: '12px',
-                                            fontSize: '17px',
+                                            border: '2px solid black',
+                                            padding: '10px',
+                                            fontSize: '15px',
                                             color: 'black',
-                                            fontWeight: 'bold',
-                                            outline: 'none'
+                                            fontWeight: '600',
+                                            outline: 'none',
+                                            borderRadius: '8px'
                                         }}
                                     />
                                 ) : PULLDOWN_KEYS.includes(h) ? (
@@ -409,13 +411,14 @@ const CoolingOffManagement = () => {
                                         onChange={(e) => handleChange(i, e.target.value)}
                                         style={{
                                             background: 'white',
-                                            border: '3px solid black',
-                                            padding: '12px',
-                                            fontSize: '17px',
+                                            border: '2px solid black',
+                                            padding: '10px',
+                                            fontSize: '15px',
                                             color: 'black',
-                                            fontWeight: 'bold',
+                                            fontWeight: '600',
                                             outline: 'none',
-                                            appearance: 'auto'
+                                            appearance: 'auto',
+                                            borderRadius: '8px'
                                         }}
                                     >
                                         {(pulldownOptions[h] || []).map(opt => (
@@ -427,15 +430,16 @@ const CoolingOffManagement = () => {
                                         type="text"
                                         value={formData[i] || ''}
                                         onChange={(e) => handleChange(i, e.target.value)}
-                                        placeholder={h === 'No.' ? '(自動)' : `${h}を入力...`}
+                                        placeholder={h === 'No.' ? '(自動)' : `${h}...`}
                                         style={{
                                             background: 'white',
-                                            border: '3px solid black',
-                                            padding: '12px',
-                                            fontSize: '17px',
+                                            border: '2px solid black',
+                                            padding: '10px',
+                                            fontSize: '15px',
                                             color: 'black',
-                                            fontWeight: 'bold',
-                                            outline: 'none'
+                                            fontWeight: '600',
+                                            outline: 'none',
+                                            borderRadius: '8px'
                                         }}
                                         spellCheck="false"
                                     />
@@ -444,24 +448,28 @@ const CoolingOffManagement = () => {
                         );
                     })}
                 </div>
-                <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '5px solid black', display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ marginTop: '25px', paddingTop: '15px', borderTop: '2px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                         onClick={handleAdd}
                         style={{
-                            background: 'black',
+                            background: '#0369a1',
                             color: 'white',
-                            padding: '15px 50px',
-                            fontSize: '22px',
-                            fontWeight: '900',
-                            border: '4px solid black',
+                            padding: '12px 35px',
+                            fontSize: '16px',
+                            fontWeight: '800',
+                            border: 'none',
                             cursor: 'pointer',
-                            boxShadow: '6px 6px 0px 0px #38bdf8',
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 12px rgba(3, 105, 161, 0.2)',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '15px'
+                            gap: '10px',
+                            transition: 'all 0.2s'
                         }}
+                        onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                        onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                     >
-                        <Sparkles size={28} /> この内容で保存する
+                        <Sparkles size={20} /> この内容で保存する
                     </button>
                 </div>
             </div>
