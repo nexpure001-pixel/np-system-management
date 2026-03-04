@@ -64,7 +64,9 @@ const CoolingOffManagement = () => {
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
+
+            if (error) throw error;
 
             if (data) {
                 setHeaders(data.headers || DEFAULT_HEADERS);
@@ -75,6 +77,7 @@ const CoolingOffManagement = () => {
             }
         } catch (err) {
             console.error('Fetch error:', err);
+            setHeaders(DEFAULT_HEADERS);
         } finally {
             setLoading(false);
         }
@@ -388,7 +391,7 @@ const CoolingOffManagement = () => {
                                     type="text"
                                     value={formData[i] || ''}
                                     onChange={(e) => handleChange(i, e.target.value)}
-                                    placeholder="新星を配置..."
+                                    placeholder={h === 'No.' ? '(自動)' : '入力...'}
                                     className="bg-white/50 border border-sky-100 rounded p-1 w-full text-sm"
                                 />
                             )}
@@ -498,8 +501,12 @@ const CoolingOffManagement = () => {
                         <AddRecordRow />
                         {tableData.length === 0 ? (
                             <tr>
-                                <td colSpan={headers.length + 1} className="p-20 text-center text-slate-400 italic">
-                                    星の海からCSVファイルを読み込んでください... ✨
+                                <td colSpan={headers.length + 1} className="p-20 text-center text-slate-400 italic leading-loose">
+                                    <div className="flex flex-col items-center gap-4">
+                                        <Sparkles className="w-8 h-8 text-sky-300 animate-pulse" />
+                                        <p>上の入力欄から直接データを記入するか、<br />CSVファイルを読み込んでください... ✨</p>
+                                        <p className="text-xs opacity-60 font-noto">（入力後に右端の「追加」ボタンを押すと記録が作成されます）</p>
+                                    </div>
                                 </td>
                             </tr>
                         ) : (
