@@ -6,7 +6,8 @@ import {
     AlertCircle,
     CheckCircle,
     Clock,
-    Sparkles
+    Sparkles,
+    Plus
 } from 'lucide-react';
 import './CoolingOffManagement.css';
 
