@@ -27,7 +27,7 @@ const DEFAULT_HEADERS = [
 ];
 
 const CoolingOffManagement = () => {
-    const [headers, setHeaders] = useState([]);
+    const [headers, setHeaders] = useState(DEFAULT_HEADERS);
     const [tableData, setTableData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isLocked, setIsLocked] = useState(false);
@@ -333,11 +333,14 @@ const CoolingOffManagement = () => {
         );
     };
 
-    const AddRecordRow = () => {
+    const AddRecordForm = () => {
         const [formData, setFormData] = useState([]);
+        const [isExpanded, setIsExpanded] = useState(false);
 
         useEffect(() => {
-            setFormData(headers.map(h => (h === '入金依頼' ? false : '')));
+            if (headers.length > 0 && formData.length === 0) {
+                setFormData(headers.map(h => (h === '入金依頼' ? false : '')));
+            }
         }, [headers]);
 
         const handleChange = (idx, value) => {
@@ -348,62 +351,82 @@ const CoolingOffManagement = () => {
         };
 
         const handleAdd = () => {
+            if (formData.every(v => v === '' || v === false)) return alert('内容を入力してください。');
             addNewRecord(formData);
             setFormData(headers.map(h => (h === '入金依頼' ? false : '')));
+            setIsExpanded(false);
         };
 
         if (headers.length === 0) return null;
 
         return (
-            <tr className="bg-white/20 sticky top-12 z-10 backdrop-blur-md shadow-sm border-b-2 border-sky-200">
-                <td className="p-4 text-center">
-                    <Sparkles className="w-5 h-5 text-sky-400 inline-block" />
-                </td>
-                {headers.map((h, i) => (
-                    <td key={i} className="p-2">
-                        <div className="flex gap-2 items-center">
-                            {h === '入金依頼' ? (
-                                <input
-                                    type="checkbox"
-                                    checked={formData[i] || false}
-                                    onChange={(e) => handleChange(i, e.target.checked)}
-                                    className="w-5 h-5 cursor-pointer accent-sky-400 mx-auto"
-                                />
-                            ) : h.includes('日') ? (
-                                <input
-                                    type="date"
-                                    value={formData[i] ? formData[i].replace(/\//g, '-') : ''}
-                                    onChange={(e) => handleChange(i, e.target.value)}
-                                    className={`bg-white/50 border border-sky-100 rounded p-1 w-full text-sm ${!formData[i] ? 'opacity-30' : ''}`}
-                                />
-                            ) : PULLDOWN_KEYS.includes(h) ? (
-                                <select
-                                    value={formData[i] || ''}
-                                    onChange={(e) => handleChange(i, e.target.value)}
-                                    className="bg-white/50 border border-sky-100 rounded p-1 w-full text-sm"
-                                >
-                                    {(pulldownOptions[h] || []).map(opt => (
-                                        <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                </select>
-                            ) : (
-                                <input
-                                    type="text"
-                                    value={formData[i] || ''}
-                                    onChange={(e) => handleChange(i, e.target.value)}
-                                    placeholder={h === 'No.' ? '(自動)' : '入力...'}
-                                    className="bg-white/50 border border-sky-100 rounded p-1 w-full text-sm"
-                                />
-                            )}
-                            {i === headers.length - 1 && (
-                                <button onClick={handleAdd} className="btn-mystic px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">
-                                    ✨ 追加
-                                </button>
-                            )}
+            <div className="glass-panel p-6 mb-6 border-2 border-sky-200 shadow-lg shadow-sky-100/50">
+                <div
+                    className="flex items-center justify-between cursor-pointer mb-2"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                >
+                    <h2 className="text-xl font-bold text-sky-600 flex items-center gap-2">
+                        <Plus className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-45' : ''}`} />
+                        新規レコードを記入する
+                    </h2>
+                    {!isExpanded && <span className="text-sm text-sky-400 font-medium">クリックして入力欄を開く ✨</span>}
+                </div>
+
+                {isExpanded && (
+                    <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
+                            {headers.map((h, i) => {
+                                if (h === '入金依頼') return null;
+                                return (
+                                    <div key={i} className="flex flex-col gap-1.5">
+                                        <label className="text-[11px] font-bold text-slate-400 ml-1 uppercase tracking-wider">{h}</label>
+                                        {h.includes('日') ? (
+                                            <input
+                                                type="date"
+                                                value={formData[i] ? formData[i].replace(/\//g, '-') : ''}
+                                                onChange={(e) => handleChange(i, e.target.value)}
+                                                className="bg-white/70 border border-sky-100 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-200 outline-none transition-all"
+                                            />
+                                        ) : PULLDOWN_KEYS.includes(h) ? (
+                                            <select
+                                                value={formData[i] || ''}
+                                                onChange={(e) => handleChange(i, e.target.value)}
+                                                className="bg-white/70 border border-sky-100 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-200 outline-none transition-all"
+                                            >
+                                                {(pulldownOptions[h] || []).map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                value={formData[i] || ''}
+                                                onChange={(e) => handleChange(i, e.target.value)}
+                                                placeholder={h === 'No.' ? '(自動採番)' : `${h}を入力...`}
+                                                className="bg-white/70 border border-sky-100 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-sky-200 outline-none transition-all"
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
-                    </td>
-                ))}
-            </tr>
+                        <div className="pt-4 flex justify-end gap-3">
+                            <button
+                                onClick={() => setIsExpanded(false)}
+                                className="px-6 py-2.5 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={handleAdd}
+                                className="px-8 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-sky-200 transition-all flex items-center gap-2"
+                            >
+                                <Sparkles size={18} /> この内容で星に刻む
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         );
     };
 
@@ -476,6 +499,8 @@ const CoolingOffManagement = () => {
                 </div>
             </div>
 
+            <AddRecordForm />
+
             <div className="glass-panel table-container">
                 <table className="w-full text-left">
                     <thead>
@@ -498,7 +523,6 @@ const CoolingOffManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        <AddRecordRow />
                         {tableData.length === 0 ? (
                             <tr>
                                 <td colSpan={headers.length + 1} className="p-20 text-center text-slate-400 italic leading-loose">
