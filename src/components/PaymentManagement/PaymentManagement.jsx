@@ -3,11 +3,169 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../../lib/supabase';
 import './PaymentManagement.css';
 
+// --- Utilities ---
+const normalizeKana = (str) => {
+    if (!str) return '';
+    return str
+        .replace(/[\u3041-\u3096]/g, (s) => String.fromCharCode(s.charCodeAt(0) + 0x60)) // Hiragana to Katakana
+        .replace(/[！-～]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0)) // Full-width to Half-width alphanumeric
+        .replace(/　/g, ' ') // Zenkaku space to Hankaku space
+        .toLowerCase()
+        .trim();
+};
+
+const injectSearchableData = (item) => ({
+    ...item,
+    _searchShimei: normalizeKana(item.shimei),
+    _searchBikou: normalizeKana(item.bikou),
+    _searchTouroku: normalizeKana(item.touroku_jouhou),
+    _searchNyuukin: (item.nyuukin_kingaku || '').toString()
+});
+
+// --- Memoized Row Component ---
+const PaymentRow = React.memo(({
+    payment: p,
+    selectedIds,
+    toggleSelectRow,
+    handleInlineEdit,
+    saveToDatabase,
+    toggleKanryou
+}) => {
+    // Local state for text fields to avoid $O(N)$ global state updates on every keystroke
+    const [localShimei, setLocalShimei] = useState(p.shimei || '');
+    const [localNyuukin, setLocalNyuukin] = useState(p.nyuukin_kingaku ? Number(p.nyuukin_kingaku).toLocaleString() : '');
+    const [localBikou, setLocalBikou] = useState(p.bikou || '');
+
+    // Sync local state if external data changes (e.g. from refresh)
+    useEffect(() => {
+        setLocalShimei(p.shimei || '');
+        setLocalNyuukin(p.nyuukin_kingaku ? Number(p.nyuukin_kingaku).toLocaleString() : '');
+        setLocalBikou(p.bikou || '');
+    }, [p.shimei, p.nyuukin_kingaku, p.bikou]);
+
+    const handleShimeiBlur = () => {
+        if (localShimei !== p.shimei) {
+            saveToDatabase(p.id, { shimei: localShimei });
+        }
+    };
+
+    const handleNyuukinBlur = () => {
+        const cleanVal = Number(String(localNyuukin).replace(/,/g, '')) || 0;
+        if (cleanVal !== p.nyuukin_kingaku) {
+            saveToDatabase(p.id, { nyuukin_kingaku: cleanVal });
+            setLocalNyuukin(cleanVal.toLocaleString()); // Re-format
+        }
+    };
+
+    const handleBikouBlur = () => {
+        if (localBikou !== p.bikou) {
+            saveToDatabase(p.id, { bikou: localBikou });
+        }
+    };
+
+    return (
+        <tr className={`${p.kanryou ? 'completed-row' : ''} ${selectedIds.has(p.id) ? 'selected-row' : ''}`}>
+            <td style={{ textAlign: 'center' }}>
+                <label className="cute-checkbox">
+                    <input
+                        type="checkbox"
+                        checked={selectedIds.has(p.id)}
+                        onChange={() => toggleSelectRow(p.id)}
+                    />
+                    <span className="checkmark"></span>
+                </label>
+            </td>
+            <td style={{ textAlign: 'center' }}>
+                <label className="cute-checkbox">
+                    <input type="checkbox" checked={p.shiharaibi_nyuuryoku} onChange={e => handleInlineEdit(p.id, 'shiharaibi_nyuuryoku', e.target.checked)} />
+                    <span className="checkmark"></span>
+                </label>
+            </td>
+            <td style={{ textAlign: 'center' }}>
+                <label className="cute-checkbox">
+                    <input type="checkbox" checked={p.box_idou} onChange={e => handleInlineEdit(p.id, 'box_idou', e.target.checked)} />
+                    <span className="checkmark"></span>
+                </label>
+            </td>
+            <td>
+                <select className="filter-input" value={p.touroku_jouhou || ''} onChange={e => handleInlineEdit(p.id, 'touroku_jouhou', e.target.value)}>
+                    <option value=""></option>
+                    <option value="未注文">未注文</option>
+                    <option value="未登録">未登録</option>
+                    <option value="新規">新規</option>
+                    <option value="追加">追加</option>
+                    <option value="ランクアップ">ﾗﾝｸｱｯﾌﾟ</option>
+                    <option value="新規／追加">新規/追加</option>
+                    <option value="新規／ランクアップ">新規/ﾗﾝｸｱｯﾌﾟ</option>
+                    <option value="追加／ランクアップ">追加/ﾗﾝｸｱｯﾌﾟ</option>
+                    <option value="リピート／購入">ﾘﾋﾟｰﾄ/購入</option>
+                    <option value="救済">救済</option>
+                    <option value="店舗関連">店舗関連</option>
+                    <option value="オートシップ">ｵｰﾄｼｯﾌﾟ</option>
+                </select>
+            </td>
+            <td style={{ textAlign: 'center' }}>
+                <label className="cute-checkbox">
+                    <input type="checkbox" checked={p.soshikizu_kakunin} onChange={e => handleInlineEdit(p.id, 'soshikizu_kakunin', e.target.checked)} />
+                    <span className="checkmark"></span>
+                </label>
+            </td>
+            <td>
+                <select className="filter-input" value={p.rank_up_bikou || ''} onChange={e => handleInlineEdit(p.id, 'rank_up_bikou', e.target.value)}>
+                    <option value=""></option>
+                    <option value="登録">登録</option>
+                    <option value="旧登録">旧登録</option>
+                    <option value="申請日">申請日</option>
+                    <option value="3個ok">3個ok</option>
+                </select>
+            </td>
+            <td>{p.chuumonbi}</td>
+            <td>
+                <input
+                    type="text"
+                    className="filter-input"
+                    style={{ background: 'transparent', border: 'none', fontWeight: 'bold' }}
+                    value={localShimei}
+                    onChange={e => setLocalShimei(e.target.value)}
+                    onBlur={handleShimeiBlur}
+                />
+            </td>
+            <td style={{ textAlign: 'right' }}>
+                <input
+                    type="text"
+                    className="filter-input"
+                    style={{ background: 'transparent', border: 'none', textAlign: 'right' }}
+                    value={localNyuukin}
+                    onChange={e => setLocalNyuukin(e.target.value)}
+                    onBlur={handleNyuukinBlur}
+                />
+            </td>
+            <td>
+                <input
+                    type="text"
+                    className="filter-input"
+                    style={{ background: 'transparent', border: 'none' }}
+                    value={localBikou}
+                    onChange={e => setLocalBikou(e.target.value)}
+                    onBlur={handleBikouBlur}
+                />
+            </td>
+            <td style={{ textAlign: 'center' }}>
+                <label className="cute-heart-checkbox">
+                    <input type="checkbox" checked={p.kanryou} onChange={() => toggleKanryou(p.id, p.kanryou)} />
+                    <i className="fa-solid fa-heart"></i>
+                </label>
+            </td>
+        </tr>
+    );
+});
+
 const PaymentManagement = () => {
     // --- State ---
     const [payments, setPayments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [filters, setFilters] = useState({
         shiharaibi: '',
         boxIdou: '',
@@ -25,6 +183,14 @@ const PaymentManagement = () => {
     const [isGlobalSelected, setIsGlobalSelected] = useState(false);
     const itemsPerPage = 100;
     const fileInputRef = useRef(null);
+
+    // Debounce search query to prevent stuttering while typing
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     // Quick Add State
     const [quickAdd, setQuickAdd] = useState({
@@ -46,10 +212,13 @@ const PaymentManagement = () => {
                 .from('payments')
                 .select('*')
                 .order('created_at', { ascending: false })
-                .order('id', { ascending: true }); // Stable tie-breaker
+                .order('id', { ascending: true });
 
             if (error) throw error;
-            setPayments(data || []);
+
+            // Pre-normalize data for fast search
+            const normalizedData = (data || []).map(injectSearchableData);
+            setPayments(normalizedData);
         } catch (err) {
             console.error('Failed to fetch payments:', err);
         } finally {
@@ -76,16 +245,6 @@ const PaymentManagement = () => {
         localStorage.setItem('payment_selection', JSON.stringify([...selectedIds]));
     }, [selectedIds]);
 
-    // --- Utilities ---
-    const normalizeKana = (str) => {
-        if (!str) return '';
-        return str
-            .replace(/[\u3041-\u3096]/g, (s) => String.fromCharCode(s.charCodeAt(0) + 0x60)) // Hiragana to Katakana
-            .replace(/[！-～]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xfee0)) // Full-width to Half-width alphanumeric
-            .replace(/　/g, ' ') // Zenkaku space to Hankaku space
-            .toLowerCase()
-            .trim();
-    };
 
     // --- Handlers ---
     const handleImportFile = (e) => {
@@ -437,7 +596,7 @@ const PaymentManagement = () => {
 
     // --- Derived Data: Filtered & Sorted ---
     const filteredPayments = useMemo(() => {
-        const normalizedQuery = normalizeKana(searchQuery);
+        const normalizedQuery = normalizeKana(debouncedSearchQuery);
 
         const normFilters = {
             touroku: normalizeKana(filters.touroku),
@@ -447,23 +606,18 @@ const PaymentManagement = () => {
 
         return payments
             .filter(p => {
-                const pShimei = normalizeKana(p.shimei);
-                const pBikou = normalizeKana(p.bikou);
-                const pTouroku = normalizeKana(p.touroku_jouhou);
-                const pNyuukin = (p.nyuukin_kingaku || '').toString();
-
                 const matchesGlobal = (
-                    pShimei.includes(normalizedQuery) ||
-                    pBikou.includes(normalizedQuery) ||
-                    pTouroku.includes(normalizedQuery)
+                    p._searchShimei.includes(normalizedQuery) ||
+                    p._searchBikou.includes(normalizedQuery) ||
+                    p._searchTouroku.includes(normalizedQuery)
                 );
 
                 const matchesColumns = (
                     (!filters.shiharaibi || (p.shiharaibi_nyuuryoku ? '済' : '未') === filters.shiharaibi) &&
                     (!filters.boxIdou || (p.box_idou ? '済' : '未') === filters.boxIdou) &&
-                    (!normFilters.touroku || pTouroku.includes(normFilters.touroku)) &&
-                    (!normFilters.shimei || pShimei.includes(normFilters.shimei)) &&
-                    (!normFilters.nyuukin || pNyuukin.includes(normFilters.nyuukin))
+                    (!normFilters.touroku || p._searchTouroku.includes(normFilters.touroku)) &&
+                    (!normFilters.shimei || p._searchShimei.includes(normFilters.shimei)) &&
+                    (!normFilters.nyuukin || p._searchNyuukin.includes(normFilters.nyuukin))
                 );
 
                 return matchesGlobal && matchesColumns;
@@ -480,7 +634,7 @@ const PaymentManagement = () => {
                 if (timeA !== timeB) return timeB - timeA; // Newer first
                 return (a.id || '').localeCompare(b.id || '');
             });
-    }, [payments, searchQuery, filters, sortConfig]);
+    }, [payments, debouncedSearchQuery, filters, sortConfig]);
 
     const paginatedPayments = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -675,99 +829,15 @@ const PaymentManagement = () => {
                     </thead>
                     <tbody>
                         {paginatedPayments.map(p => (
-                            <tr key={p.id} className={`${p.kanryou ? 'completed-row' : ''} ${selectedIds.has(p.id) ? 'selected-row' : ''}`}>
-                                <td style={{ textAlign: 'center' }}>
-                                    <label className="cute-checkbox">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedIds.has(p.id)}
-                                            onChange={() => toggleSelectRow(p.id)}
-                                        />
-                                        <span className="checkmark"></span>
-                                    </label>
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                    <label className="cute-checkbox">
-                                        <input type="checkbox" checked={p.shiharaibi_nyuuryoku} onChange={e => handleInlineEdit(p.id, 'shiharaibi_nyuuryoku', e.target.checked)} />
-                                        <span className="checkmark"></span>
-                                    </label>
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                    <label className="cute-checkbox">
-                                        <input type="checkbox" checked={p.box_idou} onChange={e => handleInlineEdit(p.id, 'box_idou', e.target.checked)} />
-                                        <span className="checkmark"></span>
-                                    </label>
-                                </td>
-                                <td>
-                                    <select className="filter-input" value={p.touroku_jouhou || ''} onChange={e => handleInlineEdit(p.id, 'touroku_jouhou', e.target.value)}>
-                                        <option value=""></option>
-                                        <option value="未注文">未注文</option>
-                                        <option value="未登録">未登録</option>
-                                        <option value="新規">新規</option>
-                                        <option value="追加">追加</option>
-                                        <option value="ランクアップ">ﾗﾝｸｱｯﾌﾟ</option>
-                                        <option value="新規／追加">新規/追加</option>
-                                        <option value="新規／ランクアップ">新規/ﾗﾝｸｱｯﾌﾟ</option>
-                                        <option value="追加／ランクアップ">追加/ﾗﾝｸｱｯﾌﾟ</option>
-                                        <option value="リピート／購入">ﾘﾋﾟｰﾄ/購入</option>
-                                        <option value="救済">救済</option>
-                                        <option value="店舗関連">店舗関連</option>
-                                        <option value="オートシップ">ｵｰﾄｼｯﾌﾟ</option>
-                                    </select>
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                    <label className="cute-checkbox">
-                                        <input type="checkbox" checked={p.soshikizu_kakunin} onChange={e => handleInlineEdit(p.id, 'soshikizu_kakunin', e.target.checked)} />
-                                        <span className="checkmark"></span>
-                                    </label>
-                                </td>
-                                <td>
-                                    <select className="filter-input" value={p.rank_up_bikou || ''} onChange={e => handleInlineEdit(p.id, 'rank_up_bikou', e.target.value)}>
-                                        <option value=""></option>
-                                        <option value="登録">登録</option>
-                                        <option value="旧登録">旧登録</option>
-                                        <option value="申請日">申請日</option>
-                                        <option value="3個ok">3個ok</option>
-                                    </select>
-                                </td>
-                                <td>{p.chuumonbi}</td>
-                                <td>
-                                    <input
-                                        type="text"
-                                        className="filter-input"
-                                        style={{ background: 'transparent', border: 'none', fontWeight: 'bold' }}
-                                        value={p.shimei || ''}
-                                        onChange={e => setPayments(payments.map(item => item.id === p.id ? { ...item, shimei: e.target.value } : item))}
-                                        onBlur={e => saveToDatabase(p.id, { shimei: e.target.value })}
-                                    />
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <input
-                                        type="text"
-                                        className="filter-input"
-                                        style={{ background: 'transparent', border: 'none', textAlign: 'right' }}
-                                        value={p.nyuukin_kingaku ? Number(p.nyuukin_kingaku).toLocaleString() : ''}
-                                        onChange={e => setPayments(payments.map(item => item.id === p.id ? { ...item, nyuukin_kingaku: e.target.value.replace(/,/g, '') } : item))}
-                                        onBlur={e => saveToDatabase(p.id, { nyuukin_kingaku: Number(String(e.target.value).replace(/,/g, '')) || 0 })}
-                                    />
-                                </td>
-                                <td>
-                                    <input
-                                        type="text"
-                                        className="filter-input"
-                                        style={{ background: 'transparent', border: 'none' }}
-                                        value={p.bikou || ''}
-                                        onChange={e => setPayments(payments.map(item => item.id === p.id ? { ...item, bikou: e.target.value } : item))}
-                                        onBlur={e => saveToDatabase(p.id, { bikou: e.target.value })}
-                                    />
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                    <label className="cute-heart-checkbox">
-                                        <input type="checkbox" checked={p.kanryou} onChange={() => toggleKanryou(p.id, p.kanryou)} />
-                                        <i className="fa-solid fa-heart"></i>
-                                    </label>
-                                </td>
-                            </tr>
+                            <PaymentRow
+                                key={p.id}
+                                payment={p}
+                                selectedIds={selectedIds}
+                                toggleSelectRow={toggleSelectRow}
+                                handleInlineEdit={handleInlineEdit}
+                                saveToDatabase={saveToDatabase}
+                                toggleKanryou={toggleKanryou}
+                            />
                         ))}
                     </tbody>
                 </table>
