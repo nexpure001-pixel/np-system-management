@@ -181,8 +181,18 @@ const PaymentManagement = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [isGlobalSelected, setIsGlobalSelected] = useState(false);
-    const itemsPerPage = 100;
+    const itemsPerPage = 50;
     const fileInputRef = useRef(null);
+    const scrollTimeoutRef = useRef(null);
+    const [isScrolling, setIsScrolling] = useState(false);
+
+    const handleScroll = () => {
+        if (!isScrolling) setIsScrolling(true);
+        if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = setTimeout(() => {
+            setIsScrolling(false);
+        }, 150);
+    };
 
     // Debounce search query to prevent stuttering while typing
     useEffect(() => {
@@ -722,7 +732,7 @@ const PaymentManagement = () => {
                 )}
             </div>
 
-            <div className="table-container glass-panel">
+            <div className={`table-container glass-panel ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
                 <table className="cute-table">
                     <thead>
                         <tr>
