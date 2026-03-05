@@ -119,7 +119,15 @@ const PaymentRow = React.memo(({
                     <option value="3個ok">3個ok</option>
                 </select>
             </td>
-            <td>{p.chuumonbi}</td>
+            <td>
+                <input
+                    type="date"
+                    className="filter-input"
+                    style={{ background: 'transparent', border: 'none' }}
+                    value={p.chuumonbi || ''}
+                    onChange={e => handleInlineEdit(p.id, 'chuumonbi', e.target.value)}
+                />
+            </td>
             <td>
                 <input
                     type="text"
@@ -134,7 +142,7 @@ const PaymentRow = React.memo(({
                 <input
                     type="text"
                     className="filter-input"
-                    style={{ background: 'transparent', border: 'none', textAlign: 'right' }}
+                    style={{ background: 'transparent', border: 'none', textAlign: 'right', fontWeight: 'bold' }}
                     value={localNyuukin}
                     onChange={e => setLocalNyuukin(e.target.value)}
                     onBlur={handleNyuukinBlur}
