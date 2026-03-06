@@ -1,6 +1,6 @@
 
-export const generateDownload = (imageSrc, hotspots, links = []) => {
-    const htmlContent = `<!DOCTYPE html>
+export const getManualHtml = (imageSrc, hotspots, links = []) => {
+  return `<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -218,12 +218,15 @@ export const generateDownload = (imageSrc, hotspots, links = []) => {
 
 </body>
 </html>`;
+};
 
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'manual-export.html';
-    a.click();
-    URL.revokeObjectURL(url);
+export const generateDownload = (imageSrc, hotspots, links = []) => {
+  const htmlContent = getManualHtml(imageSrc, hotspots, links);
+  const blob = new Blob([htmlContent], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'manual-export.html';
+  a.click();
+  URL.revokeObjectURL(url);
 };

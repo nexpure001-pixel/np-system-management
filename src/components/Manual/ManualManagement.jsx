@@ -3,7 +3,7 @@ import { Download, Eye, Layout, Settings, Save, Link as LinkIcon, Plus, FileText
 import EditorCanvas from './EditorCanvas';
 import TooltipEditor from './TooltipEditor';
 import LinkEditor from './LinkEditor';
-import { generateDownload } from './utils/export';
+import { generateDownload, getManualHtml } from './utils/export';
 import { supabase } from '../../lib/supabase';
 
 const ManualManagement = () => {
@@ -20,21 +20,26 @@ const ManualManagement = () => {
     const [manualCategory, setManualCategory] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    // Existing manuals (Hardcoded based on the 'manual' folder content)
-    const existingManuals = [
-        { id: 'm1', title: 'マニュアル 01', file: 'manualのmanual01.html', date: '2025-10-01' },
-        { id: 'm2', title: 'マニュアル 02', file: 'manualのmanual02.html', date: '2025-11-15' },
-        { id: 'm3', title: 'マニュアル 03', file: 'manualのmanual03.html', date: '2026-01-20' },
-        { id: 'm4', title: '概要書面マニュアル新人向け', file: '概要書面マニュアル新人向け/index.html', date: '2026-03-02' },
-        { id: 'm5', title: '電算システム新人向けマニュアル', file: '電算システム新人向けマニュアル/index-.html', date: '2026-03-02' },
-        { id: 'm6', title: 'サービスマニュアル (Servicemanual)', file: 'Servicemanual.html', date: '2026-03-03' },
-    ];
+    const [existingManuals, setExistingManuals] = useState([]);
 
     useEffect(() => {
         if (view === 'list') {
             fetchManagedManuals();
+            fetchExistingFiles();
         }
     }, [view]);
+
+    const fetchExistingFiles = async () => {
+        try {
+            const response = await fetch('/api/list-manuals');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success) setExistingManuals(result.files);
+            }
+        } catch (err) {
+            console.error('Failed to fetch local manual files:', err);
+        }
+    };
 
     const fetchManagedManuals = async () => {
         try {
@@ -190,9 +195,38 @@ const ManualManagement = () => {
         setView('editor');
     };
 
-    const handleExportHtml = () => {
+    const handleExportHtml = async () => {
         if (!imageSrc) return alert('画像をアップロードしてください。');
-        generateDownload(imageSrc, hotspots, links);
+
+        // Ask for a filename
+        const defaultFilename = manualTitle ? `${manualTitle}.html` : 'manual.html';
+        const filename = window.prompt('保存するファイル名を入力してください (例: step1.html)', defaultFilename);
+
+        if (!filename) return;
+
+        const safeFilename = filename.endsWith('.html') ? filename : `${filename}.html`;
+        const htmlContent = getManualHtml(imageSrc, hotspots, links);
+
+        try {
+            // First attempt: Save to local public/manual directory via Vite API
+            const response = await fetch('/api/save-manual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: safeFilename, content: htmlContent })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                alert(`マニュアルを自動保存しました！\n場所: public/manual/${safeFilename}`);
+                fetchExistingFiles(); // Refresh the list
+            } else {
+                throw new Error('Local save API not available or failed');
+            }
+        } catch (err) {
+            // Fallback: Standard browser download
+            console.warn('Local save failed, falling back to download:', err);
+            generateDownload(imageSrc, hotspots, links);
+        }
     };
 
     const handleLoadProject = (e) => {
