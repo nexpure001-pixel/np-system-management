@@ -7,7 +7,8 @@ import { generateDownload, getManualHtml } from './utils/export';
 import { supabase } from '../../lib/supabase';
 
 const ManualManagement = () => {
-    const [view, setView] = useState('list'); // 'list' or 'editor'
+    const [view, setView] = useState('list'); // 'list', 'editor', 'viewer'
+    const [viewerUrl, setViewerUrl] = useState('');
     const [imageSrc, setImageSrc] = useState(null);
     const [hotspots, setHotspots] = useState([]);
     const [links, setLinks] = useState([]);
@@ -247,7 +248,8 @@ const ManualManagement = () => {
     };
 
     const openManual = (filename) => {
-        window.open(`/manual/${filename}`, '_blank');
+        setViewerUrl(`/manual/${filename}`);
+        setView('viewer');
     };
 
     return (
@@ -337,41 +339,51 @@ const ManualManagement = () => {
                                         return acc;
                                     }, {})
                                 ).map(([category, items]) => (
-                                    <div key={category} className="space-y-4">
-                                        <h4 className="flex items-center gap-2 text-sm font-bold text-slate-500 pb-2 border-b border-slate-100 uppercase tracking-widest">
-                                            <Folder size={16} className="text-indigo-400" />
-                                            {category}
-                                            <span className="text-[10px] font-medium bg-slate-100 px-1.5 py-0.5 rounded-full text-slate-400">
-                                                {items.length}
-                                            </span>
-                                        </h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {items.map(manual => (
+                                    <div key={category} className="bg-white/40 backdrop-blur-xl rounded-3xl border border-white/60 p-6 shadow-xl shadow-indigo-500/5">
+                                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-indigo-100/50">
+                                            <h4 className="flex items-center gap-3 text-lg font-black text-slate-700 tracking-tight">
+                                                <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200">
+                                                    <Folder size={20} />
+                                                </div>
+                                                {category}
+                                                <span className="text-xs font-bold bg-indigo-50 text-indigo-500 px-3 py-1 rounded-full border border-indigo-100/50">
+                                                    {items.length} ページ
+                                                </span>
+                                            </h4>
+                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Manual Pack</div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                            {items.sort((a, b) => a.title.localeCompare(b.title)).map(manual => (
                                                 <div
                                                     key={manual.id}
-                                                    className="group bg-white p-5 rounded-2xl border border-indigo-50 border-white shadow-sm hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all cursor-pointer relative"
+                                                    className="group bg-white/60 p-4 rounded-2xl border border-white hover:border-indigo-400 hover:bg-white hover:shadow-2xl hover:shadow-indigo-500/10 transition-all cursor-pointer relative overflow-hidden"
+                                                    onClick={() => handleEditManual(manual)}
                                                 >
-                                                    <div className="flex items-start gap-4" onClick={() => handleEditManual(manual)}>
-                                                        <div className="w-14 h-14 bg-indigo-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">
-                                                            <CloudUpload size={28} />
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                                            <FileText size={20} />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Project</span>
-                                                            </div>
-                                                            <h3 className="font-bold text-slate-800 tracking-tight mt-1 truncate group-hover:text-indigo-600">{manual.title}</h3>
-                                                            <p className="text-[10px] text-slate-400 mt-1">最終更新: {new Date(manual.updated_at).toLocaleString()}</p>
+                                                            <h3 className="font-bold text-slate-800 text-sm truncate group-hover:text-indigo-600">
+                                                                {manual.title}
+                                                            </h3>
+                                                            <p className="text-[9px] text-slate-400 mt-0.5">
+                                                                更新: {new Date(manual.updated_at).toLocaleDateString()}
+                                                            </p>
                                                         </div>
                                                     </div>
-                                                    <div className="absolute top-4 right-4 flex items-center gap-1">
+                                                    <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <button
-                                                            onClick={(e) => handleDeleteManagedManual(e, manual.id)}
-                                                            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                                            title="削除"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteManagedManual(e, manual.id);
+                                                            }}
+                                                            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                                         >
-                                                            <Trash2 size={16} />
+                                                            <Trash2 size={12} />
                                                         </button>
-                                                        <ChevronRight size={18} className="text-slate-200 group-hover:text-indigo-600 transition-all translate-x-1 group-hover:translate-x-2" />
+                                                        <ChevronRight size={14} className="text-indigo-300" />
                                                     </div>
                                                 </div>
                                             ))}
@@ -409,6 +421,42 @@ const ManualManagement = () => {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    </div>
+                ) : view === 'viewer' ? (
+                    <div className="flex flex-col h-full bg-slate-900 overflow-hidden relative">
+                        {/* Viewer Header / Toolbar */}
+                        <div className="bg-slate-800 text-white px-6 py-3 flex items-center justify-between border-b border-white/10 shrink-0">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setView('list')}
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold transition-all"
+                                >
+                                    <ChevronRight className="rotate-180" size={14} /> 一覧に戻る
+                                </button>
+                                <div className="h-4 w-px bg-white/20"></div>
+                                <div className="text-sm font-bold truncate max-w-md flex items-center gap-2 text-slate-300">
+                                    <FileText size={16} /> Viewing: {viewerUrl.split('/').pop()}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => window.open(viewerUrl, '_blank')}
+                                    className="p-2 text-slate-400 hover:text-white transition-all"
+                                    title="別タブで開く"
+                                >
+                                    <ExternalLink size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Iframe for same-window experience */}
+                        <div className="flex-1 w-full bg-white relative">
+                            <iframe
+                                src={viewerUrl}
+                                className="w-full h-full border-none"
+                                title="Manual Viewer"
+                            />
                         </div>
                     </div>
                 ) : (

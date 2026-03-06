@@ -19,7 +19,7 @@ const LinkMarker = ({ link, isSelected, onClick, onDragStart, isPreviewMode }) =
                         if (!targetUrl.startsWith('http') && !targetUrl.startsWith('/') && targetUrl.endsWith('.html')) {
                             targetUrl = `/manual/${targetUrl}`;
                         }
-                        window.open(targetUrl, '_blank');
+                        window.open(targetUrl, '_self');
                     }
                 } else {
                     onClick(link.id);
