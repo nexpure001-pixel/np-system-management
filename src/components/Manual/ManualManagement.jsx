@@ -106,8 +106,14 @@ const ManualManagement = () => {
     };
 
     const handleSaveToServer = async (silent = false) => {
-        if (!imageSrc) return;
-        if (!manualTitle) return;
+        if (!imageSrc) {
+            if (!silent) alert('保存する前にスクリーンショット画像をアップロードしてください。');
+            return;
+        }
+        if (!manualTitle) {
+            if (!silent) alert('マニュアルのタイトルを入力してください。');
+            return;
+        }
 
         if (!silent) setIsSaving(true);
         try {
@@ -247,7 +253,7 @@ const ManualManagement = () => {
                             <Settings size={14} /> 読込 (JSON)
                             <input type="file" className="hidden" accept=".json" onChange={handleLoadProject} />
                         </label>
-                        <button onClick={handleSaveToServer} disabled={isSaving} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all border border-indigo-200">
+                        <button onClick={() => handleSaveToServer(false)} disabled={isSaving} className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all border border-indigo-200">
                             <CloudUpload size={14} /> {isSaving ? '保存中...' : 'サーバー保存'}
                         </button>
                         <button onClick={handleExportHtml} className="flex items-center gap-2 px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg shadow-indigo-200 transition-all">
