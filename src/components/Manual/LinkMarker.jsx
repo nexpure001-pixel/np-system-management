@@ -4,7 +4,7 @@ import { Link } from 'lucide-react';
 const LinkMarker = ({ link, isSelected, onClick, onDragStart, isPreviewMode }) => {
     return (
         <div
-            className={`absolute cursor-grab active:cursor-grabbing group z-20 ${isSelected ? 'z-30' : ''}`}
+            className={`absolute group z-20 ${isSelected ? 'z-30' : ''} ${isPreviewMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'}`}
             style={{
                 left: `${link.x}%`,
                 top: `${link.y}%`,
@@ -14,7 +14,12 @@ const LinkMarker = ({ link, isSelected, onClick, onDragStart, isPreviewMode }) =
                 e.stopPropagation();
                 if (isPreviewMode) {
                     if (link.url && link.url !== '#') {
-                        window.open(link.url, '_blank');
+                        let targetUrl = link.url;
+                        // For relative internal manual links, prepend /manual/ if not already present
+                        if (!targetUrl.startsWith('http') && !targetUrl.startsWith('/') && targetUrl.endsWith('.html')) {
+                            targetUrl = `/manual/${targetUrl}`;
+                        }
+                        window.open(targetUrl, '_blank');
                     }
                 } else {
                     onClick(link.id);

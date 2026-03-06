@@ -53,7 +53,7 @@ const LinkEditor = ({ link, onChange, onDelete, onClose }) => {
                         value={link.url}
                         onChange={(e) => handleChange('url', e.target.value)}
                         className="w-full bg-white/50 border border-white/50 rounded px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors font-mono text-xs shadow-sm"
-                        placeholder="page2.html"
+                        placeholder="例: manual02.html"
                     />
                     <div className="flex gap-2 mt-2">
                         <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white/50 hover:bg-white border border-white/50 rounded text-xs text-slate-600 font-bold cursor-pointer transition-colors shadow-sm">
@@ -68,7 +68,8 @@ const LinkEditor = ({ link, onChange, onDelete, onClose }) => {
                         </label>
                     </div>
                     <p className="text-[10px] text-slate-500 mt-2">
-                        同じフォルダ内のHTMLファイル名（例: <code>introduction.html</code>）や、WebサイトのURLを入力できます。
+                        他のマニュアルへリンクする場合、その<strong>ファイル名</strong>を入力してください。（例: <code>manual01.html</code>）<br />
+                        ※プレビューモード（右上の目玉アイコン）で実際にリンクを確認できます。
                     </p>
                 </div>
 
