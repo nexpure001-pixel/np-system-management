@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Eye, Layout, Settings, Save, Link as LinkIcon, Plus, FileText, ChevronRight, ExternalLink, Trash2, CloudUpload } from 'lucide-react';
+import { Download, Eye, Layout, Settings, Save, Link as LinkIcon, Plus, FileText, ChevronRight, ExternalLink, Trash2, CloudUpload, Folder, Edit3, Clock } from 'lucide-react';
 import EditorCanvas from './EditorCanvas';
 import TooltipEditor from './TooltipEditor';
 import LinkEditor from './LinkEditor';
@@ -17,6 +17,7 @@ const ManualManagement = () => {
     const [selectedHotspotId, setSelectedHotspotId] = useState(null);
     const [selectedLinkId, setSelectedLinkId] = useState(null);
     const [isPreviewMode, setIsPreviewMode] = useState(false);
+    const [manualCategory, setManualCategory] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     // Existing manuals (Hardcoded based on the 'manual' folder content)
@@ -123,6 +124,7 @@ const ManualManagement = () => {
                 .upsert({
                     id: editingManualId || crypto.randomUUID(),
                     title: manualTitle,
+                    category: manualCategory || null,
                     project_data: projectData,
                     updated_at: new Date().toISOString()
                 })
@@ -156,6 +158,7 @@ const ManualManagement = () => {
     const handleEditManual = (manual) => {
         setEditingManualId(manual.id);
         setManualTitle(manual.title);
+        setManualCategory(manual.category || '');
         setImageSrc(manual.project_data.imageSrc);
         setHotspots(manual.project_data.hotspots || []);
         setLinks(manual.project_data.links || []);
@@ -180,7 +183,7 @@ const ManualManagement = () => {
 
     const handleNewManual = () => {
         setEditingManualId(null);
-        setManualTitle('新規マニュアル');
+        setManualCategory('');
         setImageSrc(null);
         setHotspots([]);
         setLinks([]);
@@ -245,8 +248,16 @@ const ManualManagement = () => {
                                 type="text"
                                 value={manualTitle}
                                 onChange={(e) => setManualTitle(e.target.value)}
-                                className="bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 min-w-[200px]"
-                                placeholder="マニュアルタイトルを入力..."
+                                className="bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 min-w-[150px]"
+                                placeholder="タイトル..."
+                            />
+                            <div className="h-4 w-px bg-slate-200 mx-1"></div>
+                            <input
+                                type="text"
+                                value={manualCategory}
+                                onChange={(e) => setManualCategory(e.target.value)}
+                                className="bg-transparent border-none focus:ring-0 text-xs font-medium text-slate-400 min-w-[120px]"
+                                placeholder="カテゴリー名入力..."
                             />
                         </div>
                         <label className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-all border border-slate-200">
@@ -283,45 +294,56 @@ const ManualManagement = () => {
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {managedManuals.length === 0 ? (
-                                    <div className="col-span-full py-12 text-center bg-white rounded-2xl border-2 border-dashed border-slate-200">
-                                        <p className="text-slate-400 font-medium">保存されたプロジェクトはまだありません。</p>
-                                        <button onClick={handleNewManual} className="mt-4 text-indigo-600 font-bold hover:underline">
-                                            新しくマニュアルを作成する
-                                        </button>
-                                    </div>
-                                ) : (
-                                    managedManuals.map(manual => (
-                                        <div
-                                            key={manual.id}
-                                            className="group bg-white p-5 rounded-2xl border border-indigo-100 hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all cursor-pointer relative"
-                                        >
-                                            <div className="flex items-start gap-4" onClick={() => handleEditManual(manual)}>
-                                                <div className="w-14 h-14 bg-indigo-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">
-                                                    <CloudUpload size={28} />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Project</span>
-                                                    </div>
-                                                    <h3 className="font-bold text-slate-800 tracking-tight mt-1 truncate">{manual.title}</h3>
-                                                    <p className="text-[10px] text-slate-400 mt-1">最終更新: {new Date(manual.updated_at).toLocaleString()}</p>
-                                                </div>
-                                            </div>
-                                            <div className="absolute top-4 right-4 flex items-center gap-1">
-                                                <button
-                                                    onClick={(e) => handleDeleteManagedManual(e, manual.id)}
-                                                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                                    title="削除"
+                            <div className="space-y-10">
+                                {Object.entries(
+                                    managedManuals.reduce((acc, manual) => {
+                                        const category = manual.category || '未分類';
+                                        if (!acc[category]) acc[category] = [];
+                                        acc[category].push(manual);
+                                        return acc;
+                                    }, {})
+                                ).map(([category, items]) => (
+                                    <div key={category} className="space-y-4">
+                                        <h4 className="flex items-center gap-2 text-sm font-bold text-slate-500 pb-2 border-b border-slate-100 uppercase tracking-widest">
+                                            <Folder size={16} className="text-indigo-400" />
+                                            {category}
+                                            <span className="text-[10px] font-medium bg-slate-100 px-1.5 py-0.5 rounded-full text-slate-400">
+                                                {items.length}
+                                            </span>
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {items.map(manual => (
+                                                <div
+                                                    key={manual.id}
+                                                    className="group bg-white p-5 rounded-2xl border border-indigo-50 border-white shadow-sm hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all cursor-pointer relative"
                                                 >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                                <ChevronRight className="text-slate-300 group-hover:text-indigo-600 transition-all translate-x-1 group-hover:translate-x-2" />
-                                            </div>
+                                                    <div className="flex items-start gap-4" onClick={() => handleEditManual(manual)}>
+                                                        <div className="w-14 h-14 bg-indigo-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-100 group-hover:scale-110 transition-transform">
+                                                            <CloudUpload size={28} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Project</span>
+                                                            </div>
+                                                            <h3 className="font-bold text-slate-800 tracking-tight mt-1 truncate group-hover:text-indigo-600">{manual.title}</h3>
+                                                            <p className="text-[10px] text-slate-400 mt-1">最終更新: {new Date(manual.updated_at).toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="absolute top-4 right-4 flex items-center gap-1">
+                                                        <button
+                                                            onClick={(e) => handleDeleteManagedManual(e, manual.id)}
+                                                            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                            title="削除"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                        <ChevronRight size={18} className="text-slate-200 group-hover:text-indigo-600 transition-all translate-x-1 group-hover:translate-x-2" />
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))
-                                )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
