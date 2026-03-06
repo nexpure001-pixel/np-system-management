@@ -144,7 +144,7 @@ const StoreManagement = () => {
         data.no = formData.get('no');
         data.np_seller_id = formData.get('np_seller_id');
         data.introducer = formData.get('introducer');
-        data.store_id = formData.get('store_id') || data.store_id || Math.floor(10000000 + Math.random() * 90000000).toString();
+        data.store_id = formData.get('store_id') || null;
         data.store_name = formData.get('store_name');
         data.corporate_name = formData.get('corporate_name');
         data.representative = formData.get('representative');
@@ -263,7 +263,8 @@ const StoreManagement = () => {
                                 mapped[dbKey] = value === '' ? null : value;
                             }
                         });
-                        if (!mapped.store_id) mapped.store_id = row.storeId || Math.random().toString(36).substr(2, 9);
+                        // Allow null store_id if not provided in CSV
+                        if (!mapped.store_id) mapped.store_id = row.storeId || null;
                         return mapped;
                     });
 
@@ -405,7 +406,8 @@ const StoreManagement = () => {
         try {
             let result;
             if (editingStore) {
-                result = await supabase.from('stores').update(dbData).eq('store_id', sId);
+                // Use the internal UUID 'id' to update, allowing 'store_id' to be changed
+                result = await supabase.from('stores').update(dbData).eq('id', editingStore.raw.id);
             } else {
                 result = await supabase.from('stores').insert([dbData]);
             }
@@ -545,7 +547,7 @@ const StoreManagement = () => {
                                 <section>
                                     <h3>基本情報</h3>
                                     <div className="form-grid">
-                                        <div className="form-group"><label>店舗ID</label><input type="text" name="store_id" readOnly={!!editingStore} defaultValue={editingStore?.store_id || ''} /></div>
+                                        <div className="form-group"><label>店舗ID</label><input type="text" name="store_id" defaultValue={editingStore?.store_id || ''} /></div>
                                         <div className="form-group"><label>No</label><input type="text" name="no" defaultValue={editingStore?.no || ''} /></div>
                                         <div className="form-group"><label>店舗名</label><input type="text" name="store_name" required defaultValue={editingStore?.store_name || ''} /></div>
                                         <div className="form-group"><label>法人名</label><input type="text" name="corporate_name" defaultValue={editingStore?.corporate_name || ''} /></div>

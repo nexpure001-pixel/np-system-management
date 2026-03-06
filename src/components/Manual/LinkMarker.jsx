@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'lucide-react';
 
-const LinkMarker = ({ link, isSelected, onClick, onDragStart }) => {
+const LinkMarker = ({ link, isSelected, onClick, onDragStart, isPreviewMode }) => {
     return (
         <div
             className={`absolute cursor-grab active:cursor-grabbing group z-20 ${isSelected ? 'z-30' : ''}`}
@@ -12,7 +12,13 @@ const LinkMarker = ({ link, isSelected, onClick, onDragStart }) => {
             }}
             onClick={(e) => {
                 e.stopPropagation();
-                onClick(link.id);
+                if (isPreviewMode) {
+                    if (link.url && link.url !== '#') {
+                        window.open(link.url, '_blank');
+                    }
+                } else {
+                    onClick(link.id);
+                }
             }}
             onMouseDown={(e) => onDragStart(e, link.id, 'link')}
         >

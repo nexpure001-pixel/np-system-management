@@ -129,6 +129,7 @@ const EditorCanvas = ({
                         isSelected={link.id === selectedLinkId}
                         onClick={onSelectLink}
                         onDragStart={handleDragStart}
+                        isPreviewMode={isPreviewMode}
                     />
                 ))}
             </div>
