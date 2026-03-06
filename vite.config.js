@@ -43,17 +43,30 @@ const localManualSaver = () => ({
             return;
           }
 
-          const files = fs.readdirSync(dir)
-            .filter(f => f.endsWith('.html'))
-            .map(f => {
-              const stats = fs.statSync(path.join(dir, f));
-              return {
-                id: f,
-                title: f.replace('.html', ''),
-                file: f,
-                date: stats.mtime.toISOString().split('T')[0]
-              };
+          const getFiles = (dirPath, prefix = '') => {
+            let results = [];
+            const list = fs.readdirSync(dirPath);
+            list.forEach(file => {
+              const filePath = path.join(dirPath, file);
+              const stats = fs.statSync(filePath);
+              const relativePath = prefix ? path.join(prefix, file) : file;
+
+              if (stats.isDirectory()) {
+                results = results.concat(getFiles(filePath, relativePath));
+              } else if (file.endsWith('.html')) {
+                results.push({
+                  id: relativePath,
+                  title: file.replace('.html', ''),
+                  file: relativePath,
+                  category: prefix || '未分類',
+                  date: stats.mtime.toISOString().split('T')[0]
+                });
+              }
             });
+            return results;
+          };
+
+          const files = getFiles(dir);
 
           res.statusCode = 200;
           res.end(JSON.stringify({ success: true, files }));

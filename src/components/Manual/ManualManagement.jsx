@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase';
 const ManualManagement = () => {
     const [view, setView] = useState('list'); // 'list', 'editor', 'viewer'
     const [viewerUrl, setViewerUrl] = useState('');
+    const [viewerPack, setViewerPack] = useState([]); // List of files in the current pack
     const [imageSrc, setImageSrc] = useState(null);
     const [hotspots, setHotspots] = useState([]);
     const [links, setLinks] = useState([]);
@@ -21,7 +22,14 @@ const ManualManagement = () => {
     const [manualCategory, setManualCategory] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    const [existingManuals, setExistingManuals] = useState([]);
+    const [existingManuals, setExistingManuals] = useState([
+        { id: 'm1', title: 'マニュアル 01', file: 'manualのmanual01.html', date: '2025-10-01', category: '未分類' },
+        { id: 'm2', title: 'マニュアル 02', file: 'manualのmanual02.html', date: '2025-11-15', category: '未分類' },
+        { id: 'm3', title: 'マニュアル 03', file: 'manualのmanual03.html', date: '2026-01-20', category: '未分類' },
+        { id: 'm4', title: '概要書面マニュアル新人向け', file: '概要書面マニュアル新人向け/index.html', date: '2026-03-02', category: '概要書面マニュアル新人向け' },
+        { id: 'm5', title: '電算システム新人向けマニュアル', file: '電算システム新人向けマニュアル/index-.html', date: '2026-03-02', category: '電算システム新人向けマニュアル' },
+        { id: 'm6', title: 'サービスマニュアル (Servicemanual)', file: 'Servicemanual.html', date: '2026-03-03', category: '未分類' },
+    ]);
 
     useEffect(() => {
         if (view === 'list') {
@@ -247,8 +255,9 @@ const ManualManagement = () => {
         reader.readAsText(file);
     };
 
-    const openManual = (filename) => {
+    const openManual = (filename, pack = []) => {
         setViewerUrl(`/manual/${filename}`);
+        setViewerPack(pack);
         setView('viewer');
     };
 
@@ -401,23 +410,39 @@ const ManualManagement = () => {
                                 <p className="text-slate-400 text-sm mt-1">HTMLファイルとして構成済みの一括閲覧用マニュアルです。</p>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {existingManuals.map(manual => (
-                                    <div
-                                        key={manual.id}
-                                        onClick={() => openManual(manual.file)}
-                                        className="group bg-white p-5 rounded-2xl border border-slate-200 hover:border-slate-400 hover:shadow-xl transition-all cursor-pointer flex items-center justify-between"
-                                    >
-                                        <div className="flex items-center gap-4 min-w-0">
-                                            <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center group-hover:bg-slate-800 group-hover:text-white transition-all shrink-0">
-                                                <FileText size={24} />
-                                            </div>
-                                            <div className="truncate">
-                                                <h3 className="font-bold text-slate-800 tracking-tight truncate">{manual.title}</h3>
-                                                <p className="text-[10px] text-slate-400 mt-1">一式フォルダ格納済み ({manual.date})</p>
-                                            </div>
+                            <div className="space-y-8">
+                                {Object.entries(
+                                    existingManuals.reduce((acc, manual) => {
+                                        const category = manual.category || '未分類';
+                                        if (!acc[category]) acc[category] = [];
+                                        acc[category].push(manual);
+                                        return acc;
+                                    }, {})
+                                ).map(([category, items]) => (
+                                    <div key={category} className="bg-slate-100/50 rounded-2xl p-6 border border-slate-200/50">
+                                        <h4 className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest">
+                                            <Folder size={14} /> {category} ({items.length})
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {items.map(manual => (
+                                                <div
+                                                    key={manual.id}
+                                                    onClick={() => openManual(manual.file, items)}
+                                                    className="group bg-white p-4 rounded-xl border border-slate-200 hover:border-indigo-400 hover:shadow-lg transition-all cursor-pointer flex items-center justify-between"
+                                                >
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shrink-0">
+                                                            <FileText size={20} />
+                                                        </div>
+                                                        <div className="truncate">
+                                                            <h3 className="font-bold text-slate-700 text-sm tracking-tight truncate group-hover:text-indigo-600">{manual.title}</h3>
+                                                            <p className="text-[9px] text-slate-400 mt-0.5">{manual.date}</p>
+                                                        </div>
+                                                    </div>
+                                                    <ExternalLink size={14} className="text-slate-300 group-hover:text-indigo-400 transition-all shrink-0" />
+                                                </div>
+                                            ))}
                                         </div>
-                                        <ExternalLink size={16} className="text-slate-300 group-hover:text-slate-600 transition-all shrink-0" />
                                     </div>
                                 ))}
                             </div>
@@ -450,13 +475,39 @@ const ManualManagement = () => {
                             </div>
                         </div>
 
-                        {/* Iframe for same-window experience */}
-                        <div className="flex-1 w-full bg-white relative">
-                            <iframe
-                                src={viewerUrl}
-                                className="w-full h-full border-none"
-                                title="Manual Viewer"
-                            />
+                        {/* Iframe & Navigation Wrapper */}
+                        <div className="flex-1 flex overflow-hidden">
+                            {/* Viewer Sidebar (Pack Contents) */}
+                            {viewerPack.length > 1 && (
+                                <div className="w-64 bg-slate-800 border-r border-white/10 overflow-y-auto shrink-0 hidden md:block">
+                                    <div className="p-4 border-b border-white/5">
+                                        <h5 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                                            <Folder size={12} /> Manual Pack Contents
+                                        </h5>
+                                    </div>
+                                    <div className="p-2 space-y-1">
+                                        {viewerPack.map(f => (
+                                            <button
+                                                key={f.id}
+                                                onClick={() => setViewerUrl(`/manual/${f.file}`)}
+                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-3 ${viewerUrl.includes(f.file) ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
+                                            >
+                                                <div className={`w-2 h-2 rounded-full ${viewerUrl.includes(f.file) ? 'bg-white' : 'bg-slate-600'}`}></div>
+                                                <span className="truncate">{f.title}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Iframe for same-window experience */}
+                            <div className="flex-1 bg-white relative">
+                                <iframe
+                                    src={viewerUrl}
+                                    className="w-full h-full border-none"
+                                    title="Manual Viewer"
+                                />
+                            </div>
                         </div>
                     </div>
                 ) : (
