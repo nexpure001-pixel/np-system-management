@@ -547,8 +547,8 @@ const ManualManagement = () => {
                                 selectedLinkId={selectedLinkId}
                                 onSelectLink={(id) => { setSelectedLinkId(id); setSelectedHotspotId(null); }}
                                 onUpdateLinkPosition={handleUpdateLink}
-
                                 isPreviewMode={isPreviewMode}
+                                manualCategory={manualCategory}
                             />
 
                             {/* Properties (Right) */}

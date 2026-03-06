@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'lucide-react';
 
-const LinkMarker = ({ link, isSelected, onClick, onDragStart, isPreviewMode }) => {
+const LinkMarker = ({ link, isSelected, onClick, onDragStart, isPreviewMode, manualCategory }) => {
     return (
         <div
             className={`absolute group z-20 ${isSelected ? 'z-30' : ''} ${isPreviewMode ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'}`}
@@ -15,9 +15,10 @@ const LinkMarker = ({ link, isSelected, onClick, onDragStart, isPreviewMode }) =
                 if (isPreviewMode) {
                     if (link.url && link.url !== '#') {
                         let targetUrl = link.url;
-                        // For relative internal manual links, prepend /manual/ if not already present
+                        // For relative internal manual links, prepend /manual/ and category if not already present
                         if (!targetUrl.startsWith('http') && !targetUrl.startsWith('/') && targetUrl.endsWith('.html')) {
-                            targetUrl = `/manual/${targetUrl}`;
+                            const categoryPath = manualCategory ? `${manualCategory}/` : '';
+                            targetUrl = `/manual/${categoryPath}${targetUrl}`;
                         }
                         window.open(targetUrl, '_self');
                     }

@@ -15,7 +15,8 @@ const EditorCanvas = ({
     links = [],
     onSelectLink,
     selectedLinkId,
-    onUpdateLinkPosition
+    onUpdateLinkPosition,
+    manualCategory
 }) => {
     const containerRef = useRef(null);
     const [draggingId, setDraggingId] = useState(null);
@@ -130,6 +131,7 @@ const EditorCanvas = ({
                         onClick={onSelectLink}
                         onDragStart={handleDragStart}
                         isPreviewMode={isPreviewMode}
+                        manualCategory={manualCategory}
                     />
                 ))}
             </div>
