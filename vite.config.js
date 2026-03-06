@@ -25,6 +25,13 @@ const localManualSaver = () => ({
             }
 
             const filePath = path.join(dir, filename);
+            const parentDir = path.dirname(filePath);
+
+            // Ensure parent directory exists
+            if (!fs.existsSync(parentDir)) {
+              fs.mkdirSync(parentDir, { recursive: true });
+            }
+
             fs.writeFileSync(filePath, content);
 
             res.statusCode = 200;

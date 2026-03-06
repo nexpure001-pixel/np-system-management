@@ -208,8 +208,9 @@ const ManualManagement = () => {
         if (!imageSrc) return alert('画像をアップロードしてください。');
 
         // Ask for a filename
-        const defaultFilename = manualTitle ? `${manualTitle}.html` : 'manual.html';
-        const filename = window.prompt('保存するファイル名を入力してください (例: step1.html)', defaultFilename);
+        const categoryPrefix = manualCategory ? `${manualCategory}/` : '';
+        const defaultFilename = manualTitle ? `${categoryPrefix}${manualTitle}.html` : `${categoryPrefix}manual.html`;
+        const filename = window.prompt('保存するファイル名を入力してください。\nスラッシュ(/)を入れるとフォルダ分けされます。', defaultFilename);
 
         if (!filename) return;
 
