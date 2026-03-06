@@ -23,7 +23,7 @@ const TooltipEditor = ({ hotspot, onChange, onDelete, onClose }) => {
                     <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">タイプ</label>
                     <div className="grid grid-cols-3 gap-2">
                         {[
-                            { id: 'required', label: '必須', class: 'bg-red-500' },
+                            { id: 'required', label: '必須', class: 'bg-red-600' },
                             { id: 'caution', label: '注意', class: 'bg-amber-500' },
                             { id: 'info', label: '情報', class: 'bg-blue-500' }
                         ].map(type => (

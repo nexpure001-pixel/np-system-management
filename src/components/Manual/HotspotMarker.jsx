@@ -6,19 +6,19 @@ const HotspotMarker = ({ hotspot, isSelected, onClick, onDragStart }) => {
     // Determine base color based on type
     const getColorClasses = () => {
         switch (type) {
-            case 'required': return 'bg-accent shadow-[0_0_10px_rgba(232,69,69,0.5)]';
+            case 'required': return 'bg-red-600 shadow-[0_0_10px_rgba(239,68,68,0.5)]';
             case 'caution': return 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]';
             case 'info': return 'bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.5)]';
-            default: return 'bg-accent';
+            default: return 'bg-red-600';
         }
     };
 
     const getRingColor = () => {
         switch (type) {
-            case 'required': return 'text-accent';
+            case 'required': return 'text-red-500';
             case 'caution': return 'text-amber-500';
             case 'info': return 'text-blue-600';
-            default: return 'text-accent';
+            default: return 'text-red-500';
         }
     };
 
