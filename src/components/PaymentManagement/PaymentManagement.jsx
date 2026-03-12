@@ -183,7 +183,8 @@ const PaymentManagement = () => {
         chuumonbi: '',
         shimei: '',
         nyuukin: '',
-        bikou: ''
+        bikou: '',
+        kanryou: ''
     });
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     const [currentPage, setCurrentPage] = useState(1);
@@ -635,7 +636,8 @@ const PaymentManagement = () => {
                     (!filters.boxIdou || (p.box_idou ? '済' : '未') === filters.boxIdou) &&
                     (!normFilters.touroku || p._searchTouroku.includes(normFilters.touroku)) &&
                     (!normFilters.shimei || p._searchShimei.includes(normFilters.shimei)) &&
-                    (!normFilters.nyuukin || p._searchNyuukin.includes(normFilters.nyuukin))
+                    (!normFilters.nyuukin || p._searchNyuukin.includes(normFilters.nyuukin)) &&
+                    (!filters.kanryou || (filters.kanryou === '完了' ? p.kanryou === true : p.kanryou === false))
                 );
 
                 return matchesGlobal && matchesColumns;
@@ -788,7 +790,13 @@ const PaymentManagement = () => {
                             <th><input className="filter-input" placeholder="名前" value={filters.shimei} onChange={e => setFilters({ ...filters, shimei: e.target.value })} /></th>
                             <th><input className="filter-input" placeholder="金額" value={filters.nyuukin} onChange={e => setFilters({ ...filters, nyuukin: e.target.value })} /></th>
                             <th></th>
-                            <th></th>
+                            <th>
+                                <select className="filter-input" value={filters.kanryou} onChange={e => setFilters({ ...filters, kanryou: e.target.value })}>
+                                    <option value="">すべて</option>
+                                    <option value="完了">完了</option>
+                                    <option value="未完了">未完了</option>
+                                </select>
+                            </th>
                         </tr>
                         <tr className="quick-add-row">
                             <td></td>
