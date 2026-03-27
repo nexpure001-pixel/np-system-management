@@ -203,12 +203,12 @@ const CoolingOffManagement = () => {
     };
 
     const calculateStatus = (startDateStr, endDateStr) => {
-        if (!startDateStr || startDateStr.trim() === '-' || startDateStr.trim() === '') return 'unknown';
+        if (!startDateStr || startDateStr.trim() === '-' || startDateStr.trim() === '') return { state: 'unknown', days: null };
         let startParts = startDateStr.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
-        if (!startParts) return 'unknown';
+        if (!startParts) return { state: 'unknown', days: null };
 
         const startDate = new Date(parseInt(startParts[1]), parseInt(startParts[2]) - 1, parseInt(startParts[3]));
-        if (isNaN(startDate.getTime())) return 'unknown';
+        if (isNaN(startDate.getTime())) return { state: 'unknown', days: null };
 
         let endDate = new Date(); // 未記入の場合は今日を終点とする
         endDate.setHours(0, 0, 0, 0);
@@ -226,9 +226,9 @@ const CoolingOffManagement = () => {
         startDate.setHours(0, 0, 0, 0);
         const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-        if (diffDays <= 20) return 'cooling';
-        if (diffDays <= 90) return '90days';
-        return 'expired';
+        if (diffDays <= 20) return { state: 'cooling', days: diffDays };
+        if (diffDays <= 90) return { state: '90days', days: diffDays };
+        return { state: 'expired', days: diffDays };
     };
 
     const updateCell = (rIdx, cIdx, value) => {
@@ -563,6 +563,7 @@ const CoolingOffManagement = () => {
                     <thead>
                         <tr className="bg-white/80 sticky top-0 z-20 shadow-sm border-b">
                             <th className="p-4 w-24">判定</th>
+                            <th className="p-4 w-24 text-center">経過日数</th>
                             {headers.map((h, i) => (
                                 <th key={i} className="p-4 whitespace-nowrap cursor-pointer hover:text-sky-600 transition-colors" onClick={() => {
                                     const dir = sortConfig.key === i && sortConfig.direction === 'asc' ? 'desc' : 'asc';
@@ -582,7 +583,7 @@ const CoolingOffManagement = () => {
                     <tbody>
                         {tableData.length === 0 ? (
                             <tr>
-                                <td colSpan={headers.length + 1} className="p-20 text-center text-slate-400 italic leading-loose">
+                                <td colSpan={headers.length + 2} className="p-20 text-center text-slate-400 italic leading-loose">
                                     <div className="flex flex-col items-center gap-4">
                                         <Sparkles className="w-8 h-8 text-sky-300 animate-pulse" />
                                         <p>データがありません。画面上部の入力欄から記入するか、<br />CSVファイルを読み込んでください。</p>
@@ -600,16 +601,19 @@ const CoolingOffManagement = () => {
                                 const startDateStr = actualStartIdx !== -1 ? row[actualStartIdx] : null;
                                 const endDateStr = endDateIdx !== -1 ? row[endDateIdx] : null;
                                 
-                                const status = startDateStr ? calculateStatus(startDateStr, endDateStr) : 'unknown';
+                                const { state: status, days: diffDays } = startDateStr ? calculateStatus(startDateStr, endDateStr) : { state: 'unknown', days: null };
                                 const isCard = row.some(cell => cell?.toString().includes('カード'));
 
                                 return (
                                     <tr key={rIdx} className={`border-b border-white/40 hover:bg-white/40 transition-colors ${isCard ? 'row-card-payment' : ''}`}>
                                         <td className="p-4">
                                             {status === 'cooling' && <span className="status-badge status-cooling">🌟20日以内</span>}
-                                            {status === '90days' && <span className="status-badge status-90">🌙90日経過</span>}
+                                            {status === '90days' && <span className="status-badge status-90">🌙90日</span>}
                                             {status === 'expired' && <span className="status-badge status-expired">☄️期限切れ</span>}
                                             {status === 'unknown' && <span className="opacity-20 text-xs text-center block">--</span>}
+                                        </td>
+                                        <td className="p-4 text-center font-bold text-slate-600">
+                                            {diffDays !== null ? `${diffDays}日` : '--'}
                                         </td>
                                         {row.map((cell, cIdx) => (
                                             <td key={cIdx} className="p-4 min-w-[120px]">
@@ -671,7 +675,7 @@ const CoolingOffManagement = () => {
                                 <p>「初回商品発送日」から「解約申出日」（未記入の場合は今日）までの日数を計算し、自動で状態を判定します。</p>
                                 <ul className="space-y-3">
                                     <li className="flex items-center gap-2 pt-2"><span className="status-badge status-cooling">🌟20日以内</span> <span>期間内（クーリングオフ可能）</span></li>
-                                    <li className="flex items-center gap-2"><span className="status-badge status-90">🌙90日経過</span> <span>90日返品ルール期間</span></li>
+                                    <li className="flex items-center gap-2"><span className="status-badge status-90">🌙90日</span> <span>90日返品ルール期間</span></li>
                                     <li className="flex items-center gap-2"><span className="status-badge status-expired">☄️期限切れ</span> <span>期間超過</span></li>
                                 </ul>
                                 <p className="mt-4 text-sm text-pink-500 font-bold">※支払方法に「カード」が含まれる場合、行全体がふんわりとローズ色に染まり、処理忘れを優しく防ぎます。</p>
