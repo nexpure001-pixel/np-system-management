@@ -202,18 +202,29 @@ const CoolingOffManagement = () => {
         return `${year}/${String(parts[2]).padStart(2, '0')}/${String(parts[3]).padStart(2, '0')}`;
     };
 
-    const calculateStatus = (dateStr) => {
-        if (!dateStr || dateStr.trim() === '-' || dateStr.trim() === '') return 'unknown';
-        let parts = dateStr.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
-        if (!parts) return 'unknown';
+    const calculateStatus = (startDateStr, endDateStr) => {
+        if (!startDateStr || startDateStr.trim() === '-' || startDateStr.trim() === '') return 'unknown';
+        let startParts = startDateStr.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
+        if (!startParts) return 'unknown';
 
-        const arrivalDate = new Date(parseInt(parts[1]), parseInt(parts[2]) - 1, parseInt(parts[3]));
-        if (isNaN(arrivalDate.getTime())) return 'unknown';
+        const startDate = new Date(parseInt(startParts[1]), parseInt(startParts[2]) - 1, parseInt(startParts[3]));
+        if (isNaN(startDate.getTime())) return 'unknown';
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        arrivalDate.setHours(0, 0, 0, 0);
-        const diffDays = Math.ceil((today.getTime() - arrivalDate.getTime()) / (1000 * 60 * 60 * 24));
+        let endDate = new Date(); // 未記入の場合は今日を終点とする
+        endDate.setHours(0, 0, 0, 0);
+
+        if (endDateStr && endDateStr.trim() !== '-' && endDateStr.trim() !== '') {
+            let endParts = endDateStr.match(/(\d{4})[\/\-](\d{2})[\/\-](\d{2})/);
+            if (endParts) {
+                const parsedEndDate = new Date(parseInt(endParts[1]), parseInt(endParts[2]) - 1, parseInt(endParts[3]));
+                if (!isNaN(parsedEndDate.getTime())) {
+                    endDate = parsedEndDate;
+                }
+            }
+        }
+
+        startDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
         if (diffDays <= 20) return 'cooling';
         if (diffDays <= 90) return '90days';
@@ -580,8 +591,16 @@ const CoolingOffManagement = () => {
                             </tr>
                         ) : (
                             tableData.map((row, rIdx) => {
-                                const arrivalDateIdx = headers.findIndex(h => TARGET_DATE_COL_NAMES.includes(h) || h.includes('到着'));
-                                const status = arrivalDateIdx !== -1 ? calculateStatus(row[arrivalDateIdx]) : 'unknown';
+                                const startDateIdx = headers.findIndex(h => h.includes('初回商品発送日'));
+                                const fallbackIdx = headers.findIndex(h => TARGET_DATE_COL_NAMES.includes(h) || h.includes('到着'));
+                                const actualStartIdx = startDateIdx !== -1 ? startDateIdx : fallbackIdx;
+                                
+                                const endDateIdx = headers.findIndex(h => h.includes('解約申出日'));
+                                
+                                const startDateStr = actualStartIdx !== -1 ? row[actualStartIdx] : null;
+                                const endDateStr = endDateIdx !== -1 ? row[endDateIdx] : null;
+                                
+                                const status = startDateStr ? calculateStatus(startDateStr, endDateStr) : 'unknown';
                                 const isCard = row.some(cell => cell?.toString().includes('カード'));
 
                                 return (
@@ -649,7 +668,7 @@ const CoolingOffManagement = () => {
                                 <h3 className="text-xl font-bold text-sky-500 mb-3 flex items-center gap-2">
                                     <AlertCircle className="w-5 h-5" /> 4. 状態の自動判定
                                 </h3>
-                                <p>到着日などを基準に、魔法のように自動で状態を判定します。</p>
+                                <p>「初回商品発送日」から「解約申出日」（未記入の場合は今日）までの日数を計算し、自動で状態を判定します。</p>
                                 <ul className="space-y-3">
                                     <li className="flex items-center gap-2 pt-2"><span className="status-badge status-cooling">🌟20日以内</span> <span>期間内（クーリングオフ可能）</span></li>
                                     <li className="flex items-center gap-2"><span className="status-badge status-90">🌙90日経過</span> <span>90日返品ルール期間</span></li>
