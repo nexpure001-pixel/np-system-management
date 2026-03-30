@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXPURE 商品審査 AI 🎀</title>
+  
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --color-pink: #ffb7c5;
+      --color-pink-light: #ffdce3;
+      --color-pink-dark: #ff8fa3;
+      --color-lavender: #e6e6fa;
+      --color-lavender-dark: #c8b6ff;
+      --color-white: #ffffff;
+      --color-bg: #fff0f5;
+      --text-color: #6a4c6a;
+      --border-color: #ffc0cb;
+      --shadow-color: rgba(255, 182, 193, 0.4);
+      --font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', 'Nunito', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-family);
+      background: linear-gradient(135deg, var(--color-bg), var(--color-lavender));
+      color: var(--text-color);
+      min-height: 100vh;
+    }
+
+    #root {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      color: var(--color-pink-dark);
+      margin-top: 0;
+    }
+
+    @keyframes heartbeat {
+      0% { transform: scale(1); }
+      14% { transform: scale(1.1); }
+      28% { transform: scale(1); }
+      42% { transform: scale(1.1); }
+      70% { transform: scale(1); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-pulse-heart { animation: heartbeat 1.5s infinite; }
+    .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+    input, textarea, select {
+      font-family: var(--font-family);
+      border: 2px dashed var(--border-color);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 1rem;
+      color: var(--text-color);
+      background-color: var(--color-white);
+      outline: none;
+      transition: all 0.2s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--color-pink-dark);
+      box-shadow: 0 0 8px var(--shadow-color);
+    }
+
+    textarea { min-height: 100px; resize: vertical; }
+
+    .app-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      flex-grow: 1;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .header { text-align: center; padding: 30px 0; }
+    .header-title {
+      font-size: 2.5rem;
+      font-weight: bold;
+      background: linear-gradient(to right, var(--color-pink-dark), var(--color-lavender-dark));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    .header-subtitle { font-size: 1.1rem; color: var(--text-color); opacity: 0.8; }
+
+    .nav { display: flex; justify-content: center; gap: 15px; margin-bottom: 30px; }
+    .nav-link {
+      background: var(--color-white);
+      border: 2px solid var(--border-color);
+      border-radius: 20px;
+      padding: 8px 20px;
+      color: var(--text-color);
+      text-decoration: none;
+      font-weight: bold;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .nav-link:hover {
+      background: var(--color-pink-light);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px var(--shadow-color);
+    }
+    .nav-link.active {
+      background: var(--color-pink);
+      color: var(--color-white);
+      border-color: var(--color-pink);
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border: 3px dotted var(--color-pink);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 8px 32px var(--shadow-color);
+      margin-bottom: 20px;
+    }
+
+    .custom-button {
+      padding: 12px 24px;
+      border-radius: 30px;
+      border: none;
+      font-size: 1.2rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px var(--shadow-color);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    
+    .custom-button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+    .custom-button.primary {
+      background: linear-gradient(45deg, var(--color-pink-dark), var(--color-lavender-dark));
+      color: white;
+      border: 2px solid transparent;
+    }
+
+    .custom-button.secondary {
+      background: var(--color-pink-light);
+      color: var(--text-color);
+      border: 2px solid var(--color-pink);
+    }
+
+    .custom-button.outline {
+      background: var(--color-white);
+      color: var(--color-pink-dark);
+      border: 2px dashed var(--color-pink-dark);
+    }
+    
+    .custom-button.link {
+      background: var(--color-white);
+      color: #3b82f6;
+      border: 2px solid #93c5fd;
+      text-decoration: none;
+      font-size: 1rem;
+      padding: 10px 18px;
+    }
+
+    .custom-button:not(:disabled):hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(255, 143, 163, 0.6);
+    }
+    
+    .search-btn-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <style>
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+    @keyframes overlayIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes pulseDot {
+      0%,100% { transform: scale(1);   opacity: 1; }
+      50%      { transform: scale(1.4); opacity: 0.7; }
+    }
+    .tutorial-overlay {
+      position: fixed; inset: 0;
+      background: rgba(80, 50, 80, 0.55);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      animation: overlayIn 0.25s ease;
+    }
+    .tutorial-card {
+      background: #fff;
+      border-radius: 28px;
+      padding: 32px 28px 24px;
+      max-width: 480px; width: 100%;
+      box-shadow: 0 24px 64px rgba(255, 143, 163, 0.45);
+      border: 3px dotted var(--color-pink);
+      position: relative;
+      animation: slideUp 0.3s ease;
+    }
+    .tutorial-close {
+      position: absolute; top: 14px; right: 16px;
+      background: none; border: none; font-size: 1.4rem;
+      cursor: pointer; color: #bbb; line-height: 1;
+      transition: color 0.2s;
+    }
+    .tutorial-close:hover { color: var(--color-pink-dark); }
+    .tutorial-progress-bar {
+      height: 8px; border-radius: 8px;
+      background: #f0e8f0; overflow: hidden; margin-bottom: 22px;
+    }
+    .tutorial-progress-fill {
+      height: 100%;
+      background: linear-gradient(to right, var(--color-pink-dark), var(--color-lavender-dark));
+      border-radius: 8px;
+      transition: width 0.35s ease;
+    }
+    .tutorial-icon {
+      font-size: 3.6rem; text-align: center; margin-bottom: 12px;
+      animation: heartbeat 1.5s ease infinite;
+    }
+    .tutorial-title {
+      text-align: center; font-size: 1.25rem;
+      color: var(--color-pink-dark);
+      margin: 0 0 14px; font-weight: bold; line-height: 1.4;
+    }
+    .tutorial-body {
+      white-space: pre-wrap; line-height: 1.85;
+      color: var(--text-color); font-size: 0.93rem;
+      background: var(--color-bg); padding: 14px 16px;
+      border-radius: 14px; margin-bottom: 20px;
+    }
+    .tutorial-tag {
+      display: inline-block;
+      background: var(--color-pink-light);
+      color: var(--color-pink-dark);
+      border-radius: 20px; padding: 3px 10px;
+      font-size: 0.8rem; font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .tutorial-nav {
+      display: flex; gap: 10px; justify-content: center; margin-bottom: 16px;
+    }
+    .tutorial-dots {
+      display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;
+    }
+    .tutorial-dot {
+      height: 8px; border-radius: 4px;
+      background: var(--color-pink-light);
+      cursor: pointer; transition: all 0.3s ease;
+    }
+    .tutorial-dot.active {
+      background: var(--color-pink-dark);
+    }
+    @keyframes floatHeart {
+      0%, 100% { transform: translateY(0px)   rotate(-6deg); }
+      50%       { transform: translateY(-9px)  rotate( 6deg); }
+    }
+    .heart-fab {
+      position: fixed; top: 16px; right: 16px;
+      width: 54px; height: 54px;
+      background: linear-gradient(135deg, var(--color-pink-dark), var(--color-lavender-dark));
+      border: none; cursor: pointer; z-index: 990;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; color: white;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.15);
+      filter: drop-shadow(0 4px 10px rgba(255,143,163,0.7));
+      animation: floatHeart 3s ease-in-out infinite;
+      clip-path: path('M27,48 C27,48 4,32 4,17.5 C4,9.2 10.3,4 17.5,4 C21.5,4 25,6.5 27,10.5 C29,6.5 32.5,4 36.5,4 C43.7,4 50,9.2 50,17.5 C50,32 27,48 27,48 Z');
+      transition: filter 0.2s;
+    }
+    .heart-fab:hover {
+      filter: drop-shadow(0 6px 16px rgba(255,143,163,0.95)) brightness(1.08);
+      animation-play-state: paused;
+    }
+    .heart-fab-label {
+      position: fixed; top: 74px; right: 10px;
+      background: white; color: var(--text-color);
+      padding: 4px 10px; border-radius: 12px; font-size: 0.78rem;
+      font-weight: bold; box-shadow: 0 2px 10px var(--shadow-color);
+      border: 1px solid var(--border-color);
+      pointer-events: none; white-space: nowrap;
+    }
+  </style>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const Button = ({ children, variant = 'primary', icon, isLoading, className = '', as = 'button', href, target, ...props }) => {
+      const Tag = as;
+      return (
+        <Tag 
+          className={`custom-button ${variant} ${className}`}
+          disabled={isLoading || props.disabled}
+          href={href}
+          target={target}
+          {...props}
+        >
+          {isLoading ? <span className="animate-pulse-heart">💓</span> : icon && <span>{icon}</span>}
+          {children}
+        </Tag>
+      );
+    };
+
+    const Card = ({ children, title, className = '' }) => (
+      <div className={`card ${className} fade-in`}>
+        {title && (
+          <h2 style={{ 
+            fontSize: '1.4rem', 
+            borderBottom: '2px dashed var(--color-pink-light)', 
+            paddingBottom: '10px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            ✨ {title}
+          </h2>
+        )}
+        {children}
+      </div>
+    );
+
+    // --- Core Logic (API-Free) ---
+    const NG_WORDS = [
+      // 薬機法（医療・効果効能・身体の変化）
+      '痩せる', '治る', '治す', '治療', '予防', '完治', '改善する', '効く', '効果がある',
+      'ガン', 'がん', '癌', 'アトピー', '糖尿病', '高血圧', 'アレルギー', '便秘解消', 'ニキビ',
+      'デトックス', '血液サラサラ', 'アンチエイジング', '若返る', '老化防止', '細胞分裂',
+      '免疫力アップ', '免疫があがる', '疲労回復', '脂肪燃焼', 'セルライト', 'バストアップ',
+      '育毛', '発毛', 'シミを消す', 'シワが消える', 'デリケートゾーンの黒ずみ',
+      '副作用がない', '安全', '安心', '無毒', '無害', '万能', '医薬品と同等', '処方箋不要',
+      // 景表法（大袈裟な表現・優良誤認）
+      '絶対', '確実に', '100%', '必ず', '誰もが', '奇跡の', '魔法の',
+      '最高', '第1位', '第一位', '日本一', '世界一', '業界初', 'ナンバーワン', 'No.1',
+      '最安値', '日本と海外で大反響'
+    ];
+
+    const generateAssistantData = (productName, vendorName, price, description, companyName, needsAllergenCheck) => {
+      // NGワードのチェック
+      const foundNgWords = NG_WORDS.filter(word => description.includes(word));
+      
+      // アレルゲン表記のチェック
+      const allergenKeywords = ['アレルギー', 'アレルゲン', '成分', '原材料', '卵', '乳', '小麦', '落花生', 'えび', 'かに', 'そば'];
+      const hasAllergenMention = allergenKeywords.some(word => description.includes(word));
+      const missingAllergen = needsAllergenCheck && !hasAllergenMention;
+
+      let legalStatus = foundNgWords.length > 0 
+        ? `⚠️ 注意！「${foundNgWords.join('」「')}」などの表現が含まれています。薬機法や景表法に引っかかる可能性があるため、「サポートする」「目立たなくする」などに言い換えてもらうよう依頼してね🎀`
+        : '✨ NGワードは見当たらなかったよ！バッチリだね🎀';
+
+      if (missingAllergen) {
+        legalStatus += '\n\n⚠️ アレルゲンや成分の表記が必要な設定ですが、説明文に「成分」「アレルギー」等の記載が見当たりません。商品説明に追記してもらうようにお願いしてね！';
+      } else if (needsAllergenCheck && hasAllergenMention) {
+        legalStatus += '\n\n✨ アレルゲンや成分らしき記載がちゃんとあるよ！';
+      }
+
+      // 検索リンク
+      const encodedName = encodeURIComponent(productName);
+      const searchLinks = {
+        google: `https://www.google.com/search?q=${encodedName}`,
+        googleImages: `https://images.google.com/`,
+        amazon: `https://www.amazon.co.jp/s?k=${encodedName}`,
+        rakuten: `https://search.rakuten.co.jp/search/mall/${encodedName}/`,
+        yahoo: `https://shopping.yahoo.co.jp/search?p=${encodedName}`
+      };
+
+      // 定型メール生成
+      let revisionReqText = `${vendorName}様\n\nお世話になっております。${companyName} 商品審査チームです。\n\nご申請いただいた「${productName}」につきまして、商品説明文に一部修正・追記をお願いしたい箇所がございました。\n`;
+      
+      if (foundNgWords.length > 0) {
+        revisionReqText += `\n・「${foundNgWords.join('、')}」という表現は規約・法令上お受けできないため、表現の変更をお願いいたします。`;
+      }
+      if (missingAllergen) {
+        revisionReqText += `\n・食品/化粧品における「アレルゲン（または全成分）」の表記が確認できませんでした。該当する場合は必ず商品情報に追記をお願いいたします。`;
+      }
+      revisionReqText += `\n\nご確認のほどよろしくお願いいたします。\n\n--\n${companyName}`;
+
+      const emailDraftList = [
+        { type: '✅ 承認メール', text: `${vendorName}様\n\nお世話になっております。${companyName} 商品審査チームです。\n\nご申請いただきました「${productName}」の出品につきまして、審査が完了し、問題なく【承認】となりましたことをご報告いたします。\n\n引き続き、メーカー様の利益に貢献できる販売を共に応援させていただければ幸いです。\nよろしくお願いいたします。\n\n--\n${companyName}` },
+        { type: '✍️ 修正依頼メール', text: (foundNgWords.length > 0 || missingAllergen) ? revisionReqText : `${vendorName}様\n\nお世話になっております。${companyName} 商品審査チームです。\n\nご申請いただいた「${productName}」につきまして、商品説明文に一部修正をお願いしたい箇所がございました。\n\n（修正依頼の内容をここに記載してください）\n\nご確認のほどよろしくお願いいたします。\n\n--\n${companyName}` },
+        { type: '❌ 否認（転売疑い等）メール', text: `${vendorName}様\n\nお世話になっております。${companyName} 商品審査チームです。\n\nご申請いただきました「${productName}」につきまして、大変恐縮ですが当社の出品基準（転売対策・メーカー直販推奨）に基づき、今回はお取り扱いを【見送り】とさせていただくこととなりました。\n\nご希望に添えず申し訳ございませんが、何卒ご理解のほどよろしくお願い申し上げます。\n\n--\n${companyName}` }
+      ];
+
+      // ChatGPT用プロンプト生成
+      const gptPrompt = `あなたは消費者庁のスペシャリストです。下記内容の商品説明文で、薬機法や、法律に触れない表現かを判断し、完全にアウトの項目のみNGを出してください。法的にも問題なく、クレームの入らないよう。辛口で時間をいくらかけても良いので品質を優先して、ultra think。
+また文章の誤字脱字や計算ミスなど探してください。
+
+【商品名】
+${productName}
+
+【商品説明文】
+${description}`;
+
+      return {
+        id: Date.now().toString(),
+        date: new Date().toLocaleDateString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+        productName, vendorName, price, description,
+        foundNgWords,
+        hasNgOrWarning: foundNgWords.length > 0 || missingAllergen,
+        legalStatus,
+        searchLinks,
+        emailDraftList,
+        gptPrompt
+      };
+    };
+
+    // --- Tutorial Data ---
+    const TUTORIAL_STEPS = [
+      {
+        tag: 'ようこそ！',
+        icon: '🎀',
+        title: 'NEXPURE 商品審査サポートへようこそ！',
+        body: 'このアプリは、出品申請された商品の審査をカンタン・スピーディにサポートするツールだよ✨\n\n薬機法チェック・転売調査・ChatGPTディープチェック・メール作成まで、ぜんぶこのアプリひとつでできちゃうよ🌸\n\n「次へ」を押してチュートリアルをはじめよう！'
+      },
+      {
+        tag: 'STEP 1',
+        icon: '📝',
+        title: '商品情報を入力しよう',
+        body: '「🔍 リサーチ開始」タブから、審査したい商品の情報を入力してね。\n\n🛍️ 商品名（必須）\n👤 出店者名 / メーカー名（必須）\n💰 希望価格\n📄 商品説明文（必須・申請書からコピペ）\n\n※ 商品名・出店者名・商品説明文の3つは必ず入力してね！'
+      },
+      {
+        tag: 'STEP 2',
+        icon: '🔍',
+        title: 'アレルゲンチェックの設定',
+        body: '食品・化粧品など、成分やアレルゲン表記が必要な商品の場合は\n「🔍 アレルゲン・成分表記が必要な商品」のチェックを入れてね🌸\n\nチェックを入れると、説明文に成分やアレルギーの記載があるかを自動で確認してくれるよ！'
+      },
+      {
+        tag: 'STEP 3',
+        icon: '♡',
+        title: 'お助けツールを起動！',
+        body: '「♡ お助けツールを使う ♡」ボタンを押すと審査がスタートするよ✨\n\nボタンひとつで以下をぜんぶ自動でやってくれるよ！\n\n・NGワードのチェック\n・アレルゲン表記の確認\n・各サービスの検索リンク生成\n・返信メールテンプレートの作成\n・ChatGPT用プロンプトの生成'
+      },
+      {
+        tag: 'STEP 4',
+        icon: '🚀',
+        title: 'ワンクリックで転売チェック！',
+        body: '審査結果画面の「🚀 ワンクリックリサーチ」から、各サイトで商品を検索できるよ🌸\n\n🌐 Google検索\n🖼️ Google画像検索\n🛒 Amazon\n🛍️ 楽天市場\n🎁 Yahoo!ショッピング\n\nどのボタンも新規ウィンドウで開くから、並べて転売・価格相場チェックもラクラク！'
+      },
+      {
+        tag: 'STEP 5',
+        icon: '🤖',
+        title: 'ChatGPT ディープチェック',
+        body: '薬機法のより詳しい確認には、ChatGPT用プロンプトを活用してね！\n\n① 「📋 プロンプトをコピーする」を押す\n② 「🤖 ChatGPT を開く」を押す\n③ ChatGPTに貼り付けて送信するだけ！\n\n商品説明文が自動で埋め込まれたプロンプトが生成されるので、コピペするだけでOKだよ✨'
+      },
+      {
+        tag: 'STEP 6',
+        icon: '💊',
+        title: 'NGワード自動チェックの見かた',
+        body: '薬機法・景表法に引っかかりやすいNGワードを自動でチェックするよ！\n\n【NG例】\n「痩せる」「治る」「治療」→ 薬機法NG\n「絶対」「100%」「世界一」→ 景表法NG\n\nNGワードが見つかった場合は ⚠️ で赤く表示して、どの言葉が問題かを教えてくれるよ🌸\n問題なければ ✨ でバッチリ表示！'
+      },
+      {
+        tag: 'STEP 7',
+        icon: '✉️',
+        title: 'メールテンプレートを使おう',
+        body: '審査結果に応じて3種類のメールテンプレートが自動で作られるよ！\n\n✅ 承認メール\n✍️ 修正依頼メール（NGワードがある場合は内容が自動入力）\n❌ 否認メール（転売疑い等）\n\nテキストエリアで直接編集もできるよ✨\n「📋 コピー」ボタンで文章をコピーして使ってね！'
+      },
+      {
+        tag: 'STEP 8',
+        icon: '📋',
+        title: '作業履歴を確認しよう',
+        body: '「📋 作業履歴」タブを開くと、過去に審査した商品の履歴が見られるよ🌸\n\n各履歴には以下が保存されているよ！\n・商品名・出店者名・価格\n・NGワードの有無\n・薬機法チェック結果\n・修正依頼メールの内容\n\n「審査の詳細を見る」を押すと詳しい内容が展開されるよ！'
+      },
+      {
+        tag: 'STEP 9',
+        icon: '⚙️',
+        title: '設定：会社名を登録しよう',
+        body: '「⚙️ 設定」タブから会社名・チーム名を登録できるよ！\n\n登録した名前は、自動生成されるメールテンプレートの署名に自動で入るよ✨\n\nデフォルトは「NEXPURE」になっているので、最初に自分のチーム名に変更しておくとラクだよ🌸'
+      },
+      {
+        tag: '完了！',
+        icon: '🎉',
+        title: '準備完了！さっそく使ってみよう✨',
+        body: 'チュートリアルはこれでおしまい！お疲れさまでした🎀\n\nわからないことがあったら、画面右下の\n「❓」ボタンからいつでもこのチュートリアルを見直せるよ🌸\n\nさあ、商品審査をはじめよう！'
+      }
+    ];
+
+    // --- Tutorial Modal Component ---
+    const TutorialModal = ({ onClose }) => {
+      const [step, setStep] = useState(0);
+      const [dontShow, setDontShow] = useState(true);   // デフォルト：チェック済み
+      const total = TUTORIAL_STEPS.length;
+      const cur = TUTORIAL_STEPS[step];
+      const isLast = step === total - 1;
+
+      const goNext = () => isLast ? onClose(dontShow) : setStep(s => s + 1);
+      const goPrev = () => setStep(s => s - 1);
+
+      return (
+        <div className="tutorial-overlay" onClick={(e) => e.target === e.currentTarget && onClose(dontShow)}>
+          <div className="tutorial-card">
+            <button className="tutorial-close" onClick={() => onClose(dontShow)} title="閉じる">✕</button>
+
+            {/* Progress bar */}
+            <div className="tutorial-progress-bar">
+              <div className="tutorial-progress-fill" style={{ width: `${((step + 1) / total) * 100}%` }} />
+            </div>
+
+            {/* Tag */}
+            <div style={{ textAlign: 'center', marginBottom: '4px' }}>
+              <span className="tutorial-tag">{cur.tag}</span>
+            </div>
+
+            {/* Icon */}
+            <div className="tutorial-icon">{cur.icon}</div>
+
+            {/* Title */}
+            <h3 className="tutorial-title">{cur.title}</h3>
+
+            {/* Body */}
+            <p className="tutorial-body">{cur.body}</p>
+
+            {/* Navigation buttons */}
+            <div className="tutorial-nav">
+              {step > 0 && (
+                <Button variant="outline" onClick={goPrev} style={{ flex: 1, fontSize: '1rem', padding: '10px' }}>
+                  ← 前へ
+                </Button>
+              )}
+              <Button variant="primary" onClick={goNext} style={{ flex: 2, fontSize: '1rem', padding: '10px' }}>
+                {isLast ? '🎉 さっそく使う！' : '次へ →'}
+              </Button>
+            </div>
+
+            {/* Dot indicators */}
+            <div className="tutorial-dots">
+              {TUTORIAL_STEPS.map((_, i) => (
+                <div
+                  key={i}
+                  className={`tutorial-dot ${i === step ? 'active' : ''}`}
+                  style={{ width: i === step ? '22px' : '8px' }}
+                  onClick={() => setStep(i)}
+                  title={`ステップ ${i + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Counter */}
+            <div style={{ textAlign: 'center', fontSize: '0.8rem', color: '#bbb', marginTop: '10px' }}>
+              {step + 1} / {total}
+            </div>
+
+            {/* 次回から表示しないチェックボックス */}
+            <label style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: '6px', marginTop: '12px', cursor: 'pointer',
+              fontSize: '0.82rem', color: '#bbb',
+              borderTop: '1px dashed #f0e8f0', paddingTop: '12px'
+            }}>
+              <input
+                type="checkbox"
+                checked={dontShow}
+                onChange={e => setDontShow(e.target.checked)}
+                style={{ width: '14px', height: '14px', accentColor: 'var(--color-pink-dark)', cursor: 'pointer' }}
+              />
+              次回から自動で表示しない
+            </label>
+          </div>
+        </div>
+      );
+    };
+
+    // --- Floating Heart Help Button ---
+    const HeartFab = ({ onClick }) => {
+      const [hover, setHover] = useState(false);
+      return (
+        <>
+          {hover && <div className="heart-fab-label">使い方を見る 🎀</div>}
+          <button
+            className="heart-fab"
+            onClick={onClick}
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            title="ヘルプ・チュートリアルを見る"
+          >
+            ？
+          </button>
+        </>
+      );
+    };
+
+    // --- ChatGPT Prompt Box Component ---
+    const GptPromptBox = ({ initialPrompt }) => {
+      const [prompt, setPrompt] = useState(initialPrompt);
+      const [copied, setCopied] = useState(false);
+
+      const handleCopy = () => {
+        navigator.clipboard.writeText(prompt);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      };
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            style={{
+              fontFamily: 'inherit',
+              fontSize: '0.9rem',
+              minHeight: '220px',
+              padding: '12px',
+              lineHeight: '1.7',
+              background: 'rgba(255,255,255,0.9)',
+              border: '2px dashed var(--color-lavender-dark)',
+              borderRadius: '12px',
+            }}
+          />
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <Button
+              variant="primary"
+              icon={copied ? '✅' : '📋'}
+              onClick={handleCopy}
+              style={{ flex: 1 }}
+            >
+              {copied ? 'コピーしたよ！' : 'プロンプトをコピーする'}
+            </Button>
+            <Button
+              variant="link"
+              icon="🤖"
+              onClick={() => window.open('https://chatgpt.com/', '_blank', 'width=1200,height=800,noopener,noreferrer')}
+              style={{ flex: 1 }}
+            >
+              ChatGPT を開く
+            </Button>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: '#999', textAlign: 'center' }}>
+            💡 コピー → ChatGPT を開く → 貼り付けるだけ！
+          </p>
+        </div>
+      );
+    };
+
+    // --- Views ---
+    const SettingsView = () => {
+      const [companyName, setCompanyName] = useState('NEXPURE');
+      const [saved, setSaved] = useState(false);
+
+      useEffect(() => {
+        setCompanyName(localStorage.getItem('company_name') || 'NEXPURE');
+      }, []);
+
+      const handleSave = () => {
+        localStorage.setItem('company_name', companyName);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      };
+
+      return (
+        <div className="fade-in">
+          <Card title="設定項目 ⚙️">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>🏢 会社名・チーム名 (メール署名用)</label>
+                <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="例: NEXPURE" />
+                <p style={{ fontSize: '0.9rem', color: '#888', marginTop: '5px' }}>
+                  ※ ここに設定した名前がメールの自動生成テンプレートに使われるよ🌸
+                </p>
+              </div>
+              <Button onClick={handleSave} icon="💾">{saved ? '保存したよ！✨' : '設定を保存する'}</Button>
+            </div>
+          </Card>
+        </div>
+      );
+    };
+
+    const HistoryView = () => {
+      const [history, setHistory] = useState([]);
+
+      useEffect(() => {
+        const historyJson = localStorage.getItem('review_history');
+        if (historyJson) setHistory(JSON.parse(historyJson));
+      }, []);
+
+      const handleClear = () => {
+        if (window.confirm('本当の本当に履歴を全部消しちゃう？🌸')) {
+          localStorage.removeItem('review_history');
+          setHistory([]);
+        }
+      };
+
+      return (
+        <div className="fade-in">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ margin: 0, color: 'var(--color-pink-dark)' }}>📋 審査履歴</h2>
+            {history.length > 0 && (
+              <Button variant="outline" onClick={handleClear} style={{ padding: '8px 16px', fontSize: '1rem' }}>
+                🗑️ 履歴をぜんぶ消す
+              </Button>
+            )}
+          </div>
+
+          {history.length === 0 ? (
+            <Card>
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: '#888' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🌸</div>
+                <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>まだ履歴がないよ🌸</p>
+                <p>新しくアシスタントを使うとここに残っていくよ✨</p>
+              </div>
+            </Card>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {history.map((item) => (
+                <Card key={item.id}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '15px' }}>
+                    <span style={{ fontWeight: 'bold', color: 'var(--color-pink-dark)' }}>{item.date}</span>
+                    <span style={{ 
+                      background: (item.foundNgWords && item.foundNgWords.length > 0) ? 'rgba(255,0,0,0.1)' : 'var(--color-lavender)', 
+                      padding: '4px 12px', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold',
+                      color: (item.foundNgWords && item.foundNgWords.length > 0) ? 'red' : 'inherit'
+                    }}>NGワード: {(item.foundNgWords && item.foundNgWords.length > 0) ? 'あり⚠️' : 'なし✨'}</span>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    <div><strong>🛍️ 商品名:</strong> {item.productName}</div>
+                    <div><strong>👤 出店者:</strong> {item.vendorName}</div>
+                    <div><strong>💰 希望価格:</strong> {item.price}</div>
+                  </div>
+
+                  <details style={{ background: 'rgba(255,255,255,0.5)', padding: '10px', borderRadius: '8px', cursor: 'pointer', marginTop: '15px' }}>
+                    <summary style={{ fontWeight: 'bold', color: 'var(--text-color)' }}>審査の詳細を見る 👀</summary>
+                    <div style={{ marginTop: '15px', display: 'grid', gap: '15px' }}>
+                      <div>
+                        <strong>💊 薬機法・必須項目チェック:</strong>
+                        <p style={{ margin: '5px 0 0 0', whiteSpace: 'pre-wrap' }}>{item.legalStatus}</p>
+                      </div>
+                      <div>
+                        <strong>✉️ メール（修正依頼）:</strong>
+                        <pre style={{ margin: '5px 0 0 0', whiteSpace: 'pre-wrap', fontFamily: 'inherit', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '8px' }}>
+                          {item.emailDraftList?.find(e => e.type.includes('修正'))?.text || 'なし'}
+                        </pre>
+                      </div>
+                    </div>
+                  </details>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const ReviewView = () => {
+      const [productName, setProductName] = useState('');
+      const [vendorName, setVendorName] = useState('');
+      const [price, setPrice] = useState('');
+      const [description, setDescription] = useState('');
+      const [needsAllergenCheck, setNeedsAllergenCheck] = useState(false);
+      const [result, setResult] = useState(null);
+      const [editedEmails, setEditedEmails] = useState([]);
+
+      const handleStartAssist = () => {
+        if (!productName || !vendorName || !description) {
+          alert('🌸 商品名、出店者名、商品説明文は必須だよ！入力してね✨');
+          return;
+        }
+
+        const companyName = localStorage.getItem('company_name') || 'NEXPURE';
+        const res = generateAssistantData(productName, vendorName, price, description, companyName, needsAllergenCheck);
+        
+        const historyJson = localStorage.getItem('review_history');
+        const history = historyJson ? JSON.parse(historyJson) : [];
+        localStorage.setItem('review_history', JSON.stringify([res, ...history]));
+        
+        setResult(res);
+        setEditedEmails(res.emailDraftList.map(draft => draft.text));
+      };
+
+      const copyEmail = (text) => {
+        navigator.clipboard.writeText(text);
+        alert('📧 メールテンプレートをコピーしたよ！🌸');
+      };
+
+      const handleEmailChange = (index, newText) => {
+        const newEmails = [...editedEmails];
+        newEmails[index] = newText;
+        setEditedEmails(newEmails);
+      };
+
+      return (
+        <div className="fade-in">
+          {!result ? (
+            <Card title="自動ツール・新規作成 📝">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>🛍️ 商品名</label>
+                  <input value={productName} onChange={e => setProductName(e.target.value)} placeholder="例: NEXPURE 魔法のラベンダー化粧水" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>👤 出店者名 / メーカー名</label>
+                  <input value={vendorName} onChange={e => setVendorName(e.target.value)} placeholder="例: 株式会社きらきら" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>💰 希望価格</label>
+                  <input value={price} onChange={e => setPrice(e.target.value)} placeholder="例: 3,500円" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>📄 商品説明文 (申請書からコピペ)</label>
+                  <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="これを使えば絶対に痩せる！魔法のサプリメントです... など" />
+                </div>
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', cursor: 'pointer', background: 'var(--color-pink-light)', padding: '12px', borderRadius: '12px' }}>
+                    <input type="checkbox" checked={needsAllergenCheck} onChange={e => setNeedsAllergenCheck(e.target.checked)} style={{ width: '20px', height: '20px' }} />
+                    🔍 アレルゲン・成分表記が必要な商品としてチェックする
+                  </label>
+                </div>
+                <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                  <Button onClick={handleStartAssist}>
+                    ♡ お助けツールを使う ♡
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ) : (
+            <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <Button variant="outline" onClick={() => setResult(null)}>
+                  🔄 もう一度別のアシストを使う
+                </Button>
+              </div>
+
+              <Card title="🚀 ワンクリックリサーチ (転売チェック用)">
+                <p style={{ marginBottom: '5px', color: '#666' }}>ボタンを押すと、この商品「{result.productName}」の検索結果を別タブで開くよ！転売されていないか、相場が安すぎないかパッと確認できます🌸</p>
+                <div className="search-btn-container">
+                  <Button variant="link" icon="🌐" onClick={() => window.open(result.searchLinks.google, '_blank', 'width=1200,height=800,noopener,noreferrer')}>Google で調べる</Button>
+                  <Button variant="link" icon="🖼️" onClick={() => window.open(result.searchLinks.googleImages, '_blank', 'width=1200,height=800,noopener,noreferrer')}>Google 画像検索</Button>
+                  <Button variant="link" icon="🛒" onClick={() => window.open(result.searchLinks.amazon, '_blank', 'width=1200,height=800,noopener,noreferrer')}>Amazon で調べる</Button>
+                  <Button variant="link" icon="🛍️" onClick={() => window.open(result.searchLinks.rakuten, '_blank', 'width=1200,height=800,noopener,noreferrer')}>楽天市場 で調べる</Button>
+                  <Button variant="link" icon="🎁" onClick={() => window.open(result.searchLinks.yahoo, '_blank', 'width=1200,height=800,noopener,noreferrer')}>Yahoo! で調べる</Button>
+                </div>
+              </Card>
+
+              <Card title="🤖 ChatGPT ディープチェック用プロンプト">
+                <p style={{ marginBottom: '10px', color: '#666', lineHeight: '1.6' }}>
+                  下のプロンプトをコピーして、ChatGPTに貼り付けるだけで薬機法・誤字脱字・計算ミスをAIがチェックしてくれるよ！🎀<br/>
+                  <strong style={{ color: 'var(--color-pink-dark)' }}>✍️ 枠の中を直接編集することもできるよ！</strong>
+                </p>
+                <GptPromptBox initialPrompt={result.gptPrompt} />
+              </Card>
+
+              <Card title="💊 薬機法・必須項目 NGワードチェック">
+                <div style={{ padding: '15px', background: result.hasNgOrWarning ? 'rgba(255,182,193,0.3)' : 'rgba(230,230,250,0.5)', borderRadius: '12px' }}>
+                  <p style={{ margin: 0, fontWeight: 'bold', color: result.hasNgOrWarning ? '#d32f2f' : 'inherit', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                    {result.legalStatus}
+                  </p>
+                </div>
+              </Card>
+
+              <Card title="✉️ 返信メール自動生成">
+                <p style={{ marginBottom: '15px', color: '#666' }}>
+                  検索結果やチェック結果に合わせて、以下の文面から選んでね🌸 <br/><strong>✍️枠の中で直接テキストを編集することもできるよ！</strong>
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {result.emailDraftList.map((draft, idx) => (
+                    <div key={idx} style={{ border: '2px dashed var(--color-pink-light)', borderRadius: '12px', padding: '15px', position: 'relative' }}>
+                      <h4 style={{ margin: '0 0 10px 0', borderBottom: '1px solid var(--color-pink-light)', paddingBottom: '8px' }}>
+                        {draft.type}
+                      </h4>
+                      <textarea
+                        value={editedEmails[idx]}
+                        onChange={(e) => handleEmailChange(idx, e.target.value)}
+                        style={{ fontFamily: 'inherit', margin: '0 0 15px 0', fontSize: '0.95rem', minHeight: '200px', padding: '10px' }}
+                      />
+                      <Button variant="secondary" onClick={() => copyEmail(editedEmails[idx])} style={{ width: '100%', fontSize: '1rem' }}>
+                        📋 この文章をコピーする
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const App = () => {
+      const [currentTab, setCurrentTab] = useState('review');
+      const [showTutorial, setShowTutorial] = useState(false);
+
+      // 初回起動時は自動でチュートリアルを表示する
+      useEffect(() => {
+        const seen = localStorage.getItem('tutorial_seen');
+        if (!seen) setShowTutorial(true);
+      }, []);
+
+      const handleCloseTutorial = (dontShow) => {
+        if (dontShow) localStorage.setItem('tutorial_seen', '1');
+        setShowTutorial(false);
+      };
+
+      return (
+        <div className="app-container">
+          <header className="header">
+            <h1 className="header-title">NEXPURE 商品審査サポート 🎀</h1>
+            <p className="header-subtitle">転売ヤー対策＆メーカー応援！ワンクリックでアナタの作業をサポートするよ✨</p>
+          </header>
+
+          <nav className="nav">
+            <button className={`nav-link ${currentTab === 'review' ? 'active' : ''}`} onClick={() => setCurrentTab('review')}>🔍 リサーチ開始</button>
+            <button className={`nav-link ${currentTab === 'history' ? 'active' : ''}`} onClick={() => setCurrentTab('history')}>📋 作業履歴</button>
+            <button className={`nav-link ${currentTab === 'settings' ? 'active' : ''}`} onClick={() => setCurrentTab('settings')}>⚙️ 設定</button>
+          </nav>
+
+          <main>
+            {currentTab === 'review' && <ReviewView />}
+            {currentTab === 'history' && <HistoryView />}
+            {currentTab === 'settings' && <SettingsView />}
+          </main>
+
+          {/* チュートリアルモーダル */}
+          {showTutorial && <TutorialModal onClose={handleCloseTutorial} />}
+
+          {/* フローティングハートヘルプボタン */}
+          <HeartFab onClick={() => setShowTutorial(true)} />
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

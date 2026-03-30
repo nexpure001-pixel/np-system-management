@@ -6,6 +6,7 @@ import PaymentManagement from './components/PaymentManagement/PaymentManagement'
 import LeaveManagement from './components/LeaveManagement/LeaveManagement';
 import CoolingOffManagement from './components/CoolingOff/CoolingOffManagement';
 import ManualManagement from './components/Manual/ManualManagement';
+import ProductReviewApp from './components/ProductReview/ProductReviewApp';
 
 function App() {
   const [activeSystem, setActiveSystem] = useState('stores');
@@ -16,6 +17,7 @@ function App() {
       case 'payments': return <PaymentManagement />;
       case 'leave': return <LeaveManagement />;
       case 'cooling-off': return <CoolingOffManagement />;
+      case 'product-review': return <ProductReviewApp />;
       case 'manual': return <ManualManagement />;
       default: return <StoreManagement />;
     }
