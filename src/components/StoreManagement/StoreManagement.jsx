@@ -501,7 +501,7 @@ const StoreManagement = () => {
                         </thead>
                         <tbody>
                             {filteredStores.map(store => (
-                                <tr key={store.storeId}>
+                                <tr key={store.id}>
                                     <td>{store.storeId}</td>
                                     <td>{store.no}</td>
                                     <td><span className={`badge ${store.classification === 'FD店舗' ? 'success' : (store.classification === '新規店舗' ? 'warning' : 'neutral')}`}>{store.classification}</span></td>
