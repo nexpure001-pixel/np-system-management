@@ -8,7 +8,8 @@ import {
     ChevronRight,
     Plus,
     Clock,
-    UserPlus
+    UserPlus,
+    Trash2
 } from 'lucide-react';
 import { format, addDays, isAfter, isBefore, parseISO, addMonths } from 'date-fns';
 import { calculateGrantDays } from '../../utils/leaveCalculator';
@@ -178,6 +179,24 @@ const LeaveManagement = () => {
         } catch (err) {
             console.error('Consume error:', err);
             alert('失敗: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCancelLeave = async (requestId) => {
+        if (!window.confirm('この有給予定をキャンセルしてよろしいですか？\n※残日数が元に戻ります。')) return;
+        setLoading(true);
+        try {
+            const { error } = await supabase.rpc('cancel_leave_request', { target_request_id: requestId });
+            if (error) throw error;
+            
+            alert('キャンセルが完了しました。');
+            fetchUserDetail(selectedUserId);
+            fetchStats();
+        } catch (err) {
+            console.error('Cancel error:', err);
+            alert('キャンセルの実行に失敗しました。SQL関数が登録されているか確認してください。\n詳細: ' + err.message);
         } finally {
             setLoading(false);
         }
@@ -410,10 +429,10 @@ const LeaveManagement = () => {
                                         <p className="text-center py-8 text-gray-400">記録がありません</p>
                                     ) : (
                                         [
-                                            ...userDetail.grants.map(g => ({ type: 'grant', date: g.valid_from, amount: g.days_granted, label: '付与', bg: 'bg-blue-50', text: 'text-blue-600' })),
-                                            ...userDetail.requests.filter(r => r.status === 'approved').map(r => ({ type: 'usage', date: r.date_requested, amount: r.amount_days, label: r.reason || '有給消化', bg: 'bg-orange-50', text: 'text-orange-600' }))
+                                            ...userDetail.grants.map(g => ({ id: g.id, type: 'grant', date: g.valid_from, amount: g.days_granted, label: '付与', bg: 'bg-blue-50', text: 'text-blue-600' })),
+                                            ...userDetail.requests.filter(r => r.status === 'approved').map(r => ({ id: r.id, type: 'usage', date: r.date_requested, amount: r.amount_days, label: r.reason || '有給消化', bg: 'bg-orange-50', text: 'text-orange-600' }))
                                         ].sort((a, b) => new Date(b.date) - new Date(a.date)).map((ev, i) => (
-                                            <div key={i} className={`flex items-center justify-between p-5 rounded-md border border-gray-100 ${ev.bg}`}>
+                                            <div key={i} className={`flex items-center justify-between p-5 rounded-md border border-gray-100 group ${ev.bg}`}>
                                                 <div className="flex items-center gap-4">
                                                     <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center font-bold ${ev.text}`}>
                                                         {ev.type === 'grant' ? '+' : '-'}
@@ -423,9 +442,20 @@ const LeaveManagement = () => {
                                                         <p className="text-xs text-gray-500">{ev.date}</p>
                                                     </div>
                                                 </div>
-                                                <span className={`font-black ${ev.text}`}>
-                                                    {ev.amount}日
-                                                </span>
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`font-black ${ev.text}`}>
+                                                        {ev.amount}日
+                                                    </span>
+                                                    {ev.type === 'usage' && (
+                                                        <button 
+                                                            onClick={() => handleCancelLeave(ev.id)}
+                                                            className="p-2 text-red-500 hover:text-white hover:bg-red-500 bg-red-100/50 rounded-lg transition-all"
+                                                            title="予定をキャンセルする"
+                                                        >
+                                                            <Trash2 className="w-5 h-5" />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))
                                     )}

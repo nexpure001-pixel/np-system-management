@@ -170,6 +170,34 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- 有給キャンセル（消化予定の取り消し・復元）
+CREATE OR REPLACE FUNCTION cancel_leave_request(target_request_id UUID)
+RETURNS VOID AS $$
+DECLARE
+  consumption_record RECORD;
+BEGIN
+  -- 1. request が存在するか確認
+  IF NOT EXISTS (SELECT 1 FROM public.leave_requests WHERE id = target_request_id) THEN
+    RAISE EXCEPTION 'Request not found';
+  END IF;
+
+  -- 2. consumption レコードをループして grants の days_used を戻す
+  FOR consumption_record IN 
+    SELECT grant_id, days_consumed FROM public.leave_consumptions WHERE request_id = target_request_id
+  LOOP
+    UPDATE public.leave_grants
+    SET days_used = days_used - consumption_record.days_consumed
+    WHERE id = consumption_record.grant_id;
+  END LOOP;
+
+  -- 3. consumption の削除 (ON DELETE CASCADEにより自動削除されるが明示的にしておく)
+  DELETE FROM public.leave_consumptions WHERE request_id = target_request_id;
+
+  -- 4. request を削除
+  DELETE FROM public.leave_requests WHERE id = target_request_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- RLSの有効化 (必要に応じて)
 ALTER TABLE public.stores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
