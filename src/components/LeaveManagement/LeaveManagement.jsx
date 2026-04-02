@@ -502,17 +502,20 @@ const LeaveManagement = () => {
 
                             <Card title="現在の保有内訳" icon={CheckCircle}>
                                 <div className="space-y-3">
-                                    {userDetail.grants.filter(g => (g.days_granted - g.days_used) > 0).map((g, i) => (
-                                        <div key={i} className="p-3 bg-blue-50/50 rounded-lg border border-blue-100 flex justify-between items-center">
-                                            <div>
-                                                <p className="text-xs text-blue-400 font-bold">有効期限: {g.expiry_date}</p>
-                                                <p className="text-sm font-bold text-gray-700">{g.days_granted}日中 {g.days_used}日消化</p>
+                                    {userDetail.grants.filter(g => (g.days_granted - g.days_used) > 0).map((g, i) => {
+                                        const formatNum = (num) => Math.floor(num * 100) / 100;
+                                        return (
+                                            <div key={i} className="p-3 bg-blue-50/50 rounded-lg border border-blue-100 flex justify-between items-center">
+                                                <div>
+                                                    <p className="text-xs text-blue-400 font-bold">有効期限: {g.expiry_date}</p>
+                                                    <p className="text-sm font-bold text-gray-700">{formatNum(g.days_granted)}日中 {formatNum(g.days_used)}日消化</p>
+                                                </div>
+                                                <span className="text-lg font-black text-blue-600">
+                                                    残{formatNum(g.days_granted - g.days_used)}
+                                                </span>
                                             </div>
-                                            <span className="text-lg font-black text-blue-600">
-                                                残{g.days_granted - g.days_used}
-                                            </span>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </Card>
                         </div>
