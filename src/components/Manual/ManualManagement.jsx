@@ -23,12 +23,9 @@ const ManualManagement = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     const [existingManuals, setExistingManuals] = useState([
-        { id: 'm1', title: 'マニュアル 01', file: 'manualのmanual01.html', date: '2025-10-01', category: '未分類' },
-        { id: 'm2', title: 'マニュアル 02', file: 'manualのmanual02.html', date: '2025-11-15', category: '未分類' },
-        { id: 'm3', title: 'マニュアル 03', file: 'manualのmanual03.html', date: '2026-01-20', category: '未分類' },
         { id: 'm4', title: '概要書面マニュアル新人向け', file: '概要書面マニュアル新人向け/index.html', date: '2026-03-02', category: '概要書面マニュアル新人向け' },
         { id: 'm5', title: '電算システム新人向けマニュアル', file: '電算システム新人向けマニュアル/index-.html', date: '2026-03-02', category: '電算システム新人向けマニュアル' },
-        { id: 'm6', title: 'サービスマニュアル (Servicemanual)', file: 'Servicemanual.html', date: '2026-03-03', category: '未分類' },
+        { id: 'm6', title: 'サービスマニュアル (Servicemanual)', file: 'Servicemanual/Servicemanual.html', date: '2026-03-03', category: 'サービスマニュアル', newTab: true },
     ]);
 
     useEffect(() => {
@@ -428,7 +425,13 @@ const ManualManagement = () => {
                                             {items.map(manual => (
                                                 <div
                                                     key={manual.id}
-                                                    onClick={() => openManual(manual.file, items)}
+                                                    onClick={() => {
+                                                        if (manual.newTab) {
+                                                            window.open(`/manual/${manual.file}`, '_blank');
+                                                        } else {
+                                                            openManual(manual.file, items);
+                                                        }
+                                                    }}
                                                     className="group bg-white p-4 rounded-xl border border-slate-200 hover:border-indigo-400 hover:shadow-lg transition-all cursor-pointer flex items-center justify-between"
                                                 >
                                                     <div className="flex items-center gap-3 min-w-0">

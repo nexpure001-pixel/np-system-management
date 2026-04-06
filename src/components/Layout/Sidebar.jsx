@@ -38,6 +38,12 @@ const Sidebar = ({ activeSystem, setActiveSystem }) => {
                     <span className="nav-icon">📖</span> マニュアル
                 </button>
                 <button
+                    className={`nav-item ${activeSystem === 'manual-portal' ? 'active' : ''}`}
+                    onClick={() => setActiveSystem('manual-portal')}
+                >
+                    <span className="nav-icon">📚</span> マニュアルポータル
+                </button>
+                <button
                     className={`nav-item ${activeSystem === 'leave' ? 'active' : ''}`}
                     onClick={() => setActiveSystem('leave')}
                 >
