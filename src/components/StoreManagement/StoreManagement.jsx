@@ -10,7 +10,7 @@ const StoreManagement = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [filterMode, setFilterMode] = useState('all'); // 'all', 'document-pending', 'renewal-current', 'unpaid'
-    const [sortConfig, setSortConfig] = useState({ key: 'storeId', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState({ key: 'no', direction: 'desc' });
     const fileInputRef = useRef(null);
 
     // フィールドマッピング定義 (CSV -> DB)
@@ -88,9 +88,9 @@ const StoreManagement = () => {
 
     // データ表示用のキーに変換 (DB -> UI)
     const mapStoreFromDB = (item) => {
-        const hasConsent = item.doc_consent === '提出済み' || item.doc_consent === '両方完了';
-        const hasRegistry = item.doc_registry === '提出済み' || item.doc_registry === '両方完了' || item.doc_registry === '原本のみ';
-        const hasResident = item.doc_resident === '提出済み' || item.doc_resident === '両方完了' || item.doc_resident === '原本のみ';
+        const hasConsent = item.doc_consent === '提出済み' || item.doc_consent === '両方完了' || item.doc_consent === '電子のみ';
+        const hasRegistry = item.doc_registry === '提出済み' || item.doc_registry === '両方完了' || item.doc_registry === '原本のみ' || item.doc_registry === '電子のみ';
+        const hasResident = item.doc_resident === '提出済み' || item.doc_resident === '両方完了' || item.doc_resident === '原本のみ' || item.doc_resident === '電子のみ';
         const isDocComplete = hasConsent && (hasRegistry || hasResident);
 
         const isFD = item.initial_plan?.includes('ファウンディング') || item.distinction === 'FD店舗';
@@ -600,6 +600,7 @@ const StoreManagement = () => {
                                             <select name="doc_consent" defaultValue={editingStore?.raw?.doc_consent || '未提出'}>
                                                 <option value="提出済み">提出済み</option>
                                                 <option value="原本のみ">原本のみ</option>
+                                                <option value="電子のみ">電子のみ</option>
                                                 <option value="未確認">未確認</option>
                                                 <option value="未提出">未提出</option>
                                             </select>
@@ -609,6 +610,7 @@ const StoreManagement = () => {
                                             <select name="doc_registry" defaultValue={editingStore?.raw?.doc_registry || '未提出'}>
                                                 <option value="提出済み">提出済み</option>
                                                 <option value="原本のみ">原本のみ</option>
+                                                <option value="電子のみ">電子のみ</option>
                                                 <option value="未確認">未確認</option>
                                                 <option value="未提出">未提出</option>
                                             </select>
@@ -618,6 +620,7 @@ const StoreManagement = () => {
                                             <select name="doc_resident" defaultValue={editingStore?.raw?.doc_resident || '未提出'}>
                                                 <option value="提出済み">提出済み</option>
                                                 <option value="原本のみ">原本のみ</option>
+                                                <option value="電子のみ">電子のみ</option>
                                                 <option value="未確認">未確認</option>
                                                 <option value="未提出">未提出</option>
                                             </select>
