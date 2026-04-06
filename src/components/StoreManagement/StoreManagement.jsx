@@ -564,7 +564,7 @@ const StoreManagement = () => {
                                             <label>販売ステータス</label>
                                             <select name="sales_ok" defaultValue={editingStore?.raw?.sales_ok || '準備中'}>
                                                 <option value="準備中">準備中</option>
-                                                <option value="審査中">審査中</option>
+                                                <option value="退会">退会</option>
                                                 <option value="販売OK">販売OK</option>
                                                 <option value="一時停止">一時停止</option>
                                             </select>
@@ -630,7 +630,17 @@ const StoreManagement = () => {
                                 <section>
                                     <h3>契約・プラン・日付</h3>
                                     <div className="form-grid">
-                                        <div className="form-group"><label>契約プラン</label><input type="text" name="initial_plan" defaultValue={editingStore?.initial_plan || ''} /></div>
+                                        <div className="form-group">
+                                            <label>契約プラン</label>
+                                            <select name="initial_plan" defaultValue={editingStore?.initial_plan || ''}>
+                                                <option value="">未設定</option>
+                                                <option value="FD30品目プラン">FD30品目プラン</option>
+                                                <option value="10品目プラン">10品目プラン</option>
+                                                <option value="30品目プラン">30品目プラン</option>
+                                                <option value="50品目プラン">50品目プラン</option>
+                                                <option value="無制限プラン">無制限プラン</option>
+                                            </select>
+                                        </div>
                                         <div className="form-group">
                                             <label>プラン追加</label>
                                             <select name="plan_addition" defaultValue={editingStore?.raw?.plan_addition || 'なし'}>
@@ -638,10 +648,37 @@ const StoreManagement = () => {
                                                 <option value="追加20品目">追加20品目</option>
                                             </select>
                                         </div>
-                                        <div className="form-group"><label>申込日</label><input type="date" name="application_date" defaultValue={editingStore?.application_date || ''} /></div>
+                                        <div className="form-group"><label>申請フォーム受理日</label><input type="date" name="application_date" defaultValue={editingStore?.application_date || ''} /></div>
+                                        <div className="form-group"><label>契約締結日（ログイン情報送付日）</label><input type="date" name="login_info_sent_date" defaultValue={editingStore?.raw?.login_info_sent_date || ''} /></div>
                                         <div className="form-group"><label>入金日</label><input type="date" name="payment_date" defaultValue={editingStore?.raw?.payment_date || ''} /></div>
-                                        <div className="form-group"><label>更新月 (レガシー: YYYY-MM)</label><input type="text" name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''} /></div>
-                                        <div className="form-group"><label>更新月 (数値のみ: 1-12)</label><input type="text" name="renewal_month" defaultValue={editingStore?.renewal_month || ''} /></div>
+                                        <div className="form-group">
+                                            <label>年間契約更新状況</label>
+                                            <select name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''}>
+                                                <option value="">未設定</option>
+                                                <option value="2026年支払済">2026年支払済</option>
+                                                <option value="2027年支払済">2027年支払済</option>
+                                                <option value="2028年支払済">2028年支払済</option>
+                                                <option value="2029年支払済">2029年支払済</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>更新月</label>
+                                            <select name="renewal_month" defaultValue={editingStore?.renewal_month || ''}>
+                                                <option value="">未設定</option>
+                                                <option value="1">1月</option>
+                                                <option value="2">2月</option>
+                                                <option value="3">3月</option>
+                                                <option value="4">4月</option>
+                                                <option value="5">5月</option>
+                                                <option value="6">6月</option>
+                                                <option value="7">7月</option>
+                                                <option value="8">8月</option>
+                                                <option value="9">9月</option>
+                                                <option value="10">10月</option>
+                                                <option value="11">11月</option>
+                                                <option value="12">12月</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </section>
                                 <section>
