@@ -8,6 +8,7 @@ import CoolingOffManagement from './components/CoolingOff/CoolingOffManagement';
 import ManualManagement from './components/Manual/ManualManagement';
 import ProductReviewApp from './components/ProductReview/ProductReviewApp';
 import ManualPortal from './components/Manual/Portal/ManualPortal';
+import RequestWorkManagement from './components/RequestWork/RequestWorkManagement';
 
 function App() {
   const [activeSystem, setActiveSystem] = useState('stores');
@@ -19,6 +20,7 @@ function App() {
       case 'leave': return <LeaveManagement />;
       case 'cooling-off': return <CoolingOffManagement />;
       case 'product-review': return <ProductReviewApp />;
+      case 'request-work': return <RequestWorkManagement />;
       case 'manual': return <ManualManagement />;
       case 'manual-portal': return <ManualPortal />;
       default: return <StoreManagement />;
