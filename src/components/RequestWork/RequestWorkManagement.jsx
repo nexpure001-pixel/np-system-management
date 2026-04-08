@@ -67,6 +67,7 @@ export default function RequestWorkManagement() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        console.log('[DEBUG] handleSubmit発火', form);
         if (!form.requesterId) { setFormError('依頼者を選択してください'); return; }
         if (!form.recipientId) { setFormError('受託者を選択してください'); return; }
         if (form.requesterId === form.recipientId) { setFormError('依頼者と受託者は別の人を選択してください'); return; }
@@ -83,6 +84,23 @@ export default function RequestWorkManagement() {
         setRequests(prev => [...prev, newRequest]);
         setForm({ requesterId: '', recipientId: '', content: '' });
         setFormError('');
+
+        // LINE WORKS通知（Supabase Edge Function）
+        const requesterName = getMemberName(form.requesterId);
+        const recipientName = getMemberName(form.recipientId);
+        const requestContent = form.content.trim();
+        fetch('https://aosrdhlxfewpqhgjfmjb.supabase.co/functions/v1/notify-lineworks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+                requester: requesterName,
+                recipient: recipientName,
+                content: requestContent,
+            }),
+        }).catch(err => console.error('通知エラー:', err));
     };
 
     const completeRequest = (id) => {
