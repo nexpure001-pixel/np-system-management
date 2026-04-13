@@ -25,7 +25,7 @@ const injectSearchableData = (item) => ({
 // --- Memoized Row Component ---
 const PaymentRow = React.memo(({
     payment: p,
-    selectedIds,
+    isSelected,
     toggleSelectRow,
     handleInlineEdit,
     saveToDatabase,
@@ -34,14 +34,18 @@ const PaymentRow = React.memo(({
     // Local state for text fields to avoid $O(N)$ global state updates on every keystroke
     const [localShimei, setLocalShimei] = useState(p.shimei || '');
     const [localNyuukin, setLocalNyuukin] = useState(p.nyuukin_kingaku ? Number(p.nyuukin_kingaku).toLocaleString() : '');
+    const [localKounyuu, setLocalKounyuu] = useState(p.kounyuu_kingaku ? Number(p.kounyuu_kingaku).toLocaleString() : '');
+    const [localSagaku, setLocalSagaku] = useState(p.sagaku ? Number(p.sagaku).toLocaleString() : '');
     const [localBikou, setLocalBikou] = useState(p.bikou || '');
 
     // Sync local state if external data changes (e.g. from refresh)
     useEffect(() => {
         setLocalShimei(p.shimei || '');
         setLocalNyuukin(p.nyuukin_kingaku ? Number(p.nyuukin_kingaku).toLocaleString() : '');
+        setLocalKounyuu(p.kounyuu_kingaku ? Number(p.kounyuu_kingaku).toLocaleString() : '');
+        setLocalSagaku(p.sagaku ? Number(p.sagaku).toLocaleString() : '');
         setLocalBikou(p.bikou || '');
-    }, [p.shimei, p.nyuukin_kingaku, p.bikou]);
+    }, [p.shimei, p.nyuukin_kingaku, p.kounyuu_kingaku, p.sagaku, p.bikou]);
 
     const handleShimeiBlur = () => {
         if (localShimei !== p.shimei) {
@@ -57,6 +61,22 @@ const PaymentRow = React.memo(({
         }
     };
 
+    const handleKounyuuBlur = () => {
+        const cleanVal = Number(String(localKounyuu).replace(/,/g, '')) || 0;
+        if (cleanVal !== p.kounyuu_kingaku) {
+            saveToDatabase(p.id, { kounyuu_kingaku: cleanVal });
+            setLocalKounyuu(cleanVal.toLocaleString());
+        }
+    };
+
+    const handleSagakuBlur = () => {
+        const cleanVal = Number(String(localSagaku).replace(/,/g, '')) || 0;
+        if (cleanVal !== p.sagaku) {
+            saveToDatabase(p.id, { sagaku: cleanVal });
+            setLocalSagaku(cleanVal.toLocaleString());
+        }
+    };
+
     const handleBikouBlur = () => {
         if (localBikou !== p.bikou) {
             saveToDatabase(p.id, { bikou: localBikou });
@@ -64,12 +84,12 @@ const PaymentRow = React.memo(({
     };
 
     return (
-        <tr className={`${p.kanryou ? 'completed-row' : ''} ${selectedIds.has(p.id) ? 'selected-row' : ''}`}>
+        <tr className={`${p.kanryou ? 'completed-row' : ''} ${isSelected ? 'selected-row' : ''}`}>
             <td style={{ textAlign: 'center' }}>
                 <label className="cute-checkbox">
                     <input
                         type="checkbox"
-                        checked={selectedIds.has(p.id)}
+                        checked={isSelected}
                         onChange={() => toggleSelectRow(p.id)}
                     />
                     <span className="checkmark"></span>
@@ -104,20 +124,20 @@ const PaymentRow = React.memo(({
                     <option value="オートシップ">ｵｰﾄｼｯﾌﾟ</option>
                 </select>
             </td>
-            <td style={{ textAlign: 'center' }}>
-                <label className="cute-checkbox">
-                    <input type="checkbox" checked={p.soshikizu_kakunin} onChange={e => handleInlineEdit(p.id, 'soshikizu_kakunin', e.target.checked)} />
-                    <span className="checkmark"></span>
-                </label>
-            </td>
             <td>
-                <select className="filter-input" value={p.rank_up_bikou || ''} onChange={e => handleInlineEdit(p.id, 'rank_up_bikou', e.target.value)}>
+                <select className="filter-input input-narrow" value={p.rank_up_bikou || ''} onChange={e => handleInlineEdit(p.id, 'rank_up_bikou', e.target.value)}>
                     <option value=""></option>
                     <option value="登録">登録</option>
                     <option value="旧登録">旧登録</option>
                     <option value="申請日">申請日</option>
                     <option value="3個ok">3個ok</option>
                 </select>
+            </td>
+            <td style={{ textAlign: 'center' }}>
+                <label className="cute-checkbox">
+                    <input type="checkbox" checked={p.soshikizu_kakunin} onChange={e => handleInlineEdit(p.id, 'soshikizu_kakunin', e.target.checked)} />
+                    <span className="checkmark"></span>
+                </label>
             </td>
             <td>
                 <input
@@ -131,7 +151,7 @@ const PaymentRow = React.memo(({
             <td>
                 <input
                     type="text"
-                    className="filter-input"
+                    className="filter-input input-narrow"
                     style={{ background: 'transparent', border: 'none', fontWeight: 'bold' }}
                     value={localShimei}
                     onChange={e => setLocalShimei(e.target.value)}
@@ -141,17 +161,43 @@ const PaymentRow = React.memo(({
             <td style={{ textAlign: 'right' }}>
                 <input
                     type="text"
-                    className="filter-input"
+                    className="filter-input input-narrow"
                     style={{ background: 'transparent', border: 'none', textAlign: 'right', fontWeight: 'bold' }}
                     value={localNyuukin}
                     onChange={e => setLocalNyuukin(e.target.value)}
                     onBlur={handleNyuukinBlur}
                 />
             </td>
+            <td style={{ textAlign: 'center' }}>
+                <label className="cute-checkbox">
+                    <input type="checkbox" checked={p.henkin_taishou || false} onChange={e => handleInlineEdit(p.id, 'henkin_taishou', e.target.checked)} />
+                    <span className="checkmark"></span>
+                </label>
+            </td>
+            <td style={{ textAlign: 'right' }}>
+                <input
+                    type="text"
+                    className="filter-input input-narrow"
+                    style={{ background: 'transparent', border: 'none', textAlign: 'right' }}
+                    value={localKounyuu}
+                    onChange={e => setLocalKounyuu(e.target.value)}
+                    onBlur={handleKounyuuBlur}
+                />
+            </td>
+            <td style={{ textAlign: 'right' }}>
+                <input
+                    type="text"
+                    className="filter-input input-narrow"
+                    style={{ background: 'transparent', border: 'none', textAlign: 'right' }}
+                    value={localSagaku}
+                    onChange={e => setLocalSagaku(e.target.value)}
+                    onBlur={handleSagakuBlur}
+                />
+            </td>
             <td>
                 <input
                     type="text"
-                    className="filter-input"
+                    className="filter-input input-narrow"
                     style={{ background: 'transparent', border: 'none' }}
                     value={localBikou}
                     onChange={e => setLocalBikou(e.target.value)}
@@ -166,6 +212,11 @@ const PaymentRow = React.memo(({
             </td>
         </tr>
     );
+}, (prevProps, nextProps) => {
+    // Only re-render if the row's data or selection status actually changed. 
+    // Ignore function reference changes to prevent excessive re-renders!
+    return prevProps.isSelected === nextProps.isSelected && 
+           prevProps.payment === nextProps.payment;
 });
 
 const PaymentManagement = () => {
@@ -192,16 +243,6 @@ const PaymentManagement = () => {
     const [isGlobalSelected, setIsGlobalSelected] = useState(false);
     const itemsPerPage = 50;
     const fileInputRef = useRef(null);
-    const scrollTimeoutRef = useRef(null);
-    const [isScrolling, setIsScrolling] = useState(false);
-
-    const handleScroll = () => {
-        if (!isScrolling) setIsScrolling(true);
-        if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-        scrollTimeoutRef.current = setTimeout(() => {
-            setIsScrolling(false);
-        }, 150);
-    };
 
     // Debounce search query to prevent stuttering while typing
     useEffect(() => {
@@ -422,10 +463,14 @@ const PaymentManagement = () => {
                 shiharaibi_nyuuryoku: false,
                 box_idou: false,
                 touroku_jouhou: '',
-                soshikizu_kakunin: false,
                 rank_up_bikou: '',
+                soshikizu_kakunin: false,
+                chuumonbi: '',
                 shimei: '',
                 nyuukin_kingaku: '',
+                henkin_taishou: false,
+                kounyuu_kingaku: '',
+                sagaku: '',
                 bikou: ''
             }));
         } catch (err) {
@@ -511,7 +556,7 @@ const PaymentManagement = () => {
     };
 
     const handleExportExcel = () => {
-        const header = ["支払日入力", "BOX移動", "登録情報", "組織図確認", "ランクアップ", "振込日", "氏名", "入金金額", "備考", "完了"];
+        const header = ["支払日入力", "BOX移動", "登録情報", "ランクアップ", "組織図確認", "振込日", "氏名", "振込金額", "返金対象", "購入金額", "差額", "備考", "完了"];
 
         // Use selected rows if any are checked, otherwise use all filtered results
         const targets = selectedIds.size > 0
@@ -526,11 +571,14 @@ const PaymentManagement = () => {
             p.shiharaibi_nyuuryoku ? '済' : '未',
             p.box_idou ? '済' : '未',
             p.touroku_jouhou,
-            p.soshikizu_kakunin ? '済' : '未',
             p.rank_up_bikou,
+            p.soshikizu_kakunin ? '済' : '未',
             p.chuumonbi,
             p.shimei,
             p.nyuukin_kingaku,
+            p.henkin_taishou ? '対象' : '',
+            p.kounyuu_kingaku,
+            p.sagaku,
             p.bikou,
             p.kanryou ? '完了' : '未'
         ]);
@@ -637,7 +685,8 @@ const PaymentManagement = () => {
                     (!normFilters.touroku || p._searchTouroku.includes(normFilters.touroku)) &&
                     (!normFilters.shimei || p._searchShimei.includes(normFilters.shimei)) &&
                     (!normFilters.nyuukin || p._searchNyuukin.includes(normFilters.nyuukin)) &&
-                    (!filters.kanryou || (filters.kanryou === '完了' ? p.kanryou === true : p.kanryou === false))
+                    (!filters.kanryou || (filters.kanryou === '完了' ? p.kanryou === true : p.kanryou === false)) ||
+                    (!filters.henkin_taishou || (filters.henkin_taishou === '対象' ? p.henkin_taishou === true : p.henkin_taishou === false))
                 );
 
                 return matchesGlobal && matchesColumns;
@@ -665,14 +714,6 @@ const PaymentManagement = () => {
 
     return (
         <div className="payment-management-container">
-            <div className="background-bubbles">
-                <div className="bubble"></div>
-                <div className="bubble"></div>
-                <div className="bubble"></div>
-                <div className="bubble"></div>
-                <div className="bubble"></div>
-            </div>
-
             <header>
                 <h1><i className="fa-solid fa-cloud header-icon"></i> 入金管理システム (クラウド同期版)</h1>
             </header>
@@ -742,7 +783,7 @@ const PaymentManagement = () => {
                 )}
             </div>
 
-            <div className={`table-container glass-panel ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
+            <div className="table-container glass-panel">
                 <table className="cute-table">
                     <thead>
                         <tr>
@@ -759,11 +800,14 @@ const PaymentManagement = () => {
                             <th onClick={() => setSortConfig({ key: 'shiharaibi_nyuuryoku', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>支払日入力</th>
                             <th onClick={() => setSortConfig({ key: 'box_idou', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>BOX移動</th>
                             <th onClick={() => setSortConfig({ key: 'touroku_jouhou', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>登録情報</th>
-                            <th onClick={() => setSortConfig({ key: 'soshikizu_kakunin', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>組織図確認</th>
                             <th onClick={() => setSortConfig({ key: 'rank_up_bikou', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>ランクアップ</th>
+                            <th onClick={() => setSortConfig({ key: 'soshikizu_kakunin', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>組織図確認</th>
                             <th onClick={() => setSortConfig({ key: 'chuumonbi', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>振込日</th>
                             <th onClick={() => setSortConfig({ key: 'shimei', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>氏名</th>
-                            <th onClick={() => setSortConfig({ key: 'nyuukin_kingaku', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>金額</th>
+                            <th onClick={() => setSortConfig({ key: 'nyuukin_kingaku', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>振込金額</th>
+                            <th onClick={() => setSortConfig({ key: 'henkin_taishou', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>返金対象</th>
+                            <th onClick={() => setSortConfig({ key: 'kounyuu_kingaku', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>購入金額</th>
+                            <th onClick={() => setSortConfig({ key: 'sagaku', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>差額</th>
                             <th onClick={() => setSortConfig({ key: 'bikou', direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}>備考</th>
                             <th style={{ textAlign: 'center' }}>完了</th>
                         </tr>
@@ -783,15 +827,18 @@ const PaymentManagement = () => {
                                     <option value="未">未</option>
                                 </select>
                             </th>
-                            <th><input className="filter-input" placeholder="検索" value={filters.touroku} onChange={e => setFilters({ ...filters, touroku: e.target.value })} /></th>
+                            <th><input className="filter-input input-narrow" placeholder="検索" value={filters.touroku} onChange={e => setFilters({ ...filters, touroku: e.target.value })} /></th>
                             <th></th>
                             <th></th>
                             <th></th>
-                            <th><input className="filter-input" placeholder="名前" value={filters.shimei} onChange={e => setFilters({ ...filters, shimei: e.target.value })} /></th>
-                            <th><input className="filter-input" placeholder="金額" value={filters.nyuukin} onChange={e => setFilters({ ...filters, nyuukin: e.target.value })} /></th>
+                            <th><input className="filter-input input-narrow" placeholder="名前" value={filters.shimei} onChange={e => setFilters({ ...filters, shimei: e.target.value })} /></th>
+                            <th><input className="filter-input input-narrow" placeholder="金額" value={filters.nyuukin} onChange={e => setFilters({ ...filters, nyuukin: e.target.value })} /></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
                             <th></th>
                             <th>
-                                <select className="filter-input" value={filters.kanryou} onChange={e => setFilters({ ...filters, kanryou: e.target.value })}>
+                                <select className="filter-input input-narrow" value={filters.kanryou} onChange={e => setFilters({ ...filters, kanryou: e.target.value })}>
                                     <option value="">すべて</option>
                                     <option value="完了">完了</option>
                                     <option value="未完了">未完了</option>
@@ -813,7 +860,7 @@ const PaymentManagement = () => {
                                 </label>
                             </td>
                             <td>
-                                <select className="filter-input" value={quickAdd.touroku_jouhou} onChange={e => setQuickAdd({ ...quickAdd, touroku_jouhou: e.target.value })}>
+                                <select className="filter-input input-narrow" value={quickAdd.touroku_jouhou} onChange={e => setQuickAdd({ ...quickAdd, touroku_jouhou: e.target.value })}>
                                     <option value=""></option>
                                     <option value="未注文">未注文</option>
                                     <option value="未登録">未登録</option>
@@ -830,13 +877,7 @@ const PaymentManagement = () => {
                                 </select>
                             </td>
                             <td>
-                                <label className="cute-checkbox">
-                                    <input type="checkbox" checked={quickAdd.soshikizu_kakunin} onChange={e => setQuickAdd({ ...quickAdd, soshikizu_kakunin: e.target.checked })} />
-                                    <span className="checkmark"></span>
-                                </label>
-                            </td>
-                            <td>
-                                <select className="filter-input" value={quickAdd.rank_up_bikou} onChange={e => setQuickAdd({ ...quickAdd, rank_up_bikou: e.target.value })}>
+                                <select className="filter-input input-narrow" value={quickAdd.rank_up_bikou} onChange={e => setQuickAdd({ ...quickAdd, rank_up_bikou: e.target.value })}>
                                     <option value=""></option>
                                     <option value="登録">登録</option>
                                     <option value="旧登録">旧登録</option>
@@ -844,10 +885,24 @@ const PaymentManagement = () => {
                                     <option value="3個ok">3個ok</option>
                                 </select>
                             </td>
-                            <td><input type="date" className="filter-input" value={quickAdd.chuumonbi || ''} onChange={e => setQuickAdd({ ...quickAdd, chuumonbi: e.target.value })} /></td>
-                            <td><input type="text" className="filter-input" placeholder="氏名" value={quickAdd.shimei} onChange={e => setQuickAdd({ ...quickAdd, shimei: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
-                            <td><input type="text" className="filter-input" placeholder="金額" value={quickAdd.nyuukin_kingaku} onChange={e => setQuickAdd({ ...quickAdd, nyuukin_kingaku: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
-                            <td><input type="text" className="filter-input" placeholder="備考" value={quickAdd.bikou} onChange={e => setQuickAdd({ ...quickAdd, bikou: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
+                            <td style={{ textAlign: 'center' }}>
+                                <label className="cute-checkbox">
+                                    <input type="checkbox" checked={quickAdd.soshikizu_kakunin} onChange={e => setQuickAdd({ ...quickAdd, soshikizu_kakunin: e.target.checked })} />
+                                    <span className="checkmark"></span>
+                                </label>
+                            </td>
+                            <td><input type="date" className="filter-input input-narrow" value={quickAdd.chuumonbi || ''} onChange={e => setQuickAdd({ ...quickAdd, chuumonbi: e.target.value })} /></td>
+                            <td><input type="text" className="filter-input input-narrow" placeholder="氏名" value={quickAdd.shimei} onChange={e => setQuickAdd({ ...quickAdd, shimei: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
+                            <td><input type="text" className="filter-input input-narrow" placeholder="金額" value={quickAdd.nyuukin_kingaku} onChange={e => setQuickAdd({ ...quickAdd, nyuukin_kingaku: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
+                            <td style={{ textAlign: 'center' }}>
+                                <label className="cute-checkbox">
+                                    <input type="checkbox" checked={quickAdd.henkin_taishou || false} onChange={e => setQuickAdd({ ...quickAdd, henkin_taishou: e.target.checked })} />
+                                    <span className="checkmark"></span>
+                                </label>
+                            </td>
+                            <td><input type="text" className="filter-input input-narrow" placeholder="購入" value={quickAdd.kounyuu_kingaku || ''} onChange={e => setQuickAdd({ ...quickAdd, kounyuu_kingaku: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
+                            <td><input type="text" className="filter-input input-narrow" placeholder="差額" value={quickAdd.sagaku || ''} onChange={e => setQuickAdd({ ...quickAdd, sagaku: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
+                            <td><input type="text" className="filter-input input-narrow" placeholder="備考" value={quickAdd.bikou} onChange={e => setQuickAdd({ ...quickAdd, bikou: e.target.value })} onKeyDown={e => e.key === 'Enter' && handleQuickAdd()} /></td>
                             <td style={{ textAlign: 'center' }}>
                                 <button className="primary-btn" style={{ padding: '2px 8px', fontSize: '0.7em' }} onClick={handleQuickAdd} disabled={isLoading}>追加</button>
                             </td>
@@ -858,7 +913,7 @@ const PaymentManagement = () => {
                             <PaymentRow
                                 key={p.id}
                                 payment={p}
-                                selectedIds={selectedIds}
+                                isSelected={selectedIds.has(p.id)}
                                 toggleSelectRow={toggleSelectRow}
                                 handleInlineEdit={handleInlineEdit}
                                 saveToDatabase={saveToDatabase}

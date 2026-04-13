@@ -13,7 +13,7 @@
     font-family: 'Zen Maru Gothic', sans-serif;
     color: var(--text-color);
     min-height: 100vh;
-    padding: 15px 20px;
+    padding: 5px 10px;
     position: relative;
     overflow-x: hidden;
     /* background: var(--bg-color); */
@@ -100,8 +100,9 @@
 }
 
 .payment-management-container .glass-panel {
-    background: rgba(255, 255, 255, 0.8);
-    /* Higher opacity instead of blur */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid var(--glass-border);
     border-radius: 8px;
     box-shadow: var(--shadow);
@@ -233,12 +234,6 @@
     max-height: calc(100vh - 300px);
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.95);
-    contain: paint;
-    /* Optimize scroll performance: Non-destructive GPU promotion */
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    perspective: 1000px;
-    will-change: scroll-position;
 }
 
 /* Disable hover effects during scroll to save CPU */
@@ -298,7 +293,8 @@
 
 .payment-management-container .cute-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     table-layout: fixed;
 }
 
@@ -307,19 +303,23 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 0.8rem;
-    padding: 8px 4px;
+    font-size: 0.75rem;
+    padding: 2px 2px;
 }
 
 .payment-management-container .cute-table td {
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.payment-management-container tr.selected-row {
+.payment-management-container .cute-table th {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.payment-management-container tr.selected-row td {
     background-color: rgba(255, 182, 193, 0.25) !important;
 }
 
-.payment-management-container tr:hover:not(.quick-add-row) {
+.payment-management-container tr:hover:not(.quick-add-row) td {
     background-color: rgba(255, 255, 255, 0.9) !important;
 }
 
@@ -330,26 +330,41 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    /* Hardware promotion for sticky headers to prevent judder */
-    transform: translateZ(10px);
 }
 
 .payment-management-container .filter-input {
     width: 100%;
     padding: 4px 2px !important;
-    font-size: 0.85rem !important;
-    border-radius: 8px !important;
+    font-size: 0.8rem !important;
+    border-radius: 4px !important;
     border: 1px solid rgba(0, 0, 0, 0.1) !important;
     /* Added border for clarity */
 }
 
+.payment-management-container .input-narrow {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.payment-management-container .editable-input {
+    width: 100%;
+    padding: 4px 2px;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+}
+
 /* Checkbox Styles */
 .payment-management-container .cute-checkbox {
-    display: block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     position: relative;
-    padding-left: 25px;
     cursor: pointer;
-    height: 18px;
+    height: 16px;
+    width: 16px;
+    margin: 0 auto;
 }
 
 .payment-management-container .cute-checkbox input {
