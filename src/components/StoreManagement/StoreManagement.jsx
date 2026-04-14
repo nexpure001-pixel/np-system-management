@@ -178,7 +178,7 @@ const StoreManagement = () => {
         data.email_arrival_date = toNullifEmpty(formData.get('email_arrival_date'));
         data.original_arrival_date = toNullifEmpty(formData.get('original_arrival_date'));
         data.login_info_sent_date = toNullifEmpty(formData.get('login_info_sent_date'));
-        data.renewal_month = formData.get('renewal_month');
+        data.renewal_month = toNullifEmpty(formData.get('renewal_month'));
         data.remarks = formData.get('remarks');
         data.product_setting_plan = formData.get('product_setting_plan');
         data.not_purchased_list = formData.get('not_purchased_list');
@@ -663,7 +663,7 @@ const StoreManagement = () => {
                                         </div>
                                         <div className="form-group">
                                             <label>更新月</label>
-                                            <select name="renewal_month" defaultValue={editingStore?.renewal_month || ''}>
+                                            <select name="renewal_month" defaultValue={editingStore?.raw?.renewal_month || ''}>
                                                 <option value="">未設定</option>
                                                 <option value="1">1月</option>
                                                 <option value="2">2月</option>
