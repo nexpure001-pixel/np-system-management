@@ -139,7 +139,7 @@ const StoreManagement = () => {
         const toNullifEmpty = (val) => (val === '' || val === '-' || val === undefined || val === null) ? null : val;
 
         data.sales_ok = formData.get('sales_ok');
-        data.yearly_renewal_legacy = formData.get('yearly_renewal_legacy');
+        data.yearly_renewal_legacy = toNullifEmpty(formData.get('yearly_renewal_legacy'));
         // yearly_renewal_month はフォームに入力欄がないため、元のDB値を保持する（誤ってnullで上書きしない）
         data.yearly_renewal_month = originalRaw.yearly_renewal_month ?? null;
         data.no = formData.get('no');
@@ -384,7 +384,10 @@ const StoreManagement = () => {
             };
             // 管理対象（販売OK または 済み）かつ、いずれかの更新月フィールドが今月と一致
             const isActive = store.salesStatus === '販売OK' || store.salesStatus === '済み' || store.salesStatus === 'OK';
+            // 表示と同じ複合ロジック（yearlyRenewal が空なら renewalMonth にフォールバック）も追加でチェック
+            const displayVal = store.yearlyRenewal || store.renewalMonth;
             return isActive && (
+                isMatch(displayVal) ||
                 isMatch(store.yearly_renewal_legacy) ||
                 isMatch(store.yearly_renewal_month) ||
                 isMatch(store.renewal_month)
