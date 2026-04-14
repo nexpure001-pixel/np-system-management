@@ -140,7 +140,8 @@ const StoreManagement = () => {
 
         data.sales_ok = formData.get('sales_ok');
         data.yearly_renewal_legacy = formData.get('yearly_renewal_legacy');
-        data.yearly_renewal_month = formData.get('yearly_renewal_month');
+        // yearly_renewal_month はフォームに入力欄がないため、元のDB値を保持する（誤ってnullで上書きしない）
+        data.yearly_renewal_month = originalRaw.yearly_renewal_month ?? null;
         data.no = formData.get('no');
         data.np_seller_id = formData.get('np_seller_id');
         data.introducer = formData.get('introducer');
