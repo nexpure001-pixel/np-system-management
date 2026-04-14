@@ -136,7 +136,7 @@ const StoreManagement = () => {
     // DB保存用の形式に変換 (UI -> DB)
     const mapStoreToDB = (formData, originalRaw = {}) => {
         const data = { ...originalRaw };
-        const toNullifEmpty = (val) => (val === '' || val === undefined || val === null) ? null : val;
+        const toNullifEmpty = (val) => (val === '' || val === '-' || val === undefined || val === null) ? null : val;
 
         data.sales_ok = formData.get('sales_ok');
         data.yearly_renewal_legacy = formData.get('yearly_renewal_legacy');
@@ -370,7 +370,7 @@ const StoreManagement = () => {
         if (filterMode === 'document-pending') return !store.isDocComplete;
         if (filterMode === 'renewal-current') {
             const isMatch = (val) => {
-                if (!val) return false;
+                if (!val || val === '-') return false;
                 // 全角数字を半角に変換し、月やハイフンを処理して数値として比較
                 const normalized = String(val)
                     .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
