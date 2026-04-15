@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>送信前チェックシート</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #FBF7F2;
+  --parchment: #F4EDE4;
+  --rose-pale: #F5E4E4;
+  --rose: #D4A4A4;
+  --rose-deep: #B87C7C;
+  --mauve: #9B7B8B;
+  --plum: #3D2840;
+  --sage-pale: #E0EAE0;
+  --sage: #8FA88F;
+  --sage-deep: #6A8A6A;
+  --gold: #C4A862;
+  --amber: #E8B870;
+  --text: #3D2840;
+  --text-mid: #7A6278;
+  --text-muted: #A8909E;
+  --white: #FEFEFE;
+  --border: rgba(180,140,160,0.18);
+  --border-strong: rgba(180,140,160,0.32);
+  --shadow-xs: 0 1px 4px rgba(61,40,64,0.06);
+  --shadow-sm: 0 2px 10px rgba(61,40,64,0.08);
+  --shadow-md: 0 6px 24px rgba(61,40,64,0.10);
+  --shadow-lg: 0 12px 48px rgba(61,40,64,0.14);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 14px; }
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.65;
+  overflow-x: hidden;
+}
+
+/* Paper grain */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ── HEADER ── */
+.hdr {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(254,254,254,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+  padding: 0 28px;
+  height: 62px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.hdr-brand { display: flex; align-items: center; gap: 14px; }
+
+.hdr-mark {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--rose) 0%, var(--mauve) 100%);
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; box-shadow: 0 2px 8px rgba(180,124,124,0.3);
+}
+
+.hdr-text-main {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-weight: 400; letter-spacing: 0.06em;
+  color: var(--plum);
+}
+.hdr-text-sub {
+  font-size: 9.5px; letter-spacing: 0.14em;
+  color: var(--text-muted); margin-top: 1px;
+}
+
+.hdr-right { display: flex; align-items: center; gap: 14px; }
+
+/* Progress donut */
+.donut-wrap { display: flex; align-items: center; gap: 10px; }
+.donut { position: relative; width: 44px; height: 44px; }
+.donut svg { transform: rotate(-90deg); }
+.donut-bg { fill: none; stroke: var(--rose-pale); stroke-width: 4; }
+.donut-fill {
+  fill: none; stroke: var(--rose-deep); stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 113.1;
+  stroke-dashoffset: 113.1;
+  transition: stroke-dashoffset 0.6s cubic-bezier(.4,0,.2,1);
+}
+.donut-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--rose-deep);
+}
+.donut-info { font-size: 10.5px; color: var(--text-muted); line-height: 1.5; }
+
+/* Risk pill */
+.risk-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em; transition: all 0.3s;
+}
+.risk-normal { background: var(--sage-pale); color: var(--sage-deep); }
+.risk-high {
+  background: #FEF3DC; color: #9B6520;
+  box-shadow: 0 0 0 0 rgba(200,150,60,0.4);
+  animation: riskPulse 2s infinite;
+}
+@keyframes riskPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(200,150,60,0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(200,150,60,0); }
+}
+
+/* Save pill */
+.save-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text-muted);
+}
+.save-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--sage); transition: background 0.3s;
+}
+.save-dot.dirty { background: var(--amber); }
+
+/* Buttons */
+.btn {
+  height: 34px; padding: 0 16px; border-radius: var(--radius-sm);
+  border: none; cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 500;
+  letter-spacing: 0.03em; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-outline {
+  background: transparent; border: 1px solid var(--rose);
+  color: var(--rose-deep);
+}
+.btn-outline:hover { background: var(--rose-pale); }
+.btn-ghost { background: transparent; color: var(--text-muted); }
+.btn-ghost:hover { background: var(--parchment); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--rose-deep), var(--mauve));
+  color: white; box-shadow: 0 2px 8px rgba(184,124,124,0.28);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(184,124,124,0.38); }
+.btn-sage {
+  background: linear-gradient(135deg, var(--sage), var(--sage-deep));
+  color: white; box-shadow: 0 2px 8px rgba(143,168,143,0.28);
+}
+.btn-sage:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(143,168,143,0.38); }
+.btn-purple {
+  background: linear-gradient(135deg, #8E6EAE, #6E50A0);
+  color: white; box-shadow: 0 2px 8px rgba(110,80,160,0.28);
+}
+.btn-purple:hover { transform: translateY(-1px); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+
+/* ── MAIN LAYOUT ── */
+.layout {
+  display: flex;
+  height: calc(100vh - 62px);
+  overflow: hidden;
+}
+
+/* ── EMAIL PANEL ── */
+.email-panel {
+  width: 360px; flex-shrink: 0;
+  background: var(--white);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: width 0.32s cubic-bezier(.4,0,.2,1), opacity 0.3s;
+}
+.email-panel.collapsed { width: 0; opacity: 0; overflow: hidden; }
+
+.ep-header {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.ep-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px; color: var(--plum); letter-spacing: 0.04em;
+  display: flex; align-items: center; gap: 8px;
+}
+.ep-textarea {
+  flex: 1; resize: none; border: none; outline: none;
+  padding: 16px 20px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 12.5px;
+  color: var(--text); background: transparent; line-height: 1.85;
+}
+.ep-textarea::placeholder { color: var(--text-muted); line-height: 1.85; }
+.ep-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+
+/* AI spinner */
+.spinner {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: white; border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Panel toggle */
+.panel-toggle {
+  position: absolute; left: 360px; top: 50%;
+  transform: translateY(-50%);
+  background: var(--white); border: 1px solid var(--border);
+  border-left: none; border-radius: 0 8px 8px 0;
+  width: 20px; height: 48px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-xs); z-index: 10; color: var(--text-muted);
+  font-size: 10px; transition: all 0.3s;
+}
+.panel-toggle:hover { background: var(--parchment); color: var(--rose-deep); }
+.panel-toggle.collapsed { left: 0; border-radius: 0 8px 8px 0; }
+
+/* ── CHECKLIST PANEL ── */
+.cl-panel {
+  flex: 1; overflow-y: auto;
+  padding: 24px 28px 100px;
+  scrollbar-width: thin; scrollbar-color: var(--rose-pale) transparent;
+}
+.cl-panel::-webkit-scrollbar { width: 4px; }
+.cl-panel::-webkit-scrollbar-thumb { background: var(--rose-pale); border-radius: 4px; }
+
+/* Complete banner */
+.complete-banner {
+  background: linear-gradient(135deg, var(--sage), var(--sage-deep));
+  color: white; border-radius: var(--radius); padding: 14px 20px;
+  margin-bottom: 20px; font-size: 13px; font-weight: 500;
+  display: none; align-items: center; gap: 10px;
+  box-shadow: 0 4px 16px rgba(143,168,143,0.35);
+  animation: slideDown 0.4s ease;
+}
+.complete-banner.show { display: flex; }
+@keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── META CARD ── */
+.meta-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-xs);
+}
+.meta-card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px; color: var(--plum); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px; letter-spacing: 0.04em;
+}
+.meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.meta-field label {
+  display: block; font-size: 9.5px; color: var(--text-muted);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px;
+}
+.meta-field input {
+  width: 100%; border: none; border-bottom: 1px solid var(--border-strong);
+  padding: 5px 2px; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px; color: var(--text); background: transparent; outline: none;
+  transition: border-color 0.2s;
+}
+.meta-field input:focus { border-color: var(--rose); }
+
+/* ── SECTIONS ── */
+.section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.section:hover { box-shadow: var(--shadow-sm); }
+
+.sec-hdr {
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--border);
+}
+.sec-hdr:hover { background: var(--parchment); }
+
+.sec-badge {
+  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px; font-weight: 600;
+}
+.badge-a { background: linear-gradient(135deg, #F5E4E4, #EDD0D0); color: #8B5A5A; }
+.badge-b { background: linear-gradient(135deg, #E0EAE0, #CDE0CD); color: #507A50; }
+.badge-c { background: linear-gradient(135deg, #FDEFD8, #F8E0BC); color: #8B6020; }
+.badge-d { background: linear-gradient(135deg, #DFD8F0, #CEC4E8); color: #524878; }
+.badge-sup { background: linear-gradient(135deg, #EAD8F5, #DBC4EE); color: #6A3E8C; }
+
+.sec-info { flex: 1; }
+.sec-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px; font-weight: 400; color: var(--plum); letter-spacing: 0.04em;
+}
+.sec-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.sec-stat { font-size: 11px; color: var(--text-muted); margin-left: auto; padding-right: 10px; }
+.sec-chevron {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--parchment); display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: var(--text-muted); transition: transform 0.3s;
+}
+.section.collapsed .sec-chevron { transform: rotate(-90deg); }
+
+.sec-body { padding: 20px; }
+.section.collapsed .sec-body { display: none; }
+
+/* ── TEXTAREA QUESTIONS ── */
+.q-item { margin-bottom: 18px; }
+.q-item:last-child { margin-bottom: 0; }
+.q-label {
+  display: flex; align-items: flex-start; gap: 9px;
+  margin-bottom: 8px; font-size: 12.5px; color: var(--text-mid);
+  line-height: 1.5;
+}
+.q-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--rose-pale); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--rose-deep);
+  margin-top: 1px;
+}
+.q-textarea {
+  width: 100%; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 13px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 12.5px;
+  color: var(--text); background: var(--parchment);
+  resize: vertical; min-height: 58px; outline: none;
+  line-height: 1.75; transition: border-color 0.2s, background 0.2s;
+}
+.q-textarea:focus { border-color: var(--rose); background: var(--white); }
+.q-textarea::placeholder { color: var(--text-muted); }
+
+/* AI suggestion box */
+.ai-box {
+  margin-top: 8px; padding: 10px 14px;
+  background: linear-gradient(135deg, #F0ECFA, #E8E3F5);
+  border: 1px solid #C8BCE8; border-radius: var(--radius-sm);
+  font-size: 12px; color: #46367A; line-height: 1.7; display: none;
+}
+.ai-box-label {
+  font-size: 9.5px; font-weight: 700; color: #8A6AB8;
+  letter-spacing: 0.1em; margin-bottom: 5px;
+}
+
+/* ── CHECK ITEMS ── */
+.chk-item {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; margin-bottom: 5px;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.chk-item:hover { background: var(--parchment); }
+.chk-item.done-b {
+  background: linear-gradient(135deg, #F0FBF0, #E8F5E8);
+  border-color: #C8DEC8;
+}
+.chk-item.done-c {
+  background: linear-gradient(135deg, #FFF8EE, #FFF0DC);
+  border-color: #F0D8A8;
+}
+
+.chk-box {
+  width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+  border: 2px solid var(--rose); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; margin-top: 1px;
+}
+.chk-item.done-b .chk-box { background: var(--sage); border-color: var(--sage); }
+.chk-item.done-c .chk-box { background: var(--amber); border-color: var(--amber); }
+.chk-mark {
+  color: white; font-size: 11px; font-weight: 700;
+  opacity: 0; transform: scale(0.4) rotate(-10deg);
+  transition: all 0.2s cubic-bezier(.17,.67,.52,1.4);
+}
+.chk-item.done-b .chk-mark,
+.chk-item.done-c .chk-mark {
+  opacity: 1; transform: scale(1) rotate(0deg);
+}
+.chk-label { font-size: 12.5px; color: var(--text); line-height: 1.5; user-select: none; }
+
+/* Risk warning banner */
+.risk-warn {
+  background: linear-gradient(135deg, #FEF6EC, #FDEEDD);
+  border: 1px solid #F0D8A0; border-radius: var(--radius-sm);
+  padding: 12px 14px; margin-bottom: 14px;
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 12px; color: #8B5E20; line-height: 1.6;
+}
+
+/* ── FINAL CONFIRM ── */
+.final-radios { display: flex; gap: 12px; margin-bottom: 16px; }
+.final-btn {
+  flex: 1; padding: 13px; border-radius: var(--radius-sm);
+  border: 2px solid var(--border-strong); text-align: center;
+  cursor: pointer; font-size: 13px; color: var(--text-muted);
+  transition: all 0.2s; font-family: 'Noto Sans JP', sans-serif;
+}
+.final-btn:hover { border-color: var(--rose); }
+.final-btn.sel-yes { border-color: var(--sage); background: linear-gradient(135deg, #F0FBF0,#E8F5E8); color: var(--sage-deep); font-weight: 700; }
+.final-btn.sel-no { border-color: var(--rose-deep); background: linear-gradient(135deg, #FFF0F0,#FFE8E8); color: var(--rose-deep); font-weight: 700; }
+
+/* ── SUPERVISOR ── */
+.sup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.corr-radios { display: flex; gap: 8px; }
+.corr-btn {
+  padding: 5px 18px; border-radius: 20px; font-size: 12px;
+  border: 1px solid var(--border-strong); cursor: pointer;
+  font-family: inherit; transition: all 0.2s; color: var(--text-muted);
+}
+.corr-btn.sel { background: var(--rose); color: white; border-color: var(--rose); }
+
+/* ── ACTION BAR ── */
+.action-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+  background: rgba(254,254,254,0.92); backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border); box-shadow: 0 -4px 20px rgba(61,40,64,0.07);
+  padding: 12px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ab-left { display: flex; align-items: center; gap: 12px; }
+.ab-right { display: flex; align-items: center; gap: 10px; }
+.ab-time { font-size: 11px; color: var(--text-muted); }
+
+/* ── HISTORY OVERLAY ── */
+.hist-overlay {
+  position: fixed; inset: 0;
+  background: rgba(61,40,64,0.28); backdrop-filter: blur(5px);
+  z-index: 300; display: none;
+}
+.hist-overlay.open { display: block; }
+
+.hist-panel {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 460px; background: var(--white);
+  box-shadow: var(--shadow-lg);
+  display: flex; flex-direction: column;
+  animation: slideRight 0.3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.hist-hdr {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.hist-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; color: var(--plum); letter-spacing: 0.04em;
+}
+.hist-list { flex: 1; overflow-y: auto; padding: 14px 16px; }
+.hist-empty {
+  text-align: center; color: var(--text-muted); padding: 48px 20px;
+  font-size: 13px; line-height: 2.2;
+}
+.hist-item {
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); margin-bottom: 10px;
+  cursor: pointer; transition: all 0.2s;
+}
+.hist-item:hover { background: var(--parchment); border-color: var(--rose); }
+.hist-item-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+.hist-client { font-size: 13.5px; font-weight: 500; color: var(--plum); }
+.hist-risk-tag { font-size: 10px; background: #FEF3DC; color: #9B6520; padding: 2px 8px; border-radius: 10px; }
+.hist-case { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+.hist-score {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px; font-weight: 600; color: var(--rose-deep); line-height: 1;
+}
+.hist-score-sub { font-size: 9px; color: var(--text-muted); text-align: right; }
+.hist-date { font-size: 10.5px; color: var(--text-muted); }
+.hist-footer { padding: 14px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%) translateY(10px);
+  background: var(--plum); color: white;
+  padding: 10px 22px; border-radius: 24px; font-size: 12.5px;
+  z-index: 400; opacity: 0; pointer-events: none;
+  transition: opacity 0.28s, transform 0.28s;
+  box-shadow: 0 4px 16px rgba(61,40,64,0.28);
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── SECTION ANIMATIONS ── */
+.section { animation: fadeUp 0.4s ease both; }
+.meta-card { animation: fadeUp 0.3s ease both; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive: hide email panel on narrow screens */
+@media (max-width: 900px) {
+  .email-panel { width: 0; opacity: 0; overflow: hidden; }
+  .panel-toggle { left: 0; }
+}
+
+/* ═══════════════════════════════════════
+   💕 WELCOME OVERLAY
+═══════════════════════════════════════ */
+.welcome-overlay {
+  position: fixed; inset: 0; z-index: 800;
+  background: linear-gradient(145deg, rgba(244,237,228,0.97), rgba(245,228,228,0.97));
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+}
+.welcome-overlay.show { opacity: 1; pointer-events: all; }
+
+.welcome-card {
+  background: white; border-radius: 28px; max-width: 460px; width: 90%;
+  padding: 48px 40px; text-align: center;
+  box-shadow: 0 24px 80px rgba(184,124,124,0.22), 0 0 0 1px rgba(212,164,164,0.2);
+  position: relative; overflow: hidden;
+  animation: welcomePop 0.5s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes welcomePop {
+  from { opacity:0; transform: scale(0.85) translateY(20px); }
+  to { opacity:1; transform: scale(1) translateY(0); }
+}
+
+/* Decorative corner petals */
+.welcome-card::before {
+  content: '🌸';
+  position: absolute; top: -8px; left: 14px; font-size: 48px; opacity: 0.25;
+  transform: rotate(-20deg);
+}
+.welcome-card::after {
+  content: '🌸';
+  position: absolute; bottom: -8px; right: 14px; font-size: 48px; opacity: 0.25;
+  transform: rotate(20deg);
+}
+
+.welcome-mascot {
+  width: 86px; height: 86px; margin: 0 auto 20px;
+  background: linear-gradient(135deg, #F5E4E4, #EDD0EE);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 40px; box-shadow: 0 4px 20px rgba(184,124,184,0.22);
+  animation: mascotBob 2.8s ease-in-out infinite;
+}
+@keyframes mascotBob {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-6px) rotate(3deg); }
+}
+
+.welcome-subtitle {
+  font-size: 10px; letter-spacing: 0.2em; color: var(--mauve);
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.welcome-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px; font-weight: 400; color: var(--plum);
+  letter-spacing: 0.04em; margin-bottom: 18px; line-height: 1.4;
+}
+.welcome-text {
+  font-size: 13px; color: var(--text-mid); line-height: 2;
+  margin-bottom: 28px;
+}
+.welcome-steps {
+  display: flex; justify-content: center; gap: 10px;
+  margin-bottom: 28px; flex-wrap: wrap;
+}
+.welcome-step-pill {
+  background: var(--rose-pale); border-radius: 20px;
+  padding: 5px 13px; font-size: 11.5px; color: var(--rose-deep);
+  display: flex; align-items: center; gap: 5px;
+}
+.welcome-btns { display: flex; gap: 10px; justify-content: center; }
+.btn-welcome-start {
+  background: linear-gradient(135deg, #D4A4A4, #9B7B8B);
+  color: white; border: none; border-radius: 24px;
+  padding: 12px 28px; font-size: 13.5px; font-weight: 500;
+  font-family: 'Noto Sans JP', sans-serif; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(184,124,124,0.32);
+  transition: all 0.2s; letter-spacing: 0.04em;
+}
+.btn-welcome-start:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(184,124,124,0.4); }
+.btn-welcome-skip {
+  background: transparent; border: 1px solid var(--border-strong);
+  color: var(--text-muted); border-radius: 24px;
+  padding: 12px 20px; font-size: 13px;
+  font-family: 'Noto Sans JP', sans-serif; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-welcome-skip:hover { background: var(--parchment); }
+
+/* ═══════════════════════════════════════
+   💡 TUTORIAL STEP CARD (bottom-anchored)
+═══════════════════════════════════════ */
+.tut-dimmer {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(61,40,64,0.36);
+  backdrop-filter: blur(2px);
+  pointer-events: none; opacity: 0; transition: opacity 0.3s;
+}
+.tut-dimmer.show { opacity: 1; }
+
+.tut-card {
+  position: fixed; bottom: 82px; left: 50%; transform: translateX(-50%) translateY(20px);
+  z-index: 700; width: 520px; max-width: calc(100vw - 32px);
+  background: white; border-radius: 22px;
+  box-shadow: 0 -2px 0 0 var(--rose), var(--shadow-lg);
+  padding: 24px 26px 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.35s, transform 0.35s cubic-bezier(.34,1.3,.64,1);
+}
+.tut-card.show { opacity: 1; pointer-events: all; transform: translateX(-50%) translateY(0); }
+
+.tut-card-inner { display: flex; gap: 16px; align-items: flex-start; }
+.tut-emoji-badge {
+  width: 52px; height: 52px; border-radius: 16px; flex-shrink: 0;
+  background: linear-gradient(135deg, #FDE8F0, #ECD8F0);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; box-shadow: 0 2px 8px rgba(184,124,184,0.18);
+}
+.tut-content { flex: 1; }
+.tut-step-label {
+  font-size: 9.5px; color: var(--mauve); letter-spacing: 0.14em;
+  text-transform: uppercase; margin-bottom: 4px;
+}
+.tut-step-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px; color: var(--plum); font-weight: 400;
+  letter-spacing: 0.04em; margin-bottom: 8px;
+}
+.tut-step-text {
+  font-size: 12.5px; color: var(--text-mid); line-height: 1.9;
+}
+.tut-step-text .tut-bullet { color: var(--rose-deep); margin-right: 4px; }
+
+.tut-footer {
+  margin-top: 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.tut-dots { display: flex; gap: 6px; align-items: center; }
+.tut-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--rose-pale); transition: all 0.3s;
+}
+.tut-dot.active { background: var(--rose-deep); transform: scale(1.3); }
+.tut-dot.done { background: var(--sage); }
+
+.tut-nav { display: flex; gap: 8px; }
+.btn-tut-nav {
+  height: 32px; padding: 0 16px; border-radius: 16px;
+  border: none; cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px; font-weight: 500; transition: all 0.2s;
+}
+.btn-tut-prev { background: var(--parchment); color: var(--text-muted); }
+.btn-tut-prev:hover { background: var(--rose-pale); color: var(--rose-deep); }
+.btn-tut-next {
+  background: linear-gradient(135deg, var(--rose), var(--mauve));
+  color: white; box-shadow: 0 2px 8px rgba(184,124,124,0.28);
+}
+.btn-tut-next:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(184,124,124,0.38); }
+.btn-tut-close { background: transparent; color: var(--text-muted); }
+.btn-tut-close:hover { color: var(--rose-deep); }
+
+/* Element glow when highlighted in tutorial */
+.tut-glow {
+  outline: 2.5px solid var(--rose) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 6px rgba(212,164,164,0.18), var(--shadow-md) !important;
+  position: relative; z-index: 650;
+  animation: tutPulse 1.6s ease infinite !important;
+  border-radius: var(--radius) !important;
+}
+@keyframes tutPulse {
+  0%,100% { outline-color: var(--rose); box-shadow: 0 0 0 6px rgba(212,164,164,0.15), var(--shadow-md); }
+  50% { outline-color: var(--rose-deep); box-shadow: 0 0 0 10px rgba(212,164,164,0.06), var(--shadow-md); }
+}
+
+/* Tutorial button in header */
+.btn-tut-hdr {
+  height: 34px; padding: 0 14px; border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--rose); cursor: pointer;
+  background: rgba(245,228,228,0.5); color: var(--rose-deep);
+  font-family: 'Noto Sans JP', sans-serif; font-size: 12px; font-weight: 500;
+  letter-spacing: 0.03em; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.btn-tut-hdr:hover { background: var(--rose-pale); border-style: solid; }
+
+/* ═══════════════════════════════════════
+   💕 FLOATING HEARTS
+═══════════════════════════════════════ */
+.heart-particle {
+  position: fixed; pointer-events: none; z-index: 900;
+  font-size: 16px; user-select: none;
+  animation: heartRise var(--dur, 1.1s) cubic-bezier(.2,.8,.4,1) forwards;
+}
+@keyframes heartRise {
+  0%   { opacity: 1; transform: translateY(0)   translateX(var(--dx1,0)) scale(1)    rotate(0deg); }
+  40%  { opacity: 0.9; }
+  80%  { opacity: 0.4; transform: translateY(-70px) translateX(var(--dx2,0)) scale(0.75) rotate(var(--rot,15deg)); }
+  100% { opacity: 0; transform: translateY(-100px) translateX(var(--dx3,0)) scale(0.4) rotate(var(--rot2,30deg)); }
+}
+
+/* ═══════════════════════════════════════
+   🎉 COMPLETION CELEBRATION
+═══════════════════════════════════════ */
+.celeb-piece {
+  position: fixed; pointer-events: none; z-index: 850;
+  font-size: var(--fz, 18px);
+  animation: celebFall var(--dur, 3s) cubic-bezier(.2,.6,.4,1) forwards;
+  top: -40px;
+}
+@keyframes celebFall {
+  0%   { opacity: 1; transform: translateY(0) translateX(0) rotate(0deg) scale(1); }
+  60%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(calc(100vh + 60px)) translateX(var(--swayX,40px)) rotate(var(--spin,360deg)) scale(0.6); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-mark">✉</div>
+    <div>
+      <div class="hdr-text-main">送信前チェックシート</div>
+      <div class="hdr-text-sub">CUSTOMER REPLY PRE-SEND VERIFICATION · NEXPURE</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="donut-wrap">
+      <div class="donut">
+        <svg width="44" height="44" viewBox="0 0 44 44">
+          <circle class="donut-bg" cx="22" cy="22" r="18"/>
+          <circle class="donut-fill" id="donutFill" cx="22" cy="22" r="18"/>
+        </svg>
+        <div class="donut-label" id="donutLabel">0%</div>
+      </div>
+      <div class="donut-info">
+        <div id="donutInfo1" style="font-weight:500;color:var(--text-mid)">チェック完了度</div>
+        <div id="donutInfo2">B: 0/10 ✓</div>
+      </div>
+    </div>
+    <div class="risk-pill risk-normal" id="riskPill">🟢 標準案件</div>
+    <div class="save-pill">
+      <div class="save-dot" id="saveDot"></div>
+      <span id="saveLabel">自動保存</span>
+    </div>
+    <button class="btn btn-tut-hdr" onclick="startTutorial()">💡 使い方</button>
+    <button class="btn btn-outline" onclick="openHistory()">📋 履歴を見る</button>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="layout" id="layout">
+
+  <!-- LEFT: Email panel -->
+  <div class="email-panel" id="emailPanel">
+    <div class="ep-header">
+      <div class="ep-title">📨 返信メール下書き</div>
+      <button class="btn btn-ghost" style="padding:0 10px;height:28px;font-size:11px" onclick="clearEmail()">クリア</button>
+    </div>
+    <textarea class="ep-textarea" id="emailContent"
+      placeholder="ここに返信メールの下書きをペーストしてください。&#10;&#10;「AIで解析」を押すと、Claude APIがメール内容を読み取り、質問整理（セクションA）のヒントを自動表示します。&#10;&#10;高リスクキーワードが含まれる場合は自動検出します。"></textarea>
+    <div class="ep-footer">
+      <button class="btn btn-purple" id="aiBtn" onclick="analyzeEmail()">
+        <div class="spinner" id="aiSpinner"></div>
+        <span id="aiBtnTxt">✨ AIで解析</span>
+      </button>
+      <span style="font-size:10px;color:var(--text-muted);margin-left:auto">Claude API 使用</span>
+    </div>
+  </div>
+
+  <!-- Panel toggle -->
+  <div class="panel-toggle" id="panelToggle" onclick="toggleEmailPanel()">◀</div>
+
+  <!-- RIGHT: Checklist -->
+  <div class="cl-panel" id="clPanel">
+
+    <div class="complete-banner" id="completeBanner">
+      ✅ すべての必須チェックが完了しました。送信の準備ができています！
+    </div>
+
+    <!-- Meta -->
+    <div class="meta-card" id="metaCard">
+      <div class="meta-card-title">📝 担当者情報</div>
+      <div class="meta-grid">
+        <div class="meta-field">
+          <label>受付日</label>
+          <input type="date" id="f_date" onchange="scheduleAutoSave()">
+        </div>
+        <div class="meta-field">
+          <label>担当者名</label>
+          <input type="text" id="f_staff" placeholder="田中 花子" onchange="scheduleAutoSave()">
+        </div>
+        <div class="meta-field">
+          <label>顧客名</label>
+          <input type="text" id="f_customer" placeholder="〇〇 様" onchange="scheduleAutoSave()">
+        </div>
+        <div class="meta-field">
+          <label>案件名 / 注文番号</label>
+          <input type="text" id="f_case" placeholder="件名・注文番号等" onchange="scheduleAutoSave()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section A -->
+    <div class="section" id="secA" style="animation-delay:0.05s">
+      <div class="sec-hdr" onclick="toggleSec('secA')">
+        <div class="sec-badge badge-a">A</div>
+        <div class="sec-info">
+          <div class="sec-title">質問整理</div>
+          <div class="sec-sub">顧客の意図を構造化する · 4項目</div>
+        </div>
+        <div class="sec-stat" id="statA">0 / 4 記入済</div>
+        <div class="sec-chevron">▼</div>
+      </div>
+      <div class="sec-body">
+        <div class="q-item">
+          <div class="q-label"><div class="q-num">1</div><span>顧客が<strong>表面上</strong>聞いていることは何か</span></div>
+          <textarea class="q-textarea" id="q_a1" rows="2" placeholder="表面的な質問・要求をそのまま記入..." oninput="onInput()"></textarea>
+          <div class="ai-box" id="ai_a1"><div class="ai-box-label">✨ AI の提案</div><span id="ai_a1_txt"></span></div>
+        </div>
+        <div class="q-item">
+          <div class="q-label"><div class="q-num">2</div><span>顧客が<strong>実際に一番知りたい</strong>ことは何か</span></div>
+          <textarea class="q-textarea" id="q_a2" rows="2" placeholder="本質的ニーズ・隠れた懸念を記入..." oninput="onInput()"></textarea>
+          <div class="ai-box" id="ai_a2"><div class="ai-box-label">✨ AI の提案</div><span id="ai_a2_txt"></span></div>
+        </div>
+        <div class="q-item">
+          <div class="q-label"><div class="q-num">3</div><span>今回の回答で<strong>最初に伝えるべき結論</strong>は何か</span></div>
+          <textarea class="q-textarea" id="q_a3" rows="2" placeholder="結論ファーストで記入..." oninput="onInput()"></textarea>
+        </div>
+        <div class="q-item">
+          <div class="q-label"><div class="q-num">4</div><span>回答前に確認が必要な<strong>事実</strong>は何か（なければ「なし」）</span></div>
+          <textarea class="q-textarea" id="q_a4" rows="2" placeholder="未確認の事実・要確認事項を記入..." oninput="onInput()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section B -->
+    <div class="section" id="secB" style="animation-delay:0.10s">
+      <div class="sec-hdr" onclick="toggleSec('secB')">
+        <div class="sec-badge badge-b">B</div>
+        <div class="sec-info">
+          <div class="sec-title">送信前チェック</div>
+          <div class="sec-sub">10項目すべてにチェックを入れてください</div>
+        </div>
+        <div class="sec-stat" id="statB">0 / 10</div>
+        <div class="sec-chevron">▼</div>
+      </div>
+      <div class="sec-body" id="bodyB"></div>
+    </div>
+
+    <!-- Section C -->
+    <div class="section" id="secC" style="animation-delay:0.15s">
+      <div class="sec-hdr" onclick="toggleSec('secC')">
+        <div class="sec-badge badge-c">C</div>
+        <div class="sec-info">
+          <div class="sec-title">高リスク案件判定</div>
+          <div class="sec-sub">1つでも該当する場合は上長確認が必須です</div>
+        </div>
+        <div class="sec-stat" id="statC">該当なし</div>
+        <div class="sec-chevron">▼</div>
+      </div>
+      <div class="sec-body">
+        <div class="risk-warn">
+          <span style="font-size:18px;flex-shrink:0">⚠️</span>
+          <span>以下に<strong>1項目でも該当</strong>する場合は、送信前に必ず上長の確認を受けてください。チェックが入ると自動的に「高リスク案件」と判定されます。</span>
+        </div>
+        <div id="bodyC"></div>
+      </div>
+    </div>
+
+    <!-- Section D -->
+    <div class="section" id="secD" style="animation-delay:0.20s">
+      <div class="sec-hdr" onclick="toggleSec('secD')">
+        <div class="sec-badge badge-d">D</div>
+        <div class="sec-info">
+          <div class="sec-title">最終確認</div>
+          <div class="sec-sub">一度の返信で問い合わせを解消できるか</div>
+        </div>
+        <div class="sec-chevron">▼</div>
+      </div>
+      <div class="sec-body">
+        <p style="font-size:13px;color:var(--text-mid);margin-bottom:14px;line-height:1.7">
+          今回の回答は、顧客の問い合わせを<strong>一度で完全に解消できる内容</strong>になっているか。
+        </p>
+        <div class="final-radios">
+          <div class="final-btn" id="fbYes" onclick="setFinal('yes')">✅ はい</div>
+          <div class="final-btn" id="fbNo" onclick="setFinal('no')">❌ いいえ</div>
+        </div>
+        <div id="dLackArea" style="display:none">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:7px;letter-spacing:0.04em">「いいえ」の場合 — 何が不足しているか</div>
+          <textarea class="q-textarea" id="q_d_lack" rows="3" placeholder="不足している情報・確認事項を記入してください..." oninput="scheduleAutoSave()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supervisor -->
+    <div class="section" id="secSup" style="animation-delay:0.25s">
+      <div class="sec-hdr" onclick="toggleSec('secSup')">
+        <div class="sec-badge badge-sup">✓</div>
+        <div class="sec-info">
+          <div class="sec-title">上長確認欄</div>
+          <div class="sec-sub">高リスク案件の場合に記入してください</div>
+        </div>
+        <div class="sec-chevron">▼</div>
+      </div>
+      <div class="sec-body">
+        <div class="sup-grid">
+          <div class="meta-field">
+            <label>確認者名</label>
+            <input type="text" id="f_sup_name" placeholder="上長の氏名" onchange="scheduleAutoSave()">
+          </div>
+          <div class="meta-field">
+            <label>確認日</label>
+            <input type="date" id="f_sup_date" onchange="scheduleAutoSave()">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:9px;letter-spacing:0.06em;text-transform:uppercase">修正指示の有無</div>
+          <div class="corr-radios">
+            <div class="corr-btn" id="corrYes" onclick="setCorr('yes')">有</div>
+            <div class="corr-btn" id="corrNo" onclick="setCorr('no')">無</div>
+          </div>
+        </div>
+        <div id="corrArea" style="display:none;margin-top:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:7px">修正指示の内容</div>
+          <textarea class="q-textarea" id="q_corr" rows="3" placeholder="修正指示の内容を記入..." oninput="scheduleAutoSave()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- ACTION BAR -->
+<div class="action-bar" id="actionBar">
+  <div class="ab-left">
+    <button class="btn btn-ghost" onclick="resetAll()">🗑 リセット</button>
+    <span class="ab-time" id="abTime"></span>
+  </div>
+  <div class="ab-right">
+    <button class="btn btn-outline" onclick="exportTxt()">📄 テキスト出力</button>
+    <button class="btn btn-outline" onclick="printView()">🖨 印刷</button>
+    <button class="btn btn-sage" onclick="saveNow()">💾 今すぐ保存</button>
+  </div>
+</div>
+
+<!-- HISTORY OVERLAY -->
+<div class="hist-overlay" id="histOverlay" onclick="closeHistOuter(event)">
+  <div class="hist-panel">
+    <div class="hist-hdr">
+      <div class="hist-title">保存履歴</div>
+      <button class="btn btn-ghost" onclick="closeHist()">✕ 閉じる</button>
+    </div>
+    <div class="hist-list" id="histList">
+      <div class="hist-empty">読み込み中...</div>
+    </div>
+    <div class="hist-footer" style="display:flex;gap:8px">
+      <button class="btn btn-ghost" style="flex:1;font-size:11.5px;justify-content:center" onclick="newSheet()">＋ 新規シート</button>
+      <button class="btn btn-ghost" style="flex:1;font-size:11.5px;color:var(--rose-deep);justify-content:center" onclick="clearAllHistory()">🗑 全削除</button>
+    </div>
+  </div>
+</div>
+
+<!-- WELCOME OVERLAY -->
+<div class="welcome-overlay" id="welcomeOverlay">
+  <div class="welcome-card">
+    <div class="welcome-mascot">💌</div>
+    <div class="welcome-subtitle">NEXPURE カスタマーサポート</div>
+    <div class="welcome-title">送信前チェックシートへ<br>ようこそ！🌸</div>
+    <div class="welcome-text">
+      このシートを使えば、<strong>再問い合わせやクレームを防いで</strong><br>
+      安心・丁寧なお仕事ができるよ💕<br>
+      最初に使い方をサクッと確認してみてね！
+    </div>
+    <div class="welcome-steps">
+      <div class="welcome-step-pill">📨 メールを貼り付け</div>
+      <div class="welcome-step-pill">✅ チェックリスト記入</div>
+      <div class="welcome-step-pill">💾 自動保存で安心</div>
+    </div>
+    <div class="welcome-btns">
+      <button class="btn-welcome-start" onclick="beginTutorial()">💡 使い方を見る（1分）</button>
+      <button class="btn-welcome-skip" onclick="closeWelcome()">あとで見る</button>
+    </div>
+  </div>
+</div>
+
+<!-- TUTORIAL DIM + STEP CARD -->
+<div class="tut-dimmer" id="tutDimmer"></div>
+<div class="tut-card" id="tutCard">
+  <div class="tut-card-inner">
+    <div class="tut-emoji-badge" id="tutEmoji">🌸</div>
+    <div class="tut-content">
+      <div class="tut-step-label" id="tutStepLabel">STEP 1 / 8</div>
+      <div class="tut-step-title" id="tutTitle">タイトル</div>
+      <div class="tut-step-text" id="tutText">テキスト</div>
+    </div>
+  </div>
+  <div class="tut-footer">
+    <div class="tut-dots" id="tutDots"></div>
+    <div class="tut-nav">
+      <button class="btn-tut-nav btn-tut-close" onclick="endTutorial()">✕ 閉じる</button>
+      <button class="btn-tut-nav btn-tut-prev" id="tutPrev" onclick="prevStep()">← もどる</button>
+      <button class="btn-tut-nav btn-tut-next" id="tutNext" onclick="nextStep()">つぎへ →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CELEBRATION LAYER -->
+<div id="celebLayer" style="position:fixed;inset:0;pointer-events:none;z-index:850;overflow:hidden"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────
+const B_ITEMS = [
+  '顧客の質問に直接答えている',
+  '結論が文頭または冒頭で明確になっている',
+  '必要な事実確認が済んでいる',
+  '未確認事項を推測で補っていない',
+  '顧客が次に取るべき行動がわかる',
+  '回答に不足がある場合、その不足を明記している',
+  '不要に長いだけの文章になっていない',
+  '敬語や表現が適切である',
+  '誤字脱字、氏名、日付、金額、数量等に誤りがない',
+  '高リスク案件に該当する場合、上長確認を受けている',
+];
+
+const C_ITEMS = [
+  '返金・請求・支払いに関する案内',
+  '契約条件・規約・解約に関する案内',
+  '誤発送・未着・再発送等の配送事故',
+  'クレーム・苦情・強い不満のある案件',
+  '謝罪・補償・特別対応を含む案件',
+  '法令判断や広告表現確認を含む案件',
+  '自分で判断に迷いがある案件',
+];
+
+// ── STATE ─────────────────────────────────────────
+let st = {
+  bChecks: Array(10).fill(false),
+  cChecks: Array(7).fill(false),
+  finalAns: null,
+  corr: null,
+  isHighRisk: false,
+};
+
+let saveTimer = null;
+let currentKey = null;
+let emailPanelOpen = true;
+
+// ── STORAGE HELPERS ───────────────────────────────
+function storageGet(key) {
+  try { return localStorage.getItem(key); } catch(e) { return null; }
+}
+function storageSet(key, val) {
+  try { localStorage.setItem(key, val); return true; } catch(e) { return false; }
+}
+function storageDelete(key) {
+  try { localStorage.removeItem(key); } catch(e) {}
+}
+function storageList(prefix) {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) keys.push(k);
+    }
+    return keys;
+  } catch(e) { return []; }
+}
+
+// ── INIT ──────────────────────────────────────────
+function init() {
+  renderChecks('bodyB', B_ITEMS, 'b');
+  renderChecks('bodyC', C_ITEMS, 'c');
+  document.getElementById('f_date').value = new Date().toISOString().split('T')[0];
+  updateAll();
+  currentKey = 'nxp_chk_' + Date.now();
+  // First visit check
+  if (!storageGet('nxp_visited')) {
+    storageSet('nxp_visited', '1');
+    setTimeout(() => document.getElementById('welcomeOverlay').classList.add('show'), 600);
+  }
+}
+
+function renderChecks(containerId, items, prefix) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  items.forEach((label, i) => {
+    const div = document.createElement('div');
+    div.className = 'chk-item';
+    div.id = `chk_${prefix}_${i}`;
+    div.onclick = () => toggleChk(prefix, i);
+    div.innerHTML = `<div class="chk-box"><span class="chk-mark">✓</span></div><div class="chk-label">${i+1}. ${label}</div>`;
+    el.appendChild(div);
+  });
+}
+
+// ── INTERACTIONS ──────────────────────────────────
+function toggleChk(prefix, i) {
+  if (prefix === 'b') st.bChecks[i] = !st.bChecks[i];
+  else st.cChecks[i] = !st.cChecks[i];
+  const el = document.getElementById(`chk_${prefix}_${i}`);
+  const done = prefix === 'b' ? st.bChecks[i] : st.cChecks[i];
+  el.classList.toggle(`done-${prefix}`, done);
+  // 💕 Spawn hearts when checking ON
+  if (done) spawnHearts(el);
+  updateAll();
+  scheduleAutoSave();
+}
+
+function toggleSec(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+function setFinal(val) {
+  st.finalAns = val;
+  document.getElementById('fbYes').className = 'final-btn' + (val==='yes' ? ' sel-yes' : '');
+  document.getElementById('fbNo').className = 'final-btn' + (val==='no' ? ' sel-no' : '');
+  document.getElementById('dLackArea').style.display = val==='no' ? 'block' : 'none';
+  updateAll();
+  scheduleAutoSave();
+}
+
+function setCorr(val) {
+  st.corr = val;
+  document.getElementById('corrYes').className = 'corr-btn' + (val==='yes' ? ' sel' : '');
+  document.getElementById('corrNo').className = 'corr-btn' + (val==='no' ? ' sel' : '');
+  document.getElementById('corrArea').style.display = val==='yes' ? 'block' : 'none';
+  scheduleAutoSave();
+}
+
+function onInput() { updateAll(); scheduleAutoSave(); }
+
+function toggleEmailPanel() {
+  emailPanelOpen = !emailPanelOpen;
+  const panel = document.getElementById('emailPanel');
+  const toggle = document.getElementById('panelToggle');
+  panel.classList.toggle('collapsed', !emailPanelOpen);
+  toggle.textContent = emailPanelOpen ? '◀' : '▶';
+  toggle.classList.toggle('collapsed', !emailPanelOpen);
+}
+
+// ── UPDATE PROGRESS ───────────────────────────────
+function updateAll() {
+  const aFilled = ['q_a1','q_a2','q_a3','q_a4'].filter(id => document.getElementById(id).value.trim()).length;
+  const bCount = st.bChecks.filter(Boolean).length;
+  const cCount = st.cChecks.filter(Boolean).length;
+  const finalDone = st.finalAns ? 1 : 0;
+
+  // Section stats
+  document.getElementById('statA').textContent = `${aFilled} / 4 記入済`;
+  document.getElementById('statB').textContent = `${bCount} / 10`;
+  document.getElementById('statC').textContent = cCount > 0 ? `${cCount} 件該当 ⚠️` : '該当なし';
+
+  // Donut: A(4) + B(10) + final(1) = 15
+  const total = 15, done = aFilled + bCount + finalDone;
+  const pct = Math.round(done / total * 100);
+  const circ = 2 * Math.PI * 18; // r=18
+  const offset = circ * (1 - pct / 100);
+  const ring = document.getElementById('donutFill');
+  ring.style.strokeDasharray = circ;
+  ring.style.strokeDashoffset = offset;
+  document.getElementById('donutLabel').textContent = pct + '%';
+  document.getElementById('donutInfo1').textContent = pct === 100 ? '完了 🎉' : 'チェック完了度';
+  document.getElementById('donutInfo2').textContent = `B: ${bCount}/10 ✓`;
+
+  // Risk
+  st.isHighRisk = st.cChecks.some(Boolean);
+  const riskPill = document.getElementById('riskPill');
+  riskPill.className = 'risk-pill ' + (st.isHighRisk ? 'risk-high' : 'risk-normal');
+  riskPill.textContent = st.isHighRisk ? '⚠️ 高リスク案件' : '🟢 標準案件';
+
+  // Complete banner
+  const allDone = bCount === 10 && aFilled === 4 && finalDone === 1;
+  document.getElementById('completeBanner').classList.toggle('show', allDone);
+  // 🎉 Celebrate at 100% (once per session)
+  if (allDone && !st._celebrated) { st._celebrated = true; triggerCelebration(); }
+  if (!allDone) st._celebrated = false;
+}
+
+// ── AUTOSAVE ──────────────────────────────────────
+function scheduleAutoSave() {
+  clearTimeout(saveTimer);
+  const dot = document.getElementById('saveDot');
+  const lbl = document.getElementById('saveLabel');
+  dot.className = 'save-dot dirty';
+  lbl.textContent = '編集中...';
+  saveTimer = setTimeout(doSave, 2000);
+}
+
+function doSave() {
+  const data = collect();
+  if (!currentKey) currentKey = 'nxp_chk_' + Date.now();
+  const ok = storageSet(currentKey, JSON.stringify(data));
+  const now = new Date();
+  document.getElementById('abTime').textContent = ok ? `最終保存: ${fmtTime(now)}` : '保存失敗';
+  const dot = document.getElementById('saveDot');
+  const lbl = document.getElementById('saveLabel');
+  dot.className = 'save-dot';
+  dot.style.background = ok ? 'var(--sage)' : 'var(--rose-deep)';
+  lbl.textContent = ok ? '自動保存済' : '保存失敗';
+}
+
+function saveNow() {
+  doSave();
+  showToast('💾 保存しました');
+}
+
+// ── DATA COLLECTION ───────────────────────────────
+function collect() {
+  return {
+    savedAt: new Date().toISOString(),
+    date: document.getElementById('f_date').value,
+    staff: document.getElementById('f_staff').value,
+    customer: document.getElementById('f_customer').value,
+    caseId: document.getElementById('f_case').value,
+    email: document.getElementById('emailContent').value,
+    a1: document.getElementById('q_a1').value,
+    a2: document.getElementById('q_a2').value,
+    a3: document.getElementById('q_a3').value,
+    a4: document.getElementById('q_a4').value,
+    bChecks: [...st.bChecks],
+    cChecks: [...st.cChecks],
+    finalAns: st.finalAns,
+    dLack: document.getElementById('q_d_lack').value,
+    supName: document.getElementById('f_sup_name').value,
+    supDate: document.getElementById('f_sup_date').value,
+    corr: st.corr,
+    corrTxt: document.getElementById('q_corr').value,
+    isHighRisk: st.isHighRisk,
+    bScore: st.bChecks.filter(Boolean).length,
+  };
+}
+
+// ── HISTORY ───────────────────────────────────────
+function openHistory() {
+  document.getElementById('histOverlay').classList.add('open');
+  renderHistory();
+}
+function closeHist() { document.getElementById('histOverlay').classList.remove('open'); }
+function closeHistOuter(e) { if (e.target.id === 'histOverlay') closeHist(); }
+
+function renderHistory() {
+  const list = document.getElementById('histList');
+  const keys = storageList('nxp_chk_').sort((a,b) => {
+    const ta = parseInt(a.replace('nxp_chk_',''))||0;
+    const tb = parseInt(b.replace('nxp_chk_',''))||0;
+    return tb - ta;
+  });
+
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="hist-empty">📭 まだ保存された記録がありません。<br><br>チェックシートを記入して保存すると<br>ここに履歴として残ります。<br><br>自動保存は入力後 2 秒で実行されます。</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  keys.slice(0, 60).forEach(key => {
+    try {
+      const raw = storageGet(key);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      const div = document.createElement('div');
+      div.className = 'hist-item';
+      const riskTag = d.isHighRisk ? '<span class="hist-risk-tag">⚠️ 高リスク</span>' : '';
+      const bScore = d.bScore || 0;
+      const isCurrent = key === currentKey;
+      div.innerHTML = `
+        <div class="hist-item-top">
+          <div>
+            <div class="hist-client">${escHtml(d.customer || '（顧客名未入力）')} ${riskTag} ${isCurrent ? '<span style="font-size:10px;background:var(--rose-pale);color:var(--rose-deep);padding:2px 7px;border-radius:10px;margin-left:4px">現在</span>' : ''}</div>
+            <div class="hist-case">${escHtml(d.caseId || '案件名未入力')} · ${escHtml(d.staff || '担当者未入力')}</div>
+          </div>
+          <div>
+            <div class="hist-score">${bScore}/10</div>
+            <div class="hist-score-sub">Bチェック</div>
+          </div>
+        </div>
+        <div class="hist-date">🗓 ${d.date || '日付未入力'} &nbsp;·&nbsp; 保存: ${fmtTime(new Date(d.savedAt))}</div>
+      `;
+      div.onclick = () => restoreData(d, key);
+      list.appendChild(div);
+    } catch(e) {}
+  });
+}
+
+function restoreData(d, key) {
+  currentKey = key;
+  ['f_date','f_staff','f_customer','f_case'].forEach((id, i) => {
+    document.getElementById(id).value = [d.date,d.staff,d.customer,d.caseId][i] || '';
+  });
+  document.getElementById('emailContent').value = d.email || '';
+  document.getElementById('q_a1').value = d.a1 || '';
+  document.getElementById('q_a2').value = d.a2 || '';
+  document.getElementById('q_a3').value = d.a3 || '';
+  document.getElementById('q_a4').value = d.a4 || '';
+  document.getElementById('q_d_lack').value = d.dLack || '';
+  document.getElementById('f_sup_name').value = d.supName || '';
+  document.getElementById('f_sup_date').value = d.supDate || '';
+  document.getElementById('q_corr').value = d.corrTxt || '';
+
+  if (d.bChecks) {
+    st.bChecks = [...d.bChecks];
+    d.bChecks.forEach((v,i) => { const el=document.getElementById(`chk_b_${i}`); if(el) el.classList.toggle('done-b',v); });
+  }
+  if (d.cChecks) {
+    st.cChecks = [...d.cChecks];
+    d.cChecks.forEach((v,i) => { const el=document.getElementById(`chk_c_${i}`); if(el) el.classList.toggle('done-c',v); });
+  }
+  if (d.finalAns) setFinal(d.finalAns);
+  if (d.corr) setCorr(d.corr);
+
+  updateAll();
+  closeHist();
+  showToast('📋 履歴を復元しました');
+}
+
+function newSheet() {
+  resetAll(true);
+  closeHist();
+}
+
+function clearAllHistory() {
+  if (!confirm('すべての保存履歴を削除してよいですか？\nこの操作は取り消せません。')) return;
+  storageList('nxp_chk_').forEach(k => storageDelete(k));
+  currentKey = 'nxp_chk_' + Date.now();
+  renderHistory();
+  showToast('🗑 履歴を全削除しました');
+}
+
+// ── RESET ─────────────────────────────────────────
+function resetAll(silent = false) {
+  if (!silent && !confirm('入力内容をすべてリセットしてもよいですか？')) return;
+  currentKey = 'nxp_chk_' + Date.now();
+  document.querySelectorAll('input[type=text],input[type=date],textarea').forEach(el => el.value='');
+  document.getElementById('f_date').value = new Date().toISOString().split('T')[0];
+  st.bChecks = Array(10).fill(false);
+  st.cChecks = Array(7).fill(false);
+  st.finalAns = null; st.corr = null;
+  document.querySelectorAll('.chk-item').forEach(el => el.className='chk-item');
+  ['fbYes','fbNo'].forEach(id => document.getElementById(id).className='final-btn');
+  ['corrYes','corrNo'].forEach(id => document.getElementById(id).className='corr-btn');
+  document.getElementById('dLackArea').style.display='none';
+  document.getElementById('corrArea').style.display='none';
+  ['ai_a1','ai_a2'].forEach(id => { document.getElementById(id).style.display='none'; });
+  document.getElementById('abTime').textContent='';
+  updateAll();
+  if (!silent) showToast('🗑 リセットしました');
+}
+
+function clearEmail() {
+  document.getElementById('emailContent').value='';
+  ['ai_a1','ai_a2'].forEach(id=>{ document.getElementById(id).style.display='none'; });
+}
+
+// ── AI ANALYSIS ───────────────────────────────────
+async function analyzeEmail() {
+  const email = document.getElementById('emailContent').value.trim();
+  if (!email) { showToast('📨 まずメール本文をペーストしてください'); return; }
+
+  const btn = document.getElementById('aiBtn');
+  const spinner = document.getElementById('aiSpinner');
+  const txt = document.getElementById('aiBtnTxt');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  txt.textContent = '解析中...';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `以下は顧客対応メールの返信下書きです。分析してJSONのみで回答してください（前置き・マークダウン不要）。
+
+メール本文:
+"""
+${email}
+"""
+
+以下のJSON形式のみで回答:
+{
+  "surface": "顧客が表面上聞いていること（30文字以内）",
+  "real_need": "顧客が実際に一番知りたいこと・本質的ニーズ（40文字以内）",
+  "risks": ["高リスク要素のリスト。返金・クレーム・未着・解約・謝罪・法令等。なければ空配列"],
+  "gaps": "回答として不足している可能性がある点（なければ「特になし」）",
+  "tone_ok": true
+}`
+        }]
+      })
+    });
+
+    const data = await res.json();
+    const raw = data.content.map(c=>c.text||'').join('').trim();
+    const result = JSON.parse(raw);
+
+    if (result.surface) {
+      document.getElementById('ai_a1_txt').textContent = result.surface;
+      document.getElementById('ai_a1').style.display = 'block';
+    }
+    if (result.real_need) {
+      document.getElementById('ai_a2_txt').textContent = result.real_need;
+      document.getElementById('ai_a2').style.display = 'block';
+    }
+    if (result.risks && result.risks.length > 0) {
+      showToast(`⚠️ リスク検出: ${result.risks.slice(0,3).join('、')}`);
+    } else {
+      showToast('✨ AI解析完了！A欄にヒントを表示しました');
+    }
+  } catch(e) {
+    showToast('❌ 解析に失敗しました（API接続を確認してください）');
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    txt.textContent = '✨ AIで解析';
+  }
+}
+
+// ── EXPORT ────────────────────────────────────────
+function exportTxt() {
+  const d = collect();
+  const bLines = B_ITEMS.map((t,i)=>`  [${d.bChecks[i]?'✓':' '}] ${i+1}. ${t}`).join('\n');
+  const cLines = C_ITEMS.map((t,i)=>`  [${d.cChecks[i]?'✓':' '}] ${t}`).join('\n');
+  const txt = [
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `　 送信前チェックシート — NEXPURE`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `受付日: ${d.date}　　担当者: ${d.staff}`,
+    `顧客名: ${d.customer}　　案件名: ${d.caseId}`,
+    `リスク区分: ${d.isHighRisk ? '⚠️ 高リスク案件' : '🟢 標準案件'}`,
+    ``,
+    `【A. 質問整理】`,
+    `1. 顧客が表面上聞いていること:`,
+    `   ${d.a1||'（未記入）'}`,
+    ``,
+    `2. 顧客が実際に一番知りたいこと:`,
+    `   ${d.a2||'（未記入）'}`,
+    ``,
+    `3. 最初に伝えるべき結論:`,
+    `   ${d.a3||'（未記入）'}`,
+    ``,
+    `4. 回答前に確認が必要な事実:`,
+    `   ${d.a4||'（未記入）'}`,
+    ``,
+    `【B. 送信前チェック】 (${d.bScore}/10)`,
+    bLines,
+    ``,
+    `【C. 高リスク案件判定】`,
+    cLines,
+    ``,
+    `【D. 最終確認】`,
+    `一度で解消できる内容か: ${d.finalAns==='yes'?'はい ✓':d.finalAns==='no'?'いいえ ✗':'（未回答）'}`,
+    d.dLack ? `不足内容: ${d.dLack}` : '',
+    ``,
+    `【上長確認欄】`,
+    `確認者: ${d.supName||'（未記入）'}　確認日: ${d.supDate||'（未記入）'}`,
+    `修正指示: ${d.corr==='yes'?'有':d.corr==='no'?'無':'（未選択）'}`,
+    d.corrTxt ? `指示内容: ${d.corrTxt}` : '',
+    ``,
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `保存日時: ${fmtTime(new Date(d.savedAt))}`,
+  ].filter(l=>l!==null).join('\n');
+
+  const blob = new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`チェックシート_${d.customer||'顧客名不明'}_${d.date||'日付不明'}.txt`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('📄 テキストファイルを出力しました');
+}
+
+function printView() {
+  window.print();
+}
+
+// ── UTILS ─────────────────────────────────────────
+function fmtTime(d) {
+  if (!d||isNaN(d.getTime())) return '—';
+  return d.toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+// ── PRINT STYLES ──────────────────────────────────
+const printStyle = document.createElement('style');
+printStyle.textContent = `
+  @media print {
+    .hdr, .action-bar, .ep-footer, .panel-toggle, .hist-overlay, .toast,
+    .welcome-overlay, .tut-card, .tut-dimmer, .celeb-layer { display:none!important; }
+    .layout { height:auto!important; overflow:visible!important; }
+    .email-panel { display:none!important; }
+    .cl-panel { padding:0!important; overflow:visible!important; }
+    .section { break-inside:avoid; box-shadow:none!important; border:1px solid #ccc!important; }
+    .btn-purple, .ai-box { display:none!important; }
+    body { font-size:12px; }
+  }
+`;
+document.head.appendChild(printStyle);
+
+// ═══════════════════════════════════════
+// 💕 FLOATING HEARTS
+// ═══════════════════════════════════════
+const HEART_EMOJIS = ['💕','💗','💖','🌸','✨','🌺','💝','⭐','🌷','💫'];
+
+function spawnHearts(el) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width * 0.3;
+  const cy = rect.top + rect.height / 2;
+  const count = 4 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    const span = document.createElement('span');
+    span.className = 'heart-particle';
+    span.textContent = HEART_EMOJIS[Math.floor(Math.random() * HEART_EMOJIS.length)];
+    const dx1 = (Math.random() - 0.5) * 20;
+    const dx2 = dx1 + (Math.random() - 0.5) * 44;
+    const dx3 = dx2 + (Math.random() - 0.5) * 20;
+    const rot  = (Math.random() - 0.5) * 42;
+    const rot2 = (Math.random() - 0.5) * 64;
+    const dur  = 0.85 + Math.random() * 0.5;
+    const delay = Math.random() * 0.18;
+    const fz   = 13 + Math.random() * 10;
+    span.style.cssText = `
+      left:${cx + (Math.random()-0.5)*26}px;
+      top:${cy}px;
+      font-size:${fz}px;
+      --dx1:${dx1}px;--dx2:${dx2}px;--dx3:${dx3}px;
+      --rot:${rot}deg;--rot2:${rot2}deg;
+      --dur:${dur}s;
+      animation-delay:${delay}s;
+    `;
+    document.body.appendChild(span);
+    span.addEventListener('animationend', () => span.remove());
+  }
+}
+
+// ═══════════════════════════════════════
+// 🎉 COMPLETION CELEBRATION
+// ═══════════════════════════════════════
+function triggerCelebration() {
+  const layer = document.getElementById('celebLayer');
+  const PIECES = ['💕','🌸','✨','💖','🌺','💗','⭐','🌷','💝','🎀','🌟','💫','🎊'];
+  const count = 50;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('span');
+    el.className = 'celeb-piece';
+    const xStart = Math.random() * 100;
+    const swayX  = (Math.random() - 0.5) * 130;
+    const spin   = (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random()*200);
+    const dur    = 2.4 + Math.random() * 1.8;
+    const delay  = Math.random() * 1.6;
+    const fz     = 14 + Math.random() * 15;
+    el.textContent = PIECES[Math.floor(Math.random() * PIECES.length)];
+    el.style.cssText = `
+      left:${xStart}%;
+      --swayX:${swayX}px;--spin:${spin}deg;
+      --dur:${dur}s;--fz:${fz}px;
+      animation-delay:${delay}s;
+    `;
+    layer.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+  showToast('🎉 すべてのチェックが完了！送信できるよ💕');
+}
+
+// ═══════════════════════════════════════
+// 💡 WELCOME & TUTORIAL
+// ═══════════════════════════════════════
+const TUT_STEPS = [
+  {
+    emoji: '🌸',
+    title: 'このシートの使い方',
+    text: '送信前にこのシートでチェックすれば…\n\n💕 再問い合わせを防げる\n💕 クレームになる前に気づける\n💕 上長への報告もスムーズになる\n\nたった数分でお仕事がぐっと安心になるよ！',
+    target: null,
+  },
+  {
+    emoji: '📬',
+    title: 'メールを貼り付けてみよう',
+    text: '左パネルに返信予定のメール下書きをコピペしてね。\n\n「✨ AIで解析」を押すとClaudeがメールを読んで、セクションAのヒントを自動表示してくれるよ！\n\n時間がないときはスキップしてもOK🙆',
+    target: 'emailPanel',
+  },
+  {
+    emoji: '📝',
+    title: '担当者情報を入力しよう',
+    text: '受付日・顧客名・案件名・担当者名を入れてね。\n\nあとで「📋 履歴を見る」から過去のシートを検索するときに役立つよ。\n\nトラブルが起きた案件ほど、履歴が重要！',
+    target: 'secA',
+  },
+  {
+    emoji: '🤔',
+    title: 'A：質問を整理しよう',
+    text: '顧客の「本当に聞きたいこと」を4つの問いで整理してね。\n\n❶ 表面上の質問は？\n❷ 本当に知りたいことは？\n❸ 最初に伝える結論は？\n❹ 確認が必要な事実は？\n\nAIのヒントも参考にしてね💡',
+    target: 'secA',
+  },
+  {
+    emoji: '💕',
+    title: 'B：チェックリストで確認しよう',
+    text: '10個の項目に☑️を入れていってね。\n\nチェックするたびに💕ハートが飛ぶよ！\n\n全部チェックできたら送信準備OKのサイン🌟\n1つでも「いいえ」ならもう一度メールを確認してね。',
+    target: 'secB',
+  },
+  {
+    emoji: '⚠️',
+    title: 'C：高リスク案件を確認しよう',
+    text: '返金・クレーム・配送事故などに当てはまったら必ずチェックを。\n\n1つでも該当したら →上長に確認してから送信！\n\n1人で抱え込まないで。報告・相談はとても大切なお仕事だよ💪',
+    target: 'secC',
+  },
+  {
+    emoji: '💾',
+    title: '保存と履歴の使い方',
+    text: '入力後2秒で自動保存されるから安心してね🌿\n\n「💾 今すぐ保存」でいつでも手動保存もできるよ。\n\n「📋 履歴を見る」から過去のシートを復元できるから、トラブルの振り返りに使ってね！',
+    target: null,
+  },
+  {
+    emoji: '🎀',
+    title: '準備完了！いってらっしゃい💕',
+    text: 'チュートリアルおわり！よくできました🌟\n\n困ったときはヘッダーの「💡 使い方」からいつでも確認できるよ。\n\nていねいなお仕事が、お客様の笑顔につながるね💌\nたのしいお仕事を！',
+    target: null,
+  },
+];
+
+let tutStep = -1;
+let prevGlowEl = null;
+
+function closeWelcome() {
+  document.getElementById('welcomeOverlay').classList.remove('show');
+}
+function beginTutorial() {
+  closeWelcome();
+  setTimeout(startTutorial, 300);
+}
+function startTutorial() {
+  closeWelcome();
+  tutStep = 0;
+  buildDots();
+  showTutStep();
+}
+function endTutorial() {
+  tutStep = -1;
+  document.getElementById('tutCard').classList.remove('show');
+  document.getElementById('tutDimmer').classList.remove('show');
+  removeGlow();
+}
+function nextStep() {
+  if (tutStep < TUT_STEPS.length - 1) { tutStep++; showTutStep(); }
+  else endTutorial();
+}
+function prevStep() {
+  if (tutStep > 0) { tutStep--; showTutStep(); }
+}
+function buildDots() {
+  const container = document.getElementById('tutDots');
+  container.innerHTML = '';
+  TUT_STEPS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'tut-dot'; d.id = `tutdot_${i}`;
+    container.appendChild(d);
+  });
+}
+function showTutStep() {
+  const step = TUT_STEPS[tutStep];
+  const card = document.getElementById('tutCard');
+
+  document.getElementById('tutEmoji').textContent = step.emoji;
+  document.getElementById('tutStepLabel').textContent = `STEP ${tutStep + 1} / ${TUT_STEPS.length}`;
+  document.getElementById('tutTitle').textContent = step.title;
+  document.getElementById('tutText').innerHTML = step.text.split('\n').map(line => {
+    const isItem = /^[💕❶❷❸❹]/.test(line);
+    return isItem ? `<span style="display:block;padding-left:2px">${line}</span>` : line;
+  }).join('<br>');
+
+  TUT_STEPS.forEach((_, i) => {
+    const d = document.getElementById(`tutdot_${i}`);
+    if (d) d.className = 'tut-dot' + (i === tutStep ? ' active' : i < tutStep ? ' done' : '');
+  });
+
+  document.getElementById('tutPrev').style.display = tutStep === 0 ? 'none' : '';
+  document.getElementById('tutNext').textContent = tutStep === TUT_STEPS.length - 1 ? 'おわる 🌸' : 'つぎへ →';
+
+  removeGlow();
+  if (step.target) {
+    const targetEl = document.getElementById(step.target);
+    if (targetEl) {
+      targetEl.classList.add('tut-glow');
+      prevGlowEl = targetEl;
+      setTimeout(() => targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    }
+  }
+
+  const dimmer = document.getElementById('tutDimmer');
+  dimmer.classList.add('show');
+  dimmer.style.background = step.target ? 'rgba(61,40,64,0.28)' : 'rgba(61,40,64,0.06)';
+  card.classList.add('show');
+}
+function removeGlow() {
+  if (prevGlowEl) { prevGlowEl.classList.remove('tut-glow'); prevGlowEl = null; }
+}
+
+// ── START ─────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
