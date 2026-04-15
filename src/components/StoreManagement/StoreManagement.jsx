@@ -11,6 +11,7 @@ const StoreManagement = () => {
     const [error, setError] = useState(null);
     const [filterMode, setFilterMode] = useState('all'); // 'all', 'document-pending', 'renewal-current', 'unpaid'
     const [sortConfig, setSortConfig] = useState({ key: 'no', direction: 'desc' });
+    const [copiedCell, setCopiedCell] = useState(null); // コピー完了フィードバック用
     const fileInputRef = useRef(null);
 
     // フィールドマッピング定義 (CSV -> DB)
@@ -401,6 +402,23 @@ const StoreManagement = () => {
     const openEditModal = (store) => { setEditingStore(store); setIsModalOpen(true); };
     const closeModal = () => { setIsModalOpen(false); setEditingStore(null); };
 
+    // ダッシュボード上から販売ステータスを直接変更して即保存
+    const handleInlineSalesStatus = async (storeId, newStatus) => {
+        try {
+            const { error } = await supabase
+                .from('stores')
+                .update({ sales_ok: newStatus })
+                .eq('id', storeId);
+            if (error) throw error;
+            // ローカルのstateも即時反映（再フェッチなしで高速）
+            setStores(prev => prev.map(s =>
+                s.id === storeId ? { ...s, salesStatus: newStatus, raw: { ...s.raw, sales_ok: newStatus } } : s
+            ));
+        } catch (err) {
+            alert('ステータスの更新に失敗しました: ' + err.message);
+        }
+    };
+
     const handleSave = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -489,54 +507,86 @@ const StoreManagement = () => {
                     <table>
                         <thead>
                             <tr>
-                                <th onClick={() => handleSort('storeId')} className="sortable">ID {sortConfig.key === 'storeId' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                 <th onClick={() => handleSort('no')} className="sortable">No. {sortConfig.key === 'no' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('classification')} className="sortable">区別 {sortConfig.key === 'classification' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('storeName')} className="sortable">店舗名 {sortConfig.key === 'storeName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('corporateName')} className="sortable">法人名 {sortConfig.key === 'corporateName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('representative')} className="sortable">代表者 {sortConfig.key === 'representative' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('storeId')} className="sortable">ID {sortConfig.key === 'storeId' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                 <th onClick={() => handleSort('salesStatus')} className="sortable">販売ステータス {sortConfig.key === 'salesStatus' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('plan')} className="sortable">プラン {sortConfig.key === 'plan' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('paymentDate')} className="sortable">入金日 {sortConfig.key === 'paymentDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('documents')} className="sortable">書類構成 {sortConfig.key === 'documents' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('renewalMonth')} className="sortable">更新月 {sortConfig.key === 'renewalMonth' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('storeName')} className="sortable">店舗名 {sortConfig.key === 'storeName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('representative')} className="sortable">代表者 {sortConfig.key === 'representative' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th onClick={() => handleSort('dateSigned')} className="sortable">契約日 {sortConfig.key === 'dateSigned' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
+                                <th>メール</th>
+                                <th>パスワード</th>
                                 <th>アクション</th>
+                                <th onClick={() => handleSort('np_seller_id')} className="sortable">個人ID {sortConfig.key === 'np_seller_id' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredStores.map(store => (
+                            {filteredStores.map(store => {
+                                const copyKey = (field) => `${store.id}-${field}`;
+                                const handleCopy = (text, field) => {
+                                    if (!text) return;
+                                    navigator.clipboard.writeText(text).then(() => {
+                                        setCopiedCell(copyKey(field));
+                                        setTimeout(() => setCopiedCell(null), 1500);
+                                    });
+                                };
+                                return (
                                 <tr key={store.id}>
-                                    <td>{store.storeId}</td>
                                     <td>{store.no}</td>
-                                    <td><span className={`badge ${store.classification === 'FD店舗' ? 'success' : (store.classification === '新規店舗' ? 'warning' : 'neutral')}`}>{store.classification}</span></td>
-                                    <td><strong>{store.storeName}</strong></td>
-                                    <td>{store.corporateName || '-'}</td>
-                                    <td>{store.representative} {store.contactPerson && <span style={{ color: 'var(--primary-accent)', marginLeft: '8px', fontSize: '0.85rem' }}>(担: {store.contactPerson})</span>}</td>
-                                    <td><span className={getBadgeClass(store.salesStatus)}>{store.salesStatus}</span></td>
-                                    <td>{store.plan}</td>
+                                    <td>{store.storeId}</td>
                                     <td>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                            <span className={getBadgeClass(store.payment)} style={{ padding: '4px 8px' }}>{store.payment}</span>
-                                            {store.paymentDate && <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>{new Date(store.paymentDate).toLocaleDateString('ja-JP')}</span>}
-                                        </div>
+                                        <select
+                                            value={store.salesStatus || '準備中'}
+                                            onChange={(e) => handleInlineSalesStatus(store.id, e.target.value)}
+                                            className={getBadgeClass(store.salesStatus)}
+                                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem', padding: '3px 6px', borderRadius: '4px' }}
+                                        >
+                                            <option value="準備中">準備中</option>
+                                            <option value="販売OK">販売OK</option>
+                                            <option value="一時停止">一時停止</option>
+                                            <option value="退会">退会</option>
+                                            {store.salesStatus === 'OK' && <option value="OK">OK（旧）</option>}
+                                            {store.salesStatus === '済み' && <option value="済み">済み（旧）</option>}
+                                        </select>
                                     </td>
                                     <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span className={getBadgeClass(store.documents?.consent)} style={{ padding: '4px 8px' }}>同意書: {store.documents?.consent}</span>
-                                            <span className={getBadgeClass(store.isDocComplete ? '提出済み' : '未提出')} style={{ padding: '4px 8px' }}>{store.isDocComplete ? '完備' : '不足'}</span>
-                                        </div>
+                                        <strong style={{
+                                            color: store.classification === 'FD店舗' ? '#f97316'
+                                                 : store.classification === '特別店舗' ? '#a855f7'
+                                                 : 'inherit',
+                                            textShadow: store.classification === '特別店舗' ? '0 0 8px rgba(168,85,247,0.5)' : 'none'
+                                        }}>
+                                            {store.storeName}
+                                        </strong>
                                     </td>
-                                    <td>
-                                        {(() => {
-                                            const val = store.yearlyRenewal || store.renewalMonth;
-                                            if (!val) return '-';
-                                            // 「2月」ならそのまま、「2」なら「2月」に変換
-                                            return String(val).includes('月') ? val : val + '月';
-                                        })()}
+                                    <td>{store.representative}</td>
+                                    <td>{store.dateSigned ? new Date(store.dateSigned).toLocaleDateString('ja-JP') : '-'}</td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <button
+                                            className="action-btn"
+                                            style={{ fontSize: '0.75rem', padding: '4px 10px', minWidth: '80px', background: copiedCell === copyKey('email') ? 'var(--success-accent, #22c55e)' : '' }}
+                                            onClick={() => handleCopy(store.email, 'email')}
+                                            title={store.email || 'メールなし'}
+                                            disabled={!store.email}
+                                        >
+                                            {copiedCell === copyKey('email') ? '✓ コピー済み' : '📋 コピー'}
+                                        </button>
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <button
+                                            className="action-btn"
+                                            style={{ fontSize: '0.75rem', padding: '4px 10px', minWidth: '80px', background: copiedCell === copyKey('password') ? 'var(--success-accent, #22c55e)' : '' }}
+                                            onClick={() => handleCopy(store.password, 'password')}
+                                            title={store.password ? '••••••' : 'パスワードなし'}
+                                            disabled={!store.password}
+                                        >
+                                            {copiedCell === copyKey('password') ? '✓ コピー済み' : '📋 コピー'}
+                                        </button>
                                     </td>
                                     <td><button className="action-btn edit-btn" onClick={() => openEditModal(store)}>詳細・編集</button></td>
+                                    <td>{store.np_seller_id || '-'}</td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -559,6 +609,15 @@ const StoreManagement = () => {
                                         <div className="form-group"><label>担当者名</label><input type="text" name="contact_person" defaultValue={editingStore?.contact_person || ''} /></div>
                                         <div className="form-group"><label>メールアドレス</label><input type="email" name="email" defaultValue={editingStore?.email || ''} /></div>
                                         <div className="form-group"><label>パスワード</label><input type="text" name="password" defaultValue={editingStore?.password || ''} /></div>
+                                        <div className="form-group">
+                                            <label>個人会員ID</label>
+                                            <input
+                                                type="text"
+                                                name="np_seller_id"
+                                                defaultValue={editingStore?.raw?.np_seller_id || ''}
+                                                placeholder="例: 65813301"
+                                            />
+                                        </div>
                                     </div>
                                 </section>
                                 <section>
