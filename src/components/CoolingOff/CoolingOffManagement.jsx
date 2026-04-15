@@ -477,6 +477,9 @@ const CoolingOffManagement = () => {
             <header>
                 <h1>Stella</h1>
                 <div className="subtitle">✨ クーリングオフ・返品管理 星空システム ✨</div>
+                <button onClick={() => setIsManualOpen(true)} className="btn btn-mystic manual-btn">
+                    📜 使い方マニュアル
+                </button>
             </header>
 
             <AddRecordForm />
