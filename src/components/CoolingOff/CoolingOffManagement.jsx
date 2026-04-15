@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import {
     X,
@@ -31,31 +31,17 @@ const CoolingOffManagement = () => {
     const [headers, setHeaders] = useState(DEFAULT_HEADERS);
     const [tableData, setTableData] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isLocked, setIsLocked] = useState(false);
+    const [sortConfig, setSortConfig] = useState({ key: -1, direction: 'asc' });
     const [isManualOpen, setIsManualOpen] = useState(false);
     const [saveStatus, setSaveStatus] = useState('');
     const [pulldownOptions, setPulldownOptions] = useState(INITIAL_PULLDOWN_OPTIONS);
-    const [sortConfig, setSortConfig] = useState({ key: -1, direction: 'asc' });
 
-    const idleTimerRef = useRef(null);
-    const IDLE_TIMEOUT = 10 * 60 * 1000;
+
 
     useEffect(() => {
         fetchData();
-        resetIdleTimer();
+    }, []);
 
-        const events = ['mousemove', 'mousedown', 'keypress', 'touchstart'];
-        const handleActivityWrapper = () => {
-            if (!isLocked) resetIdleTimer();
-        };
-
-        events.forEach(event => window.addEventListener(event, handleActivityWrapper));
-
-        return () => {
-            events.forEach(event => window.removeEventListener(event, handleActivityWrapper));
-            clearTimeout(idleTimerRef.current);
-        };
-    }, [isLocked]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -99,10 +85,6 @@ const CoolingOffManagement = () => {
         }
     };
 
-    const resetIdleTimer = () => {
-        clearTimeout(idleTimerRef.current);
-        idleTimerRef.current = setTimeout(() => setIsLocked(true), IDLE_TIMEOUT);
-    };
 
     const updatePulldownOptions = (currentHeaders, currentData) => {
         const newOptions = { ...INITIAL_PULLDOWN_OPTIONS };
@@ -487,30 +469,6 @@ const CoolingOffManagement = () => {
         );
     };
 
-    if (isLocked) {
-        return (
-            <div className="cosmic-overlay active" onClick={() => setIsLocked(false)}>
-                <div className="locked-msg">
-                    ✩ 神秘の魔法で保護中 ✩<br />
-                    <span className="text-xl font-normal text-sky-400 mt-4 block">(画面をタップしてふたたび目覚める)</span>
-                </div>
-                {[...Array(30)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="shooting-star"
-                        style={{
-                            left: `${Math.random() * 150}vw`,
-                            top: `${Math.random() * 100 - 50}vh`,
-                            width: `${Math.random() * 80 + 30}px`,
-                            height: `${Math.random() * 2 + 1}px`,
-                            animationDuration: `${Math.random() * 3 + 1.5}s`,
-                            animationDelay: `${Math.random() * 4}s`
-                        }}
-                    />
-                ))}
-            </div>
-        );
-    }
 
     return (
         <div className="cooling-off-container">
