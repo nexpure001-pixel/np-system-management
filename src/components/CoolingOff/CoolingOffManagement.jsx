@@ -509,7 +509,6 @@ const CoolingOffManagement = () => {
                             <div className="w-4 h-4 rounded-full status-expired" /> 期間外
                         </div>
                     </div>
-                    <button onClick={() => setIsLocked(true)} className="btn btn-mystic">🌌 宇宙へ出かける</button>
                 </div>
             </div>
 
