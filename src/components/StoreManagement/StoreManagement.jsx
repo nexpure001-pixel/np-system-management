@@ -571,6 +571,9 @@ const StoreManagement = () => {
                                                 <option value="退会">退会</option>
                                                 <option value="販売OK">販売OK</option>
                                                 <option value="一時停止">一時停止</option>
+                                                {/* 旧データ互換用（DBに古い値が入っている場合に上書きされないよう保持） */}
+                                                {editingStore?.raw?.sales_ok === 'OK' && <option value="OK">OK（旧形式）</option>}
+                                                {editingStore?.raw?.sales_ok === '済み' && <option value="済み">済み（旧形式）</option>}
                                             </select>
                                         </div>
                                         <div className="form-group">
