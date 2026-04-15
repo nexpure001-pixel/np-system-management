@@ -38,6 +38,12 @@ const Sidebar = ({ activeSystem, setActiveSystem }) => {
                     <span className="nav-icon">📋</span> 依頼業務
                 </button>
                 <button
+                    className={`nav-item ${activeSystem === 'mail-check' ? 'active' : ''}`}
+                    onClick={() => setActiveSystem('mail-check')}
+                >
+                    <span className="nav-icon">✅</span> 送信前チェックシート
+                </button>
+                <button
                     className={`nav-item nav-bottom ${activeSystem === 'manual' ? 'active' : ''}`}
                     onClick={() => setActiveSystem('manual')}
                 >

@@ -10,6 +10,17 @@ import ProductReviewApp from './components/ProductReview/ProductReviewApp';
 import ManualPortal from './components/Manual/Portal/ManualPortal';
 import RequestWorkManagement from './components/RequestWork/RequestWorkManagement';
 
+// 送信前チェックシート：public フォルダの HTML を iframe で表示
+const MailCheckSheet = () => (
+  <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <iframe
+      src="/mail_check.html"
+      title="送信前チェックシート"
+      style={{ flex: 1, border: 'none', width: '100%' }}
+    />
+  </div>
+);
+
 function App() {
   const [activeSystem, setActiveSystem] = useState('stores');
 
@@ -21,6 +32,7 @@ function App() {
       case 'cooling-off': return <CoolingOffManagement />;
       case 'product-review': return <ProductReviewApp />;
       case 'request-work': return <RequestWorkManagement />;
+      case 'mail-check': return <MailCheckSheet />;
       case 'manual': return <ManualManagement />;
       case 'manual-portal': return <ManualPortal />;
       default: return <StoreManagement />;
