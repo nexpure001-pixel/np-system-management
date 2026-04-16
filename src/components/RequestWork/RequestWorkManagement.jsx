@@ -68,6 +68,8 @@ export default function RequestWorkManagement() {
 
         if (error) { setFormError('保存に失敗しました'); return; }
 
+        await fetchRequests(); // 投稿後に即座にボードを更新
+
         // LINE WORKS通知
         const requesterName = getMemberName(form.requesterId);
         const recipientData = members.find(m => m.id === Number(form.recipientId));
@@ -93,6 +95,7 @@ export default function RequestWorkManagement() {
             status: 'completed',
             completed_at: new Date().toISOString(),
         }).eq('id', id);
+        await fetchRequests(); // 完了後も即座にボードを更新
         if (detailRequest?.id === id) {
             setDetailRequest(prev => ({ ...prev, status: 'completed', completed_at: new Date().toISOString() }));
         }
@@ -100,6 +103,7 @@ export default function RequestWorkManagement() {
 
     const deleteRequest = async (id) => {
         await supabase.from('work_requests').delete().eq('id', id);
+        await fetchRequests(); // 削除後も即座にボードを更新
         if (detailRequest?.id === id) setDetailRequest(null);
     };
 
