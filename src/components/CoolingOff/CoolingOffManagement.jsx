@@ -13,8 +13,10 @@ import './CoolingOffManagement.css';
 
 const TARGET_DATE_COL_NAMES = ['商品到着日', '初回商品到着日', '初回商品発送日', '契約日'];
 const INITIAL_PULLDOWN_OPTIONS = {
-    '対応方法': ['', '未着手', '対応中', '処理待ち', '完了'],
-    '申出方法': ['', 'ハガキ', '書面', 'メール', 'カスタマー', 'コンタクト', '電話', '電話・メール', '消費者センター', 'その他']
+    '支払方法': ['', 'カード', '振り込み'],
+    '対応方法': ['', 'カード決済取消', '返金対応'],
+    '申出方法': ['', 'ハガキ', '書面', 'メール', 'カスタマー', 'コンタクト', '電話', '電話・メール', '消費者センター', 'その他'],
+    'コミッション発生': ['', 'あり', 'なし']
 };
 
 const DASHBOARD_COLUMNS = [
@@ -24,7 +26,8 @@ const DASHBOARD_COLUMNS = [
 
 const DEFAULT_HEADERS = [
     ...DASHBOARD_COLUMNS,
-    '種別', '支払方法', '実績月', '契約日', '初回商品発送日', '解約申出日', '返金処理日', '返金額', '振込口座', '備考', '入金依頼', '経過日数'
+    '種別', '支払方法', '実績月', '契約日', '初回商品到着日', '解約申出日', '返金処理日', '返金額', '振込口座', '備考', '返金依頼', '経過日数',
+    'コミッション発生', 'ステイタス変更', 'クーリングオフ日付入力', '口座情報クリア'
 ];
 
 const CoolingOffManagement = () => {
@@ -35,6 +38,9 @@ const CoolingOffManagement = () => {
     const [isManualOpen, setIsManualOpen] = useState(false);
     const [saveStatus, setSaveStatus] = useState('');
     const [pulldownOptions, setPulldownOptions] = useState(INITIAL_PULLDOWN_OPTIONS);
+    const [editingRowIdx, setEditingRowIdx] = useState(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [editingRow, setEditingRow] = useState(null);
 
 
 
@@ -98,7 +104,70 @@ const CoolingOffManagement = () => {
                 newOptions[h] = Array.from(options);
             }
         });
+        newOptions['コミッション発生'] = INITIAL_PULLDOWN_OPTIONS['コミッション発生'];
         setPulldownOptions(newOptions);
+    };
+
+    // --- Modal Handlers ---
+    const openDetailModal = (rIdx) => {
+        setEditingRowIdx(rIdx);
+        setEditingRow([...tableData[rIdx]]);
+        setIsDetailModalOpen(true);
+    };
+
+    const closeDetailModal = () => {
+        setIsDetailModalOpen(false);
+        setEditingRowIdx(null);
+        setEditingRow(null);
+    };
+
+    const handleModalFieldChange = (hName, val) => {
+        if (!editingRow) return;
+        const newRow = [...editingRow];
+        const idx = headers.indexOf(hName);
+        if (idx !== -1) {
+            newRow[idx] = val;
+            
+            // Auto logic
+            if (['ステイタス変更', 'クーリングオフ日付入力', '口座情報クリア'].includes(hName)) {
+                const sIdx = headers.indexOf('ステイタス変更');
+                const dIdx = headers.indexOf('クーリングオフ日付入力');
+                const cIdx = headers.indexOf('口座情報クリア');
+                const isStatus = hName === 'ステイタス変更' ? val : (sIdx !== -1 && newRow[sIdx] === true);
+                const isDate = hName === 'クーリングオフ日付入力' ? val : (dIdx !== -1 && newRow[dIdx] === true);
+                const isClear = hName === '口座情報クリア' ? val : (cIdx !== -1 && newRow[cIdx] === true);
+                
+                const regIdx = headers.indexOf('登録変更3項目');
+                if (regIdx !== -1) {
+                    newRow[regIdx] = (isStatus && isDate && isClear);
+                }
+            }
+            setEditingRow(newRow);
+        }
+    };
+
+    const handleDetailSave = (e) => {
+        e.preventDefault();
+        const newData = [...tableData];
+        newData[editingRowIdx] = editingRow;
+        setTableData(newData);
+        saveData(headers, newData);
+        closeDetailModal();
+    };
+
+    const getEditingStatus = () => {
+        if (!editingRow) return { state: 'unknown', text: '--', color: '' };
+        const startIdx = headers.findIndex(h => h.includes('初回商品到着日') || h === '契約日');
+        const endIdx = headers.indexOf('解約申出日');
+        const startDateStr = editingRow[startIdx];
+        const endDateStr = endIdx !== -1 ? editingRow[endIdx] : null;
+        if (!startDateStr) return { state: 'unknown', text: '--', color: '' };
+        
+        const { state } = calculateStatus(startDateStr, endDateStr);
+        if (state === 'cooling') return { text: '🌟20日以内', color: 'text-sky-500 font-bold' };
+        if (state === '90days') return { text: '🌙90日', color: 'text-emerald-500 font-bold' };
+        if (state === 'expired') return { text: '☄️期限切れ', color: 'text-rose-500 font-bold' };
+        return { text: '--', color: 'text-slate-400 font-bold' };
     };
 
     const handleFileUpload = (e) => {
@@ -288,8 +357,10 @@ const CoolingOffManagement = () => {
                     <input
                         type="checkbox"
                         checked={val === true || val === 'true'}
-                        onChange={(e) => updateCell(rIdx, cIdx, e.target.checked)}
-                        className="w-5 h-5 cursor-pointer accent-sky-400"
+                        readOnly
+                        onChange={() => {}}
+                        className="w-5 h-5 cursor-default accent-sky-400"
+                        title="詳細・編集モーダルから変更してください"
                     />
                 </div>
             );
@@ -388,13 +459,13 @@ const CoolingOffManagement = () => {
                 position: 'relative',
                 zIndex: 100,
                 width: '100%',
-                borderRadius: '12px'
+                borderRadius: '0px'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>
                     <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0369a1', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Sparkles size={20} className="text-sky-500" /> 新規記入
                     </h2>
-                    <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '4px 12px', fontWeight: '700', color: '#0369a1', fontSize: '11px', borderRadius: '20px' }}>
+                    <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '4px 12px', fontWeight: '700', color: '#0369a1', fontSize: '11px', borderRadius: '0px' }}>
                         項目を入力 ✨
                     </div>
                 </div>
@@ -419,7 +490,7 @@ const CoolingOffManagement = () => {
                                             color: 'black',
                                             fontWeight: '600',
                                             outline: 'none',
-                                            borderRadius: '6px'
+                                            borderRadius: '0px'
                                         }}
                                     />
                                 ) : Object.keys(pulldownOptions).includes(h) ? (
@@ -435,7 +506,7 @@ const CoolingOffManagement = () => {
                                             fontWeight: '600',
                                             outline: 'none',
                                             appearance: 'auto',
-                                            borderRadius: '6px'
+                                            borderRadius: '0px'
                                         }}
                                     >
                                         {(pulldownOptions[h] || []).map(opt => (
@@ -465,7 +536,7 @@ const CoolingOffManagement = () => {
                                             color: 'black',
                                             fontWeight: '600',
                                             outline: 'none',
-                                            borderRadius: '6px'
+                                            borderRadius: '0px'
                                         }}
                                         spellCheck="false"
                                     />
@@ -485,7 +556,7 @@ const CoolingOffManagement = () => {
                             fontWeight: '800',
                             border: 'none',
                             cursor: 'pointer',
-                            borderRadius: '10px',
+                            borderRadius: '0px',
                             boxShadow: '0 4px 10px rgba(3, 105, 161, 0.2)',
                             display: 'flex',
                             alignItems: 'center',
@@ -598,9 +669,11 @@ const CoolingOffManagement = () => {
                                 
                                 const { state: status, days: diffDays } = startDateStr ? calculateStatus(startDateStr, endDateStr) : { state: 'unknown', days: null };
                                 const isCard = row.some(cell => cell?.toString().includes('カード'));
+                                const compIdx = headers.indexOf('完了');
+                                const isCompleted = compIdx !== -1 && (row[compIdx] === true || row[compIdx] === 'true');
 
                                 return (
-                                    <tr key={rIdx} className={`border-b border-white/40 hover:bg-white/40 transition-colors text-[13px] ${isCard ? 'row-card-payment' : ''}`}>
+                                    <tr key={rIdx} className={`border-b border-white/40 transition-colors text-[13px] ${isCompleted ? 'bg-slate-200/50 opacity-60 grayscale text-slate-500' : isCard ? 'row-card-payment hover:bg-white/40' : 'hover:bg-white/40'}`}>
                                         <td className="p-4">
                                             {status === 'cooling' && <span className="status-badge status-cooling">🌟20日以内</span>}
                                             {status === '90days' && <span className="status-badge status-90">🌙90日</span>}
@@ -621,7 +694,7 @@ const CoolingOffManagement = () => {
                                         <td className="p-4 text-center">
                                             <button 
                                                 className="btn btn-mystic text-[10px] py-1 px-2 whitespace-nowrap"
-                                                onClick={() => alert('詳細・編集モーダルは後日実装します ✨')}
+                                                onClick={() => openDetailModal(rIdx)}
                                             >
                                                 詳細・編集
                                             </button>
@@ -640,6 +713,82 @@ const CoolingOffManagement = () => {
             {saveStatus && (
                 <div className="fixed bottom-10 right-10 bg-sky-500 text-white px-6 py-3 rounded-full font-bold shadow-2xl animate-bounce z-50">
                     {saveStatus}
+                </div>
+            )}
+
+            {isDetailModalOpen && editingRow && (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-sky-900/40 backdrop-blur-sm" onClick={closeDetailModal}>
+                    <div className="bg-white/95 glass-panel p-8 max-w-4xl w-full mx-4 shadow-2xl border-2 border-white relative overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        <button onClick={closeDetailModal} className="absolute top-6 right-6 text-slate-400 hover:text-sky-500 transition-colors z-10 bg-white/50 rounded-full p-2">
+                            <X className="w-6 h-6" />
+                        </button>
+                        
+                        <h2 className="text-2xl font-black text-slate-700 mb-6 flex items-center gap-3 border-b-2 border-slate-100 pb-4">
+                            <Sparkles className="w-6 h-6 text-sky-400" /> クーリングオフの詳細
+                        </h2>
+
+                        <form onSubmit={handleDetailSave} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="space-y-8 pb-8">
+                                {/* 基本情報 */}
+                                <section className="bg-sky-50/50 p-6 border border-sky-100">
+                                    <h3 className="text-sm font-bold text-sky-600 uppercase tracking-widest mb-4">基本情報</h3>
+                                    <div className="grid grid-cols-3 gap-6">
+                                        <DetailField label="判定" value={getEditingStatus().text} readonly />
+                                        <DetailField label="No." value={editingRow[headers.indexOf('No.')] || ''} readonly />
+                                        <DetailField label="お名前" type="text" value={editingRow[headers.indexOf('お名前')]} onChange={(v)=>handleModalFieldChange('お名前', v)} />
+                                        
+                                        <DetailField label="契約日" type="date" value={editingRow[headers.indexOf('契約日')]} onChange={(v)=>handleModalFieldChange('契約日', v)} />
+                                        <DetailField label="初回商品到着日" type="date" value={editingRow[headers.indexOf('初回商品到着日')]} onChange={(v)=>handleModalFieldChange('初回商品到着日', v)} />
+                                        <DetailField label="解約申出日" type="date" value={editingRow[headers.indexOf('解約申出日')]} onChange={(v)=>handleModalFieldChange('解約申出日', v)} />
+                                        
+                                        <DetailField label="申出方法" type="select" options={pulldownOptions['申出方法']} value={editingRow[headers.indexOf('申出方法')]} onChange={(v)=>handleModalFieldChange('申出方法', v)} />
+                                        <DetailField label="コミッション発生" type="select" options={pulldownOptions['コミッション発生']} value={editingRow[headers.indexOf('コミッション発生')]} onChange={(v)=>handleModalFieldChange('コミッション発生', v)} />
+                                    </div>
+                                </section>
+
+                                {/* 金銭関係 */}
+                                <section className="bg-emerald-50/50 p-6 border border-emerald-100">
+                                    <h3 className="text-sm font-bold text-emerald-600 uppercase tracking-widest mb-4">金銭関係</h3>
+                                    <div className="grid grid-cols-3 gap-6">
+                                        <DetailField label="支払い方法" type="select" options={pulldownOptions['支払方法']} value={editingRow[headers.indexOf('支払方法')]} onChange={(v)=>handleModalFieldChange('支払方法', v)} />
+                                        <DetailField label="対応方法" type="select" options={pulldownOptions['対応方法']} value={editingRow[headers.indexOf('対応方法')]} onChange={(v)=>handleModalFieldChange('対応方法', v)} />
+                                        <DetailField label="商品本社返送日" type="date" value={editingRow[headers.indexOf('商品本社返送日')]} onChange={(v)=>handleModalFieldChange('商品本社返送日', v)} />
+                                        
+                                        <DetailField label="カード決済取消日or返金日" type="date" value={editingRow[headers.indexOf('カード決済取消日or返金日')]} onChange={(v)=>handleModalFieldChange('カード決済取消日or返金日', v)} />
+                                        <DetailField label="返金額" type="text" value={editingRow[headers.indexOf('返金額')]} onChange={(v)=>handleModalFieldChange('返金額', v)} />
+                                        <DetailField label="振込口座情報" type="text" value={editingRow[headers.indexOf('振込口座')]} onChange={(v)=>handleModalFieldChange('振込口座', v)} />
+                                    </div>
+                                </section>
+
+                                {/* 処理確認 */}
+                                <section className="bg-purple-50/50 p-6 border border-purple-100">
+                                    <h3 className="text-sm font-bold text-purple-600 uppercase tracking-widest mb-4">処理確認</h3>
+                                    <div className="grid grid-cols-3 gap-6">
+                                        <DetailField label="ステイタス変更" type="checkbox" value={editingRow[headers.indexOf('ステイタス変更')]} onChange={(v)=>handleModalFieldChange('ステイタス変更', v)} />
+                                        <DetailField label="クーリングオフ日付入力" type="checkbox" value={editingRow[headers.indexOf('クーリングオフ日付入力')]} onChange={(v)=>handleModalFieldChange('クーリングオフ日付入力', v)} />
+                                        <DetailField label="口座情報クリア" type="checkbox" value={editingRow[headers.indexOf('口座情報クリア')]} onChange={(v)=>handleModalFieldChange('口座情報クリア', v)} />
+                                        
+                                        <DetailField label="伝票処理" type="checkbox" value={editingRow[headers.indexOf('伝票処理')]} onChange={(v)=>handleModalFieldChange('伝票処理', v)} />
+                                        <DetailField label="返金依頼" type="checkbox" value={editingRow[headers.indexOf('返金依頼')]} onChange={(v)=>handleModalFieldChange('返金依頼', v)} />
+                                        <DetailField label="最終メール送信" type="checkbox" value={editingRow[headers.indexOf('最終メール送信')]} onChange={(v)=>handleModalFieldChange('最終メール送信', v)} />
+                                        
+                                        <DetailField label="リジョン発送" type="checkbox" value={editingRow[headers.indexOf('リジョン発送')]} onChange={(v)=>handleModalFieldChange('リジョン発送', v)} />
+                                    </div>
+                                </section>
+
+                                {/* その他・備考 */}
+                                <section className="bg-slate-50/50 p-6 border border-slate-200">
+                                    <h3 className="text-sm font-bold text-slate-600 uppercase tracking-widest mb-4">その他・備考</h3>
+                                    <DetailField label="備考" type="textarea" value={editingRow[headers.indexOf('備考')]} onChange={(v)=>handleModalFieldChange('備考', v)} />
+                                </section>
+                            </div>
+                            
+                            <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-4 bg-white/80 sticky bottom-0 z-20 pb-2">
+                                <button type="button" onClick={closeDetailModal} className="px-6 py-2.5 font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">キャンセル</button>
+                                <button type="submit" className="px-6 py-2.5 font-bold text-white bg-sky-500 hover:bg-sky-400 transition-colors shadow-lg shadow-sky-200 disabled:opacity-50">変更を保存</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
 
@@ -697,6 +846,50 @@ const CoolingOffManagement = () => {
                             </section>
                         </div>
                     </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const DetailField = ({ label, type = 'text', value, onChange, readonly = false, options = [] }) => {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label className={`${type === 'checkbox' ? 'text-[13px]' : 'text-[11px]'} font-bold text-slate-500 uppercase tracking-wider`}>{label}</label>
+            {type === 'checkbox' ? (
+                <div className="flex items-center h-[42px] px-3 bg-white border-2 border-slate-200 focus-within:border-sky-300 focus-within:ring-2 focus-within:ring-sky-100 transition-all">
+                    <label className="cute-checkbox scale-110 origin-left">
+                        <input type="checkbox" checked={value === true} onChange={(e) => !readonly && onChange(e.target.checked)} disabled={readonly} />
+                        <span className="checkmark" style={readonly ? {opacity:0.5}: {}}></span>
+                    </label>
+                </div>
+            ) : type === 'select' ? (
+                <select 
+                    className="bg-white border-2 border-slate-200 px-4 py-2 text-[13px] font-bold text-slate-700 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100 transition-all disabled:bg-slate-50 disabled:text-slate-400"
+                    value={value || ''} 
+                    onChange={e => onChange(e.target.value)} 
+                    disabled={readonly}
+                >
+                    {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+            ) : type === 'textarea' ? (
+                <textarea 
+                    className="bg-white border-2 border-slate-200 px-4 py-3 text-[13px] font-bold text-slate-700 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100 transition-all w-full min-h-[100px] resize-y disabled:bg-slate-50 disabled:text-slate-400"
+                    value={value || ''} 
+                    onChange={e => onChange(e.target.value)}
+                    disabled={readonly}
+                />
+            ) : (
+                <div className="relative w-full">
+                    <input 
+                        type={type}
+                        className="bg-white border-2 border-slate-200 px-4 py-2 text-[13px] font-bold text-slate-700 outline-none focus:border-sky-300 focus:ring-2 focus:ring-sky-100 transition-all w-full disabled:bg-slate-50 disabled:text-slate-400 data-[readonly=true]:border-transparent data-[readonly=true]:bg-transparent data-[readonly=true]:px-0"
+                        value={type==='date' && value ? value.replace(/\//g, '-') : (value || '')} 
+                        onChange={e => onChange(e.target.value)}
+                        disabled={readonly}
+                        data-readonly={readonly}
+                        readOnly={readonly}
+                    />
                 </div>
             )}
         </div>
