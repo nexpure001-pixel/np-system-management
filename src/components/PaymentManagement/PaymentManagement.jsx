@@ -54,26 +54,29 @@ const PaymentRow = React.memo(({
     };
 
     const handleNyuukinBlur = () => {
-        const cleanVal = Number(String(localNyuukin).replace(/,/g, '')) || 0;
+        const strVal = String(localNyuukin).replace(/,/g, '').trim();
+        const cleanVal = strVal === '' ? null : Number(strVal);
         if (cleanVal !== p.nyuukin_kingaku) {
             saveToDatabase(p.id, { nyuukin_kingaku: cleanVal });
-            setLocalNyuukin(cleanVal.toLocaleString()); // Re-format
+            setLocalNyuukin(cleanVal !== null ? cleanVal.toLocaleString() : ''); // Re-format
         }
     };
 
     const handleKounyuuBlur = () => {
-        const cleanVal = Number(String(localKounyuu).replace(/,/g, '')) || 0;
+        const strVal = String(localKounyuu).replace(/,/g, '').trim();
+        const cleanVal = strVal === '' ? null : Number(strVal);
         if (cleanVal !== p.kounyuu_kingaku) {
             saveToDatabase(p.id, { kounyuu_kingaku: cleanVal });
-            setLocalKounyuu(cleanVal.toLocaleString());
+            setLocalKounyuu(cleanVal !== null ? cleanVal.toLocaleString() : '');
         }
     };
 
     const handleSagakuBlur = () => {
-        const cleanVal = Number(String(localSagaku).replace(/,/g, '')) || 0;
+        const strVal = String(localSagaku).replace(/,/g, '').trim();
+        const cleanVal = strVal === '' ? null : Number(strVal);
         if (cleanVal !== p.sagaku) {
             saveToDatabase(p.id, { sagaku: cleanVal });
-            setLocalSagaku(cleanVal.toLocaleString());
+            setLocalSagaku(cleanVal !== null ? cleanVal.toLocaleString() : '');
         }
     };
 
@@ -355,13 +358,16 @@ const PaymentManagement = () => {
                         shiharaibi_nyuuryoku: isChecked(row[0]),
                         box_idou: isChecked(row[1]),
                         touroku_jouhou: valToString(row[2]),
-                        soshikizu_kakunin: isChecked(row[3]),
-                        rank_up_bikou: valToString(row[4]),
+                        rank_up_bikou: valToString(row[3]),
+                        soshikizu_kakunin: isChecked(row[4]),
                         chuumonbi: valToString(row[5]) || null,
                         shimei: valToString(row[6]),
-                        nyuukin_kingaku: row[7] ? Number(String(row[7]).replace(/[^\d.-]/g, '')) : 0,
-                        bikou: valToString(row[8]),
-                        kanryou: row[9] === '完了' || row[9] === '済' || isChecked(row[9])
+                        nyuukin_kingaku: row[7] ? Number(String(row[7]).replace(/[^\d.-]/g, '')) : null,
+                        henkin_taishou: isChecked(row[8]),
+                        kounyuu_kingaku: row[9] ? Number(String(row[9]).replace(/[^\d.-]/g, '')) : null,
+                        sagaku: row[10] ? Number(String(row[10]).replace(/[^\d.-]/g, '')) : null,
+                        bikou: valToString(row[11]),
+                        kanryou: row[12] === '完了' || row[12] === '済' || isChecked(row[12])
                     };
 
                     if (!p.shimei && !p.nyuukin_kingaku) return;
@@ -398,13 +404,16 @@ const PaymentManagement = () => {
                                 shiharaibi_nyuuryoku: isChecked(row[0]),
                                 box_idou: isChecked(row[1]),
                                 touroku_jouhou: valToString(row[2]),
-                                soshikizu_kakunin: isChecked(row[3]),
-                                rank_up_bikou: valToString(row[4]),
+                                rank_up_bikou: valToString(row[3]),
+                                soshikizu_kakunin: isChecked(row[4]),
                                 chuumonbi: valToString(row[5]) || null,
                                 shimei: valToString(row[6]),
-                                nyuukin_kingaku: row[7] ? Number(String(row[7]).replace(/[^\d.-]/g, '')) : 0,
-                                bikou: valToString(row[8]),
-                                kanryou: row[9] === '完了' || row[9] === '済' || isChecked(row[9])
+                                nyuukin_kingaku: row[7] ? Number(String(row[7]).replace(/[^\d.-]/g, '')) : null,
+                                henkin_taishou: isChecked(row[8]),
+                                kounyuu_kingaku: row[9] ? Number(String(row[9]).replace(/[^\d.-]/g, '')) : null,
+                                sagaku: row[10] ? Number(String(row[10]).replace(/[^\d.-]/g, '')) : null,
+                                bikou: valToString(row[11]),
+                                kanryou: row[12] === '完了' || row[12] === '済' || isChecked(row[12])
                             };
                         }).filter(p => p.shimei || p.nyuukin_kingaku);
                         confirmMsg = `${finalToInsert.length}件のデータを全件インポートしますか？`;
@@ -451,6 +460,8 @@ const PaymentManagement = () => {
             const newRecord = {
                 ...quickAdd,
                 nyuukin_kingaku: quickAdd.nyuukin_kingaku.toString().replace(/,/g, '') || 0,
+                kounyuu_kingaku: quickAdd.kounyuu_kingaku ? Number(quickAdd.kounyuu_kingaku.toString().replace(/,/g, '')) : null,
+                sagaku: quickAdd.sagaku ? Number(quickAdd.sagaku.toString().replace(/,/g, '')) : null,
                 chuumonbi: quickAdd.chuumonbi || null
             };
 
@@ -504,6 +515,7 @@ const PaymentManagement = () => {
 
     const saveToDatabase = async (id, updates) => {
         setIsLoading(true);
+
         try {
             const { error } = await supabase
                 .from('payments')

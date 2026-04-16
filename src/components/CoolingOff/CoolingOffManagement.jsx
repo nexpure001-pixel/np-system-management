@@ -12,19 +12,19 @@ import {
 import './CoolingOffManagement.css';
 
 const TARGET_DATE_COL_NAMES = ['商品到着日', '初回商品到着日', '初回商品発送日', '契約日'];
-const PULLDOWN_KEYS = ['種別', '支払方法', '申出方法', '実績月', '実施月'];
-
 const INITIAL_PULLDOWN_OPTIONS = {
-    '種別': ['', 'クーリングオフ', '90日返品ルール適用解約', '特）中途解約', '退会', '特例2ポジキャンセル', '4ポジキャンセル', '商品キャンセル', 'キャンセル'],
-    '支払方法': ['', 'カード', '振込み', 'カード/振込', '口座替', '-'],
-    '実績月': ['', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-    '実施月': ['', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+    '対応方法': ['', '未着手', '対応中', '処理待ち', '完了'],
     '申出方法': ['', 'ハガキ', '書面', 'メール', 'カスタマー', 'コンタクト', '電話', '電話・メール', '消費者センター', 'その他']
 };
 
+const DASHBOARD_COLUMNS = [
+    'No.', 'お名前', '申出方法', '対応方法', '商品本社返送日', 'カード決済取消日or返金日', 
+    '登録変更3項目', '伝票処理', '最終メール送信', 'リジョン発送', '完了'
+];
+
 const DEFAULT_HEADERS = [
-    'No.', '種別', '支払方法', 'お名前', '実績月', '契約日', '初回商品発送日', '解約申出日', '申出方法',
-    '登録情報・伝票処理', 'カードキャンセル', '返信メール', '商品到着日', '返金処理日', '返金額', '振込口座', 'リジョン発送', '備考', '入金依頼'
+    ...DASHBOARD_COLUMNS,
+    '種別', '支払方法', '実績月', '契約日', '初回商品発送日', '解約申出日', '返金処理日', '返金額', '振込口座', '備考', '入金依頼', '経過日数'
 ];
 
 const CoolingOffManagement = () => {
@@ -88,8 +88,9 @@ const CoolingOffManagement = () => {
 
     const updatePulldownOptions = (currentHeaders, currentData) => {
         const newOptions = { ...INITIAL_PULLDOWN_OPTIONS };
+        const pulldownKeys = Object.keys(INITIAL_PULLDOWN_OPTIONS);
         currentHeaders.forEach((h, c) => {
-            if (PULLDOWN_KEYS.includes(h)) {
+            if (pulldownKeys.includes(h)) {
                 const options = new Set(newOptions[h]);
                 currentData.forEach(row => {
                     if (row[c]) options.add(row[c].trim());
@@ -281,14 +282,36 @@ const CoolingOffManagement = () => {
 
     const renderCellInput = (val, rIdx, cIdx) => {
         const h = headers[cIdx];
-        if (h === '入金依頼') {
+        if (['登録変更3項目', '伝票処理', '最終メール送信', 'リジョン発送'].includes(h)) {
             return (
-                <input
-                    type="checkbox"
-                    checked={val === true || val === 'true'}
-                    onChange={(e) => updateCell(rIdx, cIdx, e.target.checked)}
-                    className="w-5 h-5 cursor-pointer accent-sky-400"
-                />
+                <div className="flex justify-center">
+                    <input
+                        type="checkbox"
+                        checked={val === true || val === 'true'}
+                        onChange={(e) => updateCell(rIdx, cIdx, e.target.checked)}
+                        className="w-5 h-5 cursor-pointer accent-sky-400"
+                    />
+                </div>
+            );
+        }
+        if (h === '完了') {
+            const isCompleted = val === true || val === 'true';
+            return (
+                <div className="flex justify-center">
+                    <button 
+                        onClick={() => updateCell(rIdx, cIdx, !isCompleted)}
+                        className={`transition-colors ${isCompleted ? 'text-yellow-400' : 'text-slate-300'} hover:scale-110 active:scale-95`}
+                    >
+                        <Star size={24} fill={isCompleted ? "currentColor" : "none"} />
+                    </button>
+                </div>
+            );
+        }
+        if (h === '経過日数') {
+            return (
+                <div className="text-center font-bold text-slate-500">
+                    {val || '--'}
+                </div>
             );
         }
         if (h.includes('日')) {
@@ -302,7 +325,7 @@ const CoolingOffManagement = () => {
                 />
             );
         }
-        if (PULLDOWN_KEYS.includes(h)) {
+        if (Object.keys(pulldownOptions).includes(h)) {
             const options = pulldownOptions[h] || [];
             return (
                 <select
@@ -377,10 +400,11 @@ const CoolingOffManagement = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
-                    {headers.map((h, i) => {
-                        if (h === '入金依頼') return null;
+                    {[...DASHBOARD_COLUMNS, '契約日', '初回商品発送日', '解約申出日'].map((h) => {
+                        const i = headers.indexOf(h);
+                        if (i === -1 || h === '経過日数') return null;
                         return (
-                            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div key={h} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <label style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', marginLeft: '2px' }}>{h}</label>
                                 {h.includes('日') ? (
                                     <input
@@ -398,7 +422,7 @@ const CoolingOffManagement = () => {
                                             borderRadius: '6px'
                                         }}
                                     />
-                                ) : PULLDOWN_KEYS.includes(h) ? (
+                                ) : Object.keys(pulldownOptions).includes(h) ? (
                                     <select
                                         value={formData[i] || ''}
                                         onChange={(e) => handleChange(i, e.target.value)}
@@ -418,6 +442,15 @@ const CoolingOffManagement = () => {
                                             <option key={opt} value={opt}>{opt}</option>
                                         ))}
                                     </select>
+                                ) : ['登録変更3項目', '伝票処理', '最終メール送信', 'リジョン発送', '完了'].includes(h) ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', height: '100%', paddingLeft: '8px' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData[i] === true}
+                                            onChange={(e) => handleChange(i, e.target.checked)}
+                                            style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                        />
+                                    </div>
                                 ) : (
                                     <input
                                         type="text"
@@ -518,23 +551,28 @@ const CoolingOffManagement = () => {
             <div className="glass-panel table-container">
                 <table className="w-full text-left">
                     <thead>
-                        <tr className="bg-white/80 sticky top-0 z-20 shadow-sm border-b">
-                            <th className="p-4 w-24">判定</th>
+                        <tr className="bg-white/80 sticky top-0 z-20 shadow-sm border-b text-sky-900 font-extrabold text-[13px]">
+                            <th className="p-4 w-20">判定</th>
+                            {DASHBOARD_COLUMNS.map((colName) => {
+                                const i = headers.indexOf(colName);
+                                if (i === -1) return null;
+                                return (
+                                    <th key={colName} className="p-4 whitespace-nowrap cursor-pointer hover:text-sky-600 transition-colors" onClick={() => {
+                                        const dir = sortConfig.key === i && sortConfig.direction === 'asc' ? 'desc' : 'asc';
+                                        setSortConfig({ key: i, direction: dir });
+                                        const sorted = [...tableData].sort((a, b) => {
+                                            if (a[i] < b[i]) return dir === 'asc' ? -1 : 1;
+                                            if (a[i] > b[i]) return dir === 'asc' ? 1 : -1;
+                                            return 0;
+                                        });
+                                        setTableData(sorted);
+                                    }}>
+                                        {colName} {sortConfig.key === i && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                                    </th>
+                                );
+                            })}
+                            <th className="p-4 whitespace-nowrap">アクション</th>
                             <th className="p-4 w-24 text-center">経過日数</th>
-                            {headers.map((h, i) => (
-                                <th key={i} className="p-4 whitespace-nowrap cursor-pointer hover:text-sky-600 transition-colors" onClick={() => {
-                                    const dir = sortConfig.key === i && sortConfig.direction === 'asc' ? 'desc' : 'asc';
-                                    setSortConfig({ key: i, direction: dir });
-                                    const sorted = [...tableData].sort((a, b) => {
-                                        if (a[i] < b[i]) return dir === 'asc' ? -1 : 1;
-                                        if (a[i] > b[i]) return dir === 'asc' ? 1 : -1;
-                                        return 0;
-                                    });
-                                    setTableData(sorted);
-                                }}>
-                                    {h} {sortConfig.key === i && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-                                </th>
-                            ))}
                         </tr>
                     </thead>
                     <tbody>
@@ -549,8 +587,8 @@ const CoolingOffManagement = () => {
                             </tr>
                         ) : (
                             tableData.map((row, rIdx) => {
-                                const startDateIdx = headers.findIndex(h => h.includes('初回商品発送日'));
-                                const fallbackIdx = headers.findIndex(h => TARGET_DATE_COL_NAMES.includes(h) || h.includes('到着'));
+                                const startDateIdx = headers.findIndex(h => h.includes('初回商品発送日') || h === '契約日');
+                                const fallbackIdx = headers.findIndex(h => TARGET_DATE_COL_NAMES.includes(h) || h.includes('到着') || h === '商品本社返送日');
                                 const actualStartIdx = startDateIdx !== -1 ? startDateIdx : fallbackIdx;
                                 
                                 const endDateIdx = headers.findIndex(h => h.includes('解約申出日'));
@@ -562,21 +600,35 @@ const CoolingOffManagement = () => {
                                 const isCard = row.some(cell => cell?.toString().includes('カード'));
 
                                 return (
-                                    <tr key={rIdx} className={`border-b border-white/40 hover:bg-white/40 transition-colors ${isCard ? 'row-card-payment' : ''}`}>
+                                    <tr key={rIdx} className={`border-b border-white/40 hover:bg-white/40 transition-colors text-[13px] ${isCard ? 'row-card-payment' : ''}`}>
                                         <td className="p-4">
                                             {status === 'cooling' && <span className="status-badge status-cooling">🌟20日以内</span>}
                                             {status === '90days' && <span className="status-badge status-90">🌙90日</span>}
                                             {status === 'expired' && <span className="status-badge status-expired">☄️期限切れ</span>}
                                             {status === 'unknown' && <span className="opacity-20 text-xs text-center block">--</span>}
                                         </td>
+                                        {DASHBOARD_COLUMNS.map((colName) => {
+                                            const i = headers.indexOf(colName);
+                                            if (i === -1) return null;
+                                            const cell = row[i];
+                                            
+                                            return (
+                                                <td key={colName} className="p-4 min-w-[120px]">
+                                                    {renderCellInput(cell, rIdx, i)}
+                                                </td>
+                                            );
+                                        })}
+                                        <td className="p-4 text-center">
+                                            <button 
+                                                className="btn btn-mystic text-[10px] py-1 px-2 whitespace-nowrap"
+                                                onClick={() => alert('詳細・編集モーダルは後日実装します ✨')}
+                                            >
+                                                詳細・編集
+                                            </button>
+                                        </td>
                                         <td className="p-4 text-center font-bold text-slate-600">
                                             {diffDays !== null ? `${diffDays}日` : '--'}
                                         </td>
-                                        {row.map((cell, cIdx) => (
-                                            <td key={cIdx} className="p-4 min-w-[120px]">
-                                                {renderCellInput(cell, rIdx, cIdx)}
-                                            </td>
-                                        ))}
                                     </tr>
                                 );
                             })
