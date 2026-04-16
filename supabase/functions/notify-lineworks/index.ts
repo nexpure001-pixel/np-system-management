@@ -68,12 +68,19 @@ async function getAccessToken(): Promise<string> {
   return data.access_token;
 }
 
-async function sendMessage(requester: string, recipient: string, content: string) {
+async function sendMessage(requester: string, recipient: string, recipientLineworksId: string, content: string) {
   const token = await getAccessToken();
+
+  let textMessage = `📋 新しい依頼が届きました\n\n依頼者：${requester}\n受託者：${recipient}\n内容：${content}`;
+  
+  if (recipientLineworksId && recipientLineworksId.trim() !== '') {
+    textMessage = `<m userNo="${recipientLineworksId.trim()}">${recipient}</m>\n` + textMessage;
+  }
+
   const message = {
     content: {
       type: 'text',
-      text: `📋 新しい依頼が届きました\n\n依頼者：${requester}\n受託者：${recipient}\n内容：${content}`,
+      text: textMessage,
     },
   };
   const res = await fetch(
@@ -92,8 +99,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
   try {
-    const { requester, recipient, content } = await req.json();
-    await sendMessage(requester, recipient, content);
+    const { requester, recipient, recipientLineworksId, content } = await req.json();
+    await sendMessage(requester, recipient, recipientLineworksId, content);
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

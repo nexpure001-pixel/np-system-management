@@ -70,15 +70,18 @@ export default function RequestWorkManagement() {
 
         // LINE WORKS通知
         const requesterName = getMemberName(form.requesterId);
-        const recipientName = getMemberName(form.recipientId);
+        const recipientData = members.find(m => m.id === Number(form.recipientId));
+        const recipientName = recipientData?.name || '不明';
+        const recipientLineworksId = recipientData?.lineworks_id || '';
         const requestContent = form.content.trim();
+        
         fetch('https://aosrdhlxfewpqhgjfmjb.supabase.co/functions/v1/notify-lineworks', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             },
-            body: JSON.stringify({ requester: requesterName, recipient: recipientName, content: requestContent }),
+            body: JSON.stringify({ requester: requesterName, recipient: recipientName, recipientLineworksId, content: requestContent }),
         }).catch(err => console.error('通知エラー:', err));
 
         setForm({ requesterId: '', recipientId: '', content: '' });
@@ -107,7 +110,10 @@ export default function RequestWorkManagement() {
 
     const saveSettings = async () => {
         for (const m of editingNames) {
-            await supabase.from('work_members').update({ name: m.name.trim() || m.name }).eq('id', m.id);
+            await supabase.from('work_members').update({ 
+                name: m.name.trim() || m.name,
+                lineworks_id: m.lineworks_id?.trim() || null
+            }).eq('id', m.id);
         }
         await fetchMembers();
         setShowSettings(false);
@@ -192,8 +198,10 @@ export default function RequestWorkManagement() {
                                         className={`rw-card ${req.status === 'completed' ? 'rw-card--done' : 'rw-card--pending'}`}
                                         onClick={() => setDetailRequest(req)}
                                     >
-                                        <div className="rw-card-from">{getMemberName(req.requester_id)} → {member.name}</div>
-                                        <div className="rw-card-content">{req.content}</div>
+                                        <div className="rw-card-from" style={{ fontSize: '12px', background: req.status === 'completed' ? '#c6f6d5' : '#fed7d7', padding: '4px 6px', borderRadius: '4px', color: req.status === 'completed' ? '#276749' : '#c53030' }}>
+                                            {getMemberName(req.requester_id)} ➔ {member.name}
+                                        </div>
+                                        <div className="rw-card-content" style={{ fontSize: '14px', margin: '8px 0', fontWeight: req.status === 'pending' ? 'bold' : 'normal' }}>{req.content}</div>
                                         <div className="rw-card-footer">
                                             <span className="rw-card-date">{formatDate(req.created_at)}</span>
                                             {req.status === 'pending' ? (
@@ -226,8 +234,10 @@ export default function RequestWorkManagement() {
                                         className={`rw-card ${req.status === 'completed' ? 'rw-card--done' : 'rw-card--pending'}`}
                                         onClick={() => setDetailRequest(req)}
                                     >
-                                        <div className="rw-card-from">{member.name} → {getMemberName(req.recipient_id)}</div>
-                                        <div className="rw-card-content">{req.content}</div>
+                                        <div className="rw-card-from" style={{ fontSize: '12px', background: req.status === 'completed' ? '#c6f6d5' : '#fed7d7', padding: '4px 6px', borderRadius: '4px', color: req.status === 'completed' ? '#276749' : '#c53030' }}>
+                                            {member.name} ➔ {getMemberName(req.recipient_id)}
+                                        </div>
+                                        <div className="rw-card-content" style={{ fontSize: '14px', margin: '8px 0', fontWeight: req.status === 'pending' ? 'bold' : 'normal' }}>{req.content}</div>
                                         <div className="rw-card-footer">
                                             <span className="rw-card-date">{formatDate(req.created_at)}</span>
                                             {req.status === 'completed'
@@ -277,20 +287,38 @@ export default function RequestWorkManagement() {
             {showSettings && (
                 <div className="rw-modal-overlay" onClick={() => setShowSettings(false)}>
                     <div className="rw-modal" onClick={e => e.stopPropagation()}>
-                        <h2 className="rw-modal-title">メンバー名の編集</h2>
-                        <div className="rw-settings-list">
+                        <h2 className="rw-modal-title">メンバー・LINE通知設定</h2>
+                        <div className="rw-settings-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                             {editingNames.map((m, i) => (
-                                <div key={m.id} className="rw-settings-row">
-                                    <span className="rw-settings-index">{i + 1}.</span>
-                                    <input
-                                        type="text"
-                                        value={m.name}
-                                        onChange={e => {
-                                            const updated = [...editingNames];
-                                            updated[i] = { ...updated[i], name: e.target.value };
-                                            setEditingNames(updated);
-                                        }}
-                                    />
+                                <div key={m.id} className="rw-settings-row flex flex-col gap-2 p-2 border-b">
+                                    <div className="flex items-center gap-2">
+                                        <span className="rw-settings-index">{i + 1}.</span>
+                                        <input
+                                            type="text"
+                                            placeholder="お名前"
+                                            value={m.name || ''}
+                                            onChange={e => {
+                                                const updated = [...editingNames];
+                                                updated[i] = { ...updated[i], name: e.target.value };
+                                                setEditingNames(updated);
+                                            }}
+                                            className="flex-1"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2 pl-6">
+                                        <span className="text-xs text-slate-500 whitespace-nowrap">LINE ID (userNo):</span>
+                                        <input
+                                            type="text"
+                                            placeholder="例: 110002509649274"
+                                            value={m.lineworks_id || ''}
+                                            onChange={e => {
+                                                const updated = [...editingNames];
+                                                updated[i] = { ...updated[i], lineworks_id: e.target.value };
+                                                setEditingNames(updated);
+                                            }}
+                                            className="text-sm flex-1 opacity-80"
+                                        />
+                                    </div>
                                 </div>
                             ))}
                         </div>
