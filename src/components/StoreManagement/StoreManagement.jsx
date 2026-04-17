@@ -514,7 +514,6 @@ const StoreManagement = () => {
                                 <th onClick={() => handleSort('salesStatus')} className="sortable">販売ステータス {sortConfig.key === 'salesStatus' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                 <th onClick={() => handleSort('storeName')} className="sortable">店舗名 {sortConfig.key === 'storeName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                 <th onClick={() => handleSort('representative')} className="sortable">代表者 {sortConfig.key === 'representative' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
-                                <th onClick={() => handleSort('dateSigned')} className="sortable">契約日 {sortConfig.key === 'dateSigned' && (sortConfig.direction === 'asc' ? '↑' : '↓')}</th>
                                 <th>メール</th>
                                 <th>パスワード</th>
                                 <th>アクション</th>
@@ -562,7 +561,6 @@ const StoreManagement = () => {
                                         </strong>
                                     </td>
                                     <td>{store.representative}</td>
-                                    <td>{store.dateSigned ? new Date(store.dateSigned).toLocaleDateString('ja-JP') : '-'}</td>
                                     <td style={{ textAlign: 'center' }}>
                                         <button
                                             className="action-btn"
