@@ -71,18 +71,18 @@ async function getAccessToken(): Promise<string> {
 async function sendMessage(bodyData: any) {
   const token = await getAccessToken();
 
-  const { requester, recipient, recipientLineworksId, content, type, requesterLineworksId, customMessage } = bodyData;
+  const { requester, recipient, recipientLineworksId, content, title, type, requesterLineworksId, customMessage } = bodyData;
 
   let textMessage = '';
   let mentionTag = '';
 
   if (type === 'complete') {
-      textMessage = `✅ ${recipient} さんが依頼を完了しました！\n\n「${customMessage}」\n\n元の依頼内容：${content}`;
+      textMessage = `✅ ${recipient} さんが依頼を完了しました！\n\n「${customMessage}」\n\nタイトル：${title || 'なし'}\n元の依頼内容：${content}`;
       if (requesterLineworksId && requesterLineworksId.trim() !== '') {
           mentionTag = `<m userNo="${requesterLineworksId.trim()}">${requester}</m>\n`;
       }
   } else {
-      textMessage = `📋 新しい依頼が届きました\n\n依頼者：${requester}\n受託者：${recipient}\n内容：${content}`;
+      textMessage = `📋 新しい依頼が届きました\n\n依頼者：${requester}\n受託者：${recipient}\nタイトル：${title || 'なし'}\n内容：${content}`;
       if (recipientLineworksId && recipientLineworksId.trim() !== '') {
           mentionTag = `<m userNo="${recipientLineworksId.trim()}">${recipient}</m>\n`;
       }
