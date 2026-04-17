@@ -68,21 +68,33 @@ async function getAccessToken(): Promise<string> {
   return data.access_token;
 }
 
-async function sendMessage(requester: string, recipient: string, recipientLineworksId: string, content: string) {
+async function sendMessage(bodyData: any) {
   const token = await getAccessToken();
 
-  let textMessage = `📋 新しい依頼が届きました\n\n依頼者：${requester}\n受託者：${recipient}\n内容：${content}`;
-  
-  if (recipientLineworksId && recipientLineworksId.trim() !== '') {
-    textMessage = `<m userNo="${recipientLineworksId.trim()}">${recipient}</m>\n` + textMessage;
+  const { requester, recipient, recipientLineworksId, content, type, requesterLineworksId, customMessage } = bodyData;
+
+  let textMessage = '';
+  let mentionTag = '';
+
+  if (type === 'complete') {
+      textMessage = `✅ ${recipient} さんが依頼を完了しました！\n\n「${customMessage}」\n\n元の依頼内容：${content}`;
+      if (requesterLineworksId && requesterLineworksId.trim() !== '') {
+          mentionTag = `<m userNo="${requesterLineworksId.trim()}">${requester}</m>\n`;
+      }
+  } else {
+      textMessage = `📋 新しい依頼が届きました\n\n依頼者：${requester}\n受託者：${recipient}\n内容：${content}`;
+      if (recipientLineworksId && recipientLineworksId.trim() !== '') {
+          mentionTag = `<m userNo="${recipientLineworksId.trim()}">${recipient}</m>\n`;
+      }
   }
 
   const message = {
     content: {
       type: 'text',
-      text: textMessage,
+      text: mentionTag + textMessage,
     },
   };
+
   const res = await fetch(
     `https://www.worksapis.com/v1.0/bots/${BOT_ID}/channels/${CHANNEL_ID}/messages`,
     {
@@ -99,8 +111,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
   try {
-    const { requester, recipient, recipientLineworksId, content } = await req.json();
-    await sendMessage(requester, recipient, recipientLineworksId, content);
+    const bodyData = await req.json();
+    await sendMessage(bodyData);
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

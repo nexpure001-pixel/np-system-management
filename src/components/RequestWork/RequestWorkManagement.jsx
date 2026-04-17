@@ -90,7 +90,19 @@ export default function RequestWorkManagement() {
         setFormError('');
     };
 
+    const completeMessages = [
+        "完了したよ",
+        "完了しました",
+        "完了したらしいです",
+        "任務完遂",
+        "ご報告、終わったですます",
+        "うぃ（完了）"
+    ];
+
     const completeRequest = async (id) => {
+        // 対象の依頼を取得
+        const req = requests.find(r => r.id === id) || detailRequest;
+
         await supabase.from('work_requests').update({
             status: 'completed',
             completed_at: new Date().toISOString(),
@@ -98,6 +110,33 @@ export default function RequestWorkManagement() {
         await fetchRequests(); // 完了後も即座にボードを更新
         if (detailRequest?.id === id) {
             setDetailRequest(prev => ({ ...prev, status: 'completed', completed_at: new Date().toISOString() }));
+        }
+
+        // 完了した旨を依頼者にLINE WORKS通知
+        if (req) {
+            const requesterData = members.find(m => m.id === req.requester_id);
+            const recipientData = members.find(m => m.id === req.recipient_id);
+            
+            const requesterName = requesterData?.name || '不明';
+            const recipientName = recipientData?.name || '不明';
+            const requesterLineworksId = requesterData?.lineworks_id || '';
+            const customMessage = completeMessages[Math.floor(Math.random() * completeMessages.length)];
+
+            fetch('https://aosrdhlxfewpqhgjfmjb.supabase.co/functions/v1/notify-lineworks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                },
+                body: JSON.stringify({ 
+                    type: 'complete', 
+                    requester: requesterName, 
+                    recipient: recipientName, 
+                    content: req.content,
+                    requesterLineworksId: requesterLineworksId,
+                    customMessage: customMessage
+                }),
+            }).catch(err => console.error('完了通知エラー:', err));
         }
     };
 
