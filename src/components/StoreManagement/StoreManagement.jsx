@@ -94,9 +94,9 @@ const StoreManagement = () => {
         const hasResident = item.doc_resident === '提出済み' || item.doc_resident === '両方完了' || item.doc_resident === '原本のみ' || item.doc_resident === '電子のみ';
         const isDocComplete = hasConsent && (hasRegistry || hasResident);
 
-        const isFD = item.initial_plan?.includes('ファウンディング') || item.distinction === 'FD店舗';
-        const isNew = item.application_date && item.application_date >= '2025-03-01';
-        const classification = item.distinction || (isFD ? 'FD店舗' : (isNew ? '新規店舗' : '通常'));
+        const isFounding = item.initial_plan?.includes('ファウンディング') || item.initial_plan?.includes('FD') || item.distinction === 'FD店舗';
+        const isSpecial = item.distinction?.includes('特別');
+        const classification = isSpecial ? '特別店舗' : (isFounding ? 'FD店舗' : '通常店舗');
 
         // 入金状況の判定ロジックを統一
         let paymentStatusValue = item.payment_status;
