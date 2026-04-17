@@ -301,6 +301,8 @@ const StoreManagement = () => {
             case '完了':
             case '提出済み':
                 return 'badge success';
+            case '未申請':
+                return 'badge warning';
             case '免除':
                 return 'badge info'; // or something that looks neutral/good
             case '一時停止':
@@ -541,6 +543,7 @@ const StoreManagement = () => {
                                             style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem', padding: '3px 6px', borderRadius: '4px' }}
                                         >
                                             <option value="準備中">準備中</option>
+                                            <option value="未申請">未申請</option>
                                             <option value="販売OK">販売OK</option>
                                             <option value="一時停止">一時停止</option>
                                             <option value="退会">退会</option>
@@ -627,6 +630,7 @@ const StoreManagement = () => {
                                             <label>販売ステータス</label>
                                             <select name="sales_ok" defaultValue={editingStore?.raw?.sales_ok || '準備中'}>
                                                 <option value="準備中">準備中</option>
+                                                <option value="未申請">未申請</option>
                                                 <option value="退会">退会</option>
                                                 <option value="販売OK">販売OK</option>
                                                 <option value="一時停止">一時停止</option>
