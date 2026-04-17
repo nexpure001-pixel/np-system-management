@@ -539,7 +539,18 @@ const StoreManagement = () => {
                                             value={store.salesStatus || '準備中'}
                                             onChange={(e) => handleInlineSalesStatus(store.id, e.target.value)}
                                             className={getBadgeClass(store.salesStatus)}
-                                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem', padding: '3px 6px', borderRadius: '4px' }}
+                                            style={{ 
+                                                border: 'none', 
+                                                background: 'transparent', 
+                                                cursor: 'pointer', 
+                                                fontWeight: '600', 
+                                                fontSize: '0.8rem', 
+                                                padding: '3px 6px', 
+                                                borderRadius: '4px',
+                                                color: store.classification === 'FD店舗' ? '#f97316'
+                                                     : store.classification === '特別店舗' ? '#a855f7'
+                                                     : '#333' // 通常は黒（濃いグレー）
+                                            }}
                                         >
                                             <option value="準備中">準備中</option>
                                             <option value="未申請">未申請</option>
