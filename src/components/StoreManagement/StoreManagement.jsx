@@ -716,9 +716,9 @@ const StoreManagement = () => {
                                                 <option value="追加20品目">追加20品目</option>
                                             </select>
                                         </div>
-                                        <div className="form-group"><label>申請フォーム受理日</label><input type="date" name="application_date" defaultValue={editingStore?.application_date || ''} /></div>
-                                        <div className="form-group"><label>契約締結日（ログイン情報送付日）</label><input type="date" name="login_info_sent_date" defaultValue={editingStore?.raw?.login_info_sent_date || ''} /></div>
-                                        <div className="form-group"><label>入金日</label><input type="date" name="payment_date" defaultValue={editingStore?.raw?.payment_date || ''} /></div>
+                                        <div className="form-group"><label>申請フォーム受理日</label><input type="date" name="application_date" defaultValue={editingStore?.application_date ? editingStore.application_date.slice(0, 10) : ''} /></div>
+                                        <div className="form-group"><label>契約締結日（ログイン情報送付日）</label><input type="date" name="login_info_sent_date" defaultValue={editingStore?.raw?.login_info_sent_date ? editingStore.raw.login_info_sent_date.slice(0, 10) : ''} /></div>
+                                        <div className="form-group"><label>入金日</label><input type="date" name="payment_date" defaultValue={editingStore?.raw?.payment_date ? editingStore.raw.payment_date.slice(0, 10) : ''} /></div>
                                         <div className="form-group">
                                             <label>年間契約更新状況</label>
                                             <select name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''}>
