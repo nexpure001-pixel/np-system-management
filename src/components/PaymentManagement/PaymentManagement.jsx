@@ -29,7 +29,8 @@ const PaymentRow = React.memo(({
     toggleSelectRow,
     handleInlineEdit,
     saveToDatabase,
-    toggleKanryou
+    toggleKanryou,
+    onShimeiEnter
 }) => {
     // Local state for text fields to avoid $O(N)$ global state updates on every keystroke
     const [localShimei, setLocalShimei] = useState(p.shimei || '');
@@ -50,6 +51,14 @@ const PaymentRow = React.memo(({
     const handleShimeiBlur = () => {
         if (localShimei !== p.shimei) {
             saveToDatabase(p.id, { shimei: localShimei });
+        }
+    };
+
+    const handleShimeiKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleShimeiBlur();
+            if (onShimeiEnter) onShimeiEnter(p.id, p.chuumonbi);
         }
     };
 
@@ -142,11 +151,11 @@ const PaymentRow = React.memo(({
                     <span className="checkmark"></span>
                 </label>
             </td>
-            <td>
+            <td style={{ minWidth: '135px' }}>
                 <input
                     type="date"
                     className="filter-input"
-                    style={{ background: 'transparent', border: 'none' }}
+                    style={{ background: 'transparent', border: 'none', width: '100%' }}
                     value={p.chuumonbi || ''}
                     onChange={e => handleInlineEdit(p.id, 'chuumonbi', e.target.value)}
                 />
@@ -154,11 +163,12 @@ const PaymentRow = React.memo(({
             <td>
                 <input
                     type="text"
-                    className="filter-input input-narrow"
+                    className="filter-input input-narrow shimei-input"
                     style={{ background: 'transparent', border: 'none', fontWeight: 'bold' }}
                     value={localShimei}
                     onChange={e => setLocalShimei(e.target.value)}
                     onBlur={handleShimeiBlur}
+                    onKeyDown={handleShimeiKeyDown}
                 />
             </td>
             <td style={{ textAlign: 'right' }}>
@@ -490,21 +500,24 @@ const PaymentManagement = () => {
     };
 
     const toggleKanryou = async (id, currentStatus) => {
+        // 即時UI反映 (Functional state update to avoid races)
+        setPayments(prev => prev.map(p => p.id === id ? { ...p, kanryou: !currentStatus } : p));
         try {
             const { error } = await supabase
                 .from('payments')
                 .update({ kanryou: !currentStatus })
                 .eq('id', id);
             if (error) throw error;
-            setPayments(payments.map(p => p.id === id ? { ...p, kanryou: !currentStatus } : p));
         } catch (err) {
             alert('更新に失敗しました');
+            // Revert on error
+            fetchPayments();
         }
     };
 
     const handleInlineEdit = async (id, field, value) => {
-        // Update local state immediately for responsiveness
-        setPayments(payments.map(p => p.id === id ? { ...p, [field]: value } : p));
+        // Update local state immediately for responsiveness (Functional update!)
+        setPayments(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
 
         // Non-text fields (checkboxes, selects) save immediately
         const immediateFields = ['shiharaibi_nyuuryoku', 'box_idou', 'touroku_jouhou', 'soshikizu_kakunin', 'rank_up_bikou', 'kanryou', 'chuumonbi'];
@@ -515,6 +528,8 @@ const PaymentManagement = () => {
 
     const saveToDatabase = async (id, updates) => {
         setIsLoading(true);
+        // Ensure global state has the updates (crucial for text blur sync!)
+        setPayments(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
 
         try {
             const { error } = await supabase
@@ -724,6 +739,25 @@ const PaymentManagement = () => {
 
     const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
 
+    const handleShimeiEnter = (currentId, currentDate) => {
+        const index = paginatedPayments.findIndex(p => p.id === currentId);
+        // If not the last row on the page
+        if (index >= 0 && index < paginatedPayments.length - 1) {
+            const nextPayment = paginatedPayments[index + 1];
+            
+            // Only update if current date is set and next row's date is different or empty
+            if (currentDate && nextPayment.chuumonbi !== currentDate) {
+                handleInlineEdit(nextPayment.id, 'chuumonbi', currentDate);
+            }
+            
+            // Move focus to the next row's name field
+            setTimeout(() => {
+                const inputs = document.querySelectorAll('.shimei-input');
+                if (inputs[index + 1]) inputs[index + 1].focus();
+            }, 50);
+        }
+    };
+
     return (
         <div className="payment-management-container">
             <header>
@@ -930,6 +964,7 @@ const PaymentManagement = () => {
                                 handleInlineEdit={handleInlineEdit}
                                 saveToDatabase={saveToDatabase}
                                 toggleKanryou={toggleKanryou}
+                                onShimeiEnter={handleShimeiEnter}
                             />
                         ))}
                     </tbody>
