@@ -7,7 +7,7 @@ export default function RequestWorkManagement() {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const [form, setForm] = useState({ requesterId: '', recipientId: '', content: '' });
+    const [form, setForm] = useState({ requesterId: '', recipientId: '', content: '', title: '' });
     const [formError, setFormError] = useState('');
 
     const [showSettings, setShowSettings] = useState(false);
@@ -57,11 +57,13 @@ export default function RequestWorkManagement() {
         if (!form.requesterId) { setFormError('依頼者を選択してください'); return; }
         if (!form.recipientId) { setFormError('受託者を選択してください'); return; }
         if (form.requesterId === form.recipientId) { setFormError('依頼者と受託者は別の人を選択してください'); return; }
+        if (!form.title.trim()) { setFormError('タイトルを入力してください'); return; }
         if (!form.content.trim()) { setFormError('依頼内容を入力してください'); return; }
 
         const { error } = await supabase.from('work_requests').insert({
             requester_id: Number(form.requesterId),
             recipient_id: Number(form.recipientId),
+            title: form.title.trim(),
             content: form.content.trim(),
             status: 'pending',
         });
@@ -76,6 +78,7 @@ export default function RequestWorkManagement() {
         const recipientName = recipientData?.name || '不明';
         const recipientLineworksId = recipientData?.lineworks_id || '';
         const requestContent = form.content.trim();
+        const requestTitle = form.title.trim();
         
         fetch('https://aosrdhlxfewpqhgjfmjb.supabase.co/functions/v1/notify-lineworks', {
             method: 'POST',
@@ -83,10 +86,16 @@ export default function RequestWorkManagement() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
             },
-            body: JSON.stringify({ requester: requesterName, recipient: recipientName, recipientLineworksId, content: requestContent }),
+            body: JSON.stringify({ 
+                requester: requesterName, 
+                recipient: recipientName, 
+                recipientLineworksId, 
+                title: requestTitle,
+                content: requestContent 
+            }),
         }).catch(err => console.error('通知エラー:', err));
 
-        setForm({ requesterId: '', recipientId: '', content: '' });
+        setForm({ requesterId: '', recipientId: '', content: '', title: '' });
         setFormError('');
     };
 
@@ -132,6 +141,7 @@ export default function RequestWorkManagement() {
                     type: 'complete', 
                     requester: requesterName, 
                     recipient: recipientName, 
+                    title: req.title || 'なし',
                     content: req.content,
                     requesterLineworksId: requesterLineworksId,
                     customMessage: customMessage
@@ -182,32 +192,45 @@ export default function RequestWorkManagement() {
 
             {/* Request Form */}
             <form className="rw-form" onSubmit={handleSubmit}>
-                <div className="rw-form-row">
-                    <div className="rw-form-group">
-                        <label>依頼者</label>
-                        <select value={form.requesterId} onChange={e => setForm(f => ({ ...f, requesterId: e.target.value }))}>
-                            <option value="">選択してください</option>
-                            {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                        </select>
+                <div className="rw-form-main">
+                    <div className="rw-form-top">
+                        <div className="rw-form-group">
+                            <label>依頼者</label>
+                            <select value={form.requesterId} onChange={e => setForm(f => ({ ...f, requesterId: e.target.value }))}>
+                                <option value="">選択してください</option>
+                                {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="rw-form-arrow">→</div>
+                        <div className="rw-form-group">
+                            <label>受託者</label>
+                            <select value={form.recipientId} onChange={e => setForm(f => ({ ...f, recipientId: e.target.value }))}>
+                                <option value="">選択してください</option>
+                                {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="rw-form-group rw-form-title">
+                            <label>案件タイトル</label>
+                            <input
+                                type="text"
+                                placeholder="例：〇〇資料の作成"
+                                value={form.title}
+                                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                            />
+                        </div>
                     </div>
-                    <div className="rw-form-arrow">→</div>
-                    <div className="rw-form-group">
-                        <label>受託者</label>
-                        <select value={form.recipientId} onChange={e => setForm(f => ({ ...f, recipientId: e.target.value }))}>
-                            <option value="">選択してください</option>
-                            {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                        </select>
+                    <div className="rw-form-bottom">
+                        <div className="rw-form-group rw-form-content">
+                            <label>具体的な依頼内容</label>
+                            <textarea
+                                placeholder="詳しい内容を記入してください（改行も反映されます）"
+                                value={form.content}
+                                onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                                rows="3"
+                            />
+                        </div>
+                        <button type="submit" className="rw-submit-btn">依頼を送信</button>
                     </div>
-                    <div className="rw-form-group rw-form-content">
-                        <label>依頼内容</label>
-                        <input
-                            type="text"
-                            placeholder="依頼内容を入力..."
-                            value={form.content}
-                            onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
-                        />
-                    </div>
-                    <button type="submit" className="rw-submit-btn">依頼する</button>
                 </div>
                 {formError && <p className="rw-form-error">{formError}</p>}
             </form>
@@ -244,7 +267,14 @@ export default function RequestWorkManagement() {
                                         <div className="rw-card-from" style={{ fontSize: '12px', background: req.status === 'completed' ? '#c6f6d5' : '#fed7d7', padding: '4px 6px', borderRadius: '4px', color: req.status === 'completed' ? '#276749' : '#c53030' }}>
                                             {getMemberName(req.requester_id)} ➔ {member.name}
                                         </div>
-                                        <div className="rw-card-content" style={{ fontSize: '14px', margin: '8px 0', fontWeight: req.status === 'pending' ? 'bold' : 'normal' }}>{req.content}</div>
+                                        <div className="rw-card-title" style={{ fontSize: '14px', fontWeight: 'bold', margin: '4px 0', color: '#2d3748' }}>
+                                            {req.title || '（タイトルなし）'}
+                                        </div>
+                                        {req.status === 'pending' && (
+                                            <div className="rw-card-content" style={{ fontSize: '13px', margin: '4px 0', whiteSpace: 'pre-wrap', color: '#4a5568' }}>
+                                                {req.content}
+                                            </div>
+                                        )}
                                         <div className="rw-card-footer">
                                             <span className="rw-card-date">{formatDate(req.created_at)}</span>
                                             {req.status === 'pending' ? (
@@ -280,7 +310,14 @@ export default function RequestWorkManagement() {
                                         <div className="rw-card-from" style={{ fontSize: '12px', background: req.status === 'completed' ? '#c6f6d5' : '#fed7d7', padding: '4px 6px', borderRadius: '4px', color: req.status === 'completed' ? '#276749' : '#c53030' }}>
                                             {member.name} ➔ {getMemberName(req.recipient_id)}
                                         </div>
-                                        <div className="rw-card-content" style={{ fontSize: '14px', margin: '8px 0', fontWeight: req.status === 'pending' ? 'bold' : 'normal' }}>{req.content}</div>
+                                        <div className="rw-card-title" style={{ fontSize: '14px', fontWeight: 'bold', margin: '4px 0', color: '#2d3748' }}>
+                                            {req.title || '（タイトルなし）'}
+                                        </div>
+                                        {req.status === 'pending' && (
+                                            <div className="rw-card-content" style={{ fontSize: '13px', margin: '4px 0', whiteSpace: 'pre-wrap', color: '#4a5568' }}>
+                                                {req.content}
+                                            </div>
+                                        )}
                                         <div className="rw-card-footer">
                                             <span className="rw-card-date">{formatDate(req.created_at)}</span>
                                             {req.status === 'completed'
@@ -308,7 +345,8 @@ export default function RequestWorkManagement() {
                             <tbody>
                                 <tr><th>依頼者</th><td>{getMemberName(detailRequest.requester_id)}</td></tr>
                                 <tr><th>受託者</th><td>{getMemberName(detailRequest.recipient_id)}</td></tr>
-                                <tr><th>依頼内容</th><td>{detailRequest.content}</td></tr>
+                                <tr><th>タイトル</th><td style={{ fontWeight: 'bold' }}>{detailRequest.title || 'なし'}</td></tr>
+                                <tr><th>依頼内容</th><td style={{ whiteSpace: 'pre-wrap' }}>{detailRequest.content}</td></tr>
                                 <tr><th>依頼日時</th><td>{formatDate(detailRequest.created_at)}</td></tr>
                                 {detailRequest.completed_at && (
                                     <tr><th>完了日時</th><td>{formatDate(detailRequest.completed_at)}</td></tr>
