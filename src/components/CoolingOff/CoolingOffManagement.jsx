@@ -904,7 +904,7 @@ const CoolingOffManagement = () => {
                                 <h3 className="text-xl font-bold text-sky-500 mb-3 flex items-center gap-2">
                                     <AlertCircle className="w-5 h-5" /> 4. 状態の自動判定
                                 </h3>
-                                <p>「初回商品発送日」から「解約申出日」（未記入の場合は今日）までの日数を計算し、自動で状態を判定します。</p>
+                                <p>「初回商品到着日」から「解約申出日」（未記入の場合は今日）までの日数を計算し、自動で状態を判定します。</p>
                                 <ul className="space-y-3">
                                     <li className="flex items-center gap-2 pt-2"><span className="status-badge status-cooling">🌟20日以内</span> <span>期間内（クーリングオフ可能）</span></li>
                                     <li className="flex items-center gap-2"><span className="status-badge status-90">🌙90日</span> <span>90日返品ルール期間</span></li>
