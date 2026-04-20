@@ -520,7 +520,7 @@ const PaymentManagement = () => {
         setPayments(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p));
 
         // Non-text fields (checkboxes, selects) save immediately
-        const immediateFields = ['shiharaibi_nyuuryoku', 'box_idou', 'touroku_jouhou', 'soshikizu_kakunin', 'rank_up_bikou', 'kanryou', 'chuumonbi'];
+        const immediateFields = ['shiharaibi_nyuuryoku', 'box_idou', 'touroku_jouhou', 'soshikizu_kakunin', 'rank_up_bikou', 'kanryou', 'chuumonbi', 'henkin_taishou'];
         if (immediateFields.includes(field)) {
             await saveToDatabase(id, { [field]: value === '' ? null : value });
         }
