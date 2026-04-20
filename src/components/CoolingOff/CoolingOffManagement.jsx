@@ -109,6 +109,12 @@ const CoolingOffManagement = () => {
     };
 
     // --- Modal Handlers ---
+    const openAddModal = () => {
+        setEditingRowIdx(null);
+        setEditingRow(headers.map(h => (h === '入金依頼' ? false : '')));
+        setIsDetailModalOpen(true);
+    };
+
     const openDetailModal = (rIdx) => {
         setEditingRowIdx(rIdx);
         setEditingRow([...tableData[rIdx]]);
@@ -148,8 +154,23 @@ const CoolingOffManagement = () => {
 
     const handleDetailSave = (e) => {
         e.preventDefault();
-        const newData = [...tableData];
-        newData[editingRowIdx] = editingRow;
+        let newData;
+        
+        if (editingRowIdx === null) {
+            // 新規追加
+            const newForm = [...editingRow];
+            const noIdx = headers.indexOf('No.');
+            if (noIdx !== -1 && (!newForm[noIdx] || newForm[noIdx] === '')) {
+                const lastNo = tableData.length > 0 ? Math.max(...tableData.map(r => parseInt(r[noIdx]) || 0)) : 0;
+                newForm[noIdx] = lastNo + 1;
+            }
+            newData = [newForm, ...tableData];
+        } else {
+            // 更新
+            newData = [...tableData];
+            newData[editingRowIdx] = editingRow;
+        }
+
         setTableData(newData);
         saveData(headers, newData);
         closeDetailModal();
@@ -157,15 +178,18 @@ const CoolingOffManagement = () => {
 
     const getEditingStatus = () => {
         if (!editingRow) return { state: 'unknown', text: '--', color: '' };
-        const startIdx = headers.findIndex(h => h.includes('初回商品到着日') || h === '契約日');
+        const arriveIdx = headers.indexOf('初回商品到着日');
+        const contractIdx = headers.indexOf('契約日');
         const endIdx = headers.indexOf('解約申出日');
-        const startDateStr = editingRow[startIdx];
+        
+        const startDateStr = (arriveIdx !== -1 && editingRow[arriveIdx]) ? editingRow[arriveIdx] : editingRow[contractIdx];
         const endDateStr = endIdx !== -1 ? editingRow[endIdx] : null;
+        
         if (!startDateStr) return { state: 'unknown', text: '--', color: '' };
         
         const { state } = calculateStatus(startDateStr, endDateStr);
-        if (state === 'cooling') return { text: '🌟20日以内', color: 'text-sky-500 font-bold' };
-        if (state === '90days') return { text: '🌙90日', color: 'text-emerald-500 font-bold' };
+        if (state === 'cooling') return { text: '【クーリングオフ】', color: 'text-sky-500 font-bold' };
+        if (state === '90days') return { text: '【190日返品ルール】', color: 'text-emerald-500 font-bold' };
         if (state === 'expired') return { text: '☄️期限切れ', color: 'text-rose-500 font-bold' };
         return { text: '--', color: 'text-slate-400 font-bold' };
     };
@@ -283,6 +307,29 @@ const CoolingOffManagement = () => {
         return { state: 'expired', days: diffDays };
     };
 
+    const getStats = () => {
+        const total = tableData.length;
+        const compIdx = headers.indexOf('完了');
+        const methodIdx = headers.indexOf('対応方法');
+        const shippingIdx = headers.indexOf('リジョン発送');
+
+        const cardRefundPending = tableData.filter(row => {
+            const isTarget = row[methodIdx] === 'カード決済取消' || row[methodIdx] === '返金対応';
+            const isNotCompleted = compIdx !== -1 && !(row[compIdx] === true || row[compIdx] === 'true');
+            return isTarget && isNotCompleted;
+        }).length;
+
+        const regionNotShipped = tableData.filter(row => {
+            return shippingIdx !== -1 && !(row[shippingIdx] === true || row[shippingIdx] === 'true');
+        }).length;
+
+        const notCompleted = tableData.filter(row => {
+            return compIdx !== -1 && !(row[compIdx] === true || row[compIdx] === 'true');
+        }).length;
+
+        return { total, cardRefundPending, regionNotShipped, notCompleted };
+    };
+
     const updateCell = (rIdx, cIdx, value) => {
         const newData = [...tableData];
         if (headers[cIdx].includes('日') && value) {
@@ -294,7 +341,7 @@ const CoolingOffManagement = () => {
     };
 
     const addNewRecord = (formData) => {
-        // Auto-increment No. if it's empty
+        // 詳細モーダル側で統合されたため、こちらは将来的に削除可能ですが互換性のために維持
         const newForm = [...formData];
         const noIdx = headers.indexOf('No.');
         if (noIdx !== -1 && (!newForm[noIdx] || newForm[noIdx] === '')) {
@@ -581,12 +628,41 @@ const CoolingOffManagement = () => {
             <header>
                 <h1>Stella</h1>
                 <div className="subtitle">✨ クーリングオフ・返品管理 星空システム ✨</div>
-                <button onClick={() => setIsManualOpen(true)} className="btn btn-mystic manual-btn">
-                    📜 使い方マニュアル
-                </button>
+                <div className="flex gap-3 justify-center mt-4">
+                    <button onClick={openAddModal} className="glass-btn">+ 新規追加</button>
+                    <button onClick={() => setIsManualOpen(true)} className="btn btn-mystic manual-btn">
+                        📜 使い方マニュアル
+                    </button>
+                </div>
             </header>
 
-            <AddRecordForm />
+            {/* 旧 AddRecordForm は削除（詳細モーダルに統合） */}
+
+            <div className="stats-grid">
+                {(() => {
+                    const stats = getStats();
+                    return (
+                        <>
+                            <div className="glass-panel stat-card">
+                                <h3>【全件数】</h3>
+                                <div className="value">{stats.total}</div>
+                            </div>
+                            <div className="glass-panel stat-card">
+                                <h3>【カード決済取消or返金未完了】</h3>
+                                <div className="value">{stats.cardRefundPending}</div>
+                            </div>
+                            <div className="glass-panel stat-card">
+                                <h3>【リジョン未発送】</h3>
+                                <div className="value">{stats.regionNotShipped}</div>
+                            </div>
+                            <div className="glass-panel stat-card">
+                                <h3>【未完了】</h3>
+                                <div className="value">{stats.notCompleted}</div>
+                            </div>
+                        </>
+                    );
+                })()}
+            </div>
 
             <div className="glass-panel controls p-6 mb-6">
                 <div className="flex gap-4">
@@ -607,10 +683,10 @@ const CoolingOffManagement = () => {
                 <div className="flex gap-8 items-center">
                     <div className="flex gap-4 text-sm font-semibold">
                         <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded-full status-cooling" /> クーリングオフ(20日以内)
+                            <div className="w-4 h-4 rounded-full status-cooling" /> 【クーリングオフ】
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded-full status-90" /> 90日ルール(90日以内)
+                            <div className="w-4 h-4 rounded-full status-90" /> 【90日返品ルール】
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-4 h-4 rounded-full status-expired" /> 期間外
@@ -658,13 +734,11 @@ const CoolingOffManagement = () => {
                             </tr>
                         ) : (
                             tableData.map((row, rIdx) => {
-                                const startDateIdx = headers.findIndex(h => h.includes('初回商品発送日') || h === '契約日');
-                                const fallbackIdx = headers.findIndex(h => TARGET_DATE_COL_NAMES.includes(h) || h.includes('到着') || h === '商品本社返送日');
-                                const actualStartIdx = startDateIdx !== -1 ? startDateIdx : fallbackIdx;
+                                const arriveIdx = headers.indexOf('初回商品到着日');
+                                const contractIdx = headers.indexOf('契約日');
+                                const startDateStr = (arriveIdx !== -1 && row[arriveIdx]) ? row[arriveIdx] : (contractIdx !== -1 ? row[contractIdx] : null);
                                 
                                 const endDateIdx = headers.findIndex(h => h.includes('解約申出日'));
-                                
-                                const startDateStr = actualStartIdx !== -1 ? row[actualStartIdx] : null;
                                 const endDateStr = endDateIdx !== -1 ? row[endDateIdx] : null;
                                 
                                 const { state: status, days: diffDays } = startDateStr ? calculateStatus(startDateStr, endDateStr) : { state: 'unknown', days: null };
@@ -675,8 +749,8 @@ const CoolingOffManagement = () => {
                                 return (
                                     <tr key={rIdx} className={`border-b border-white/40 transition-colors text-[13px] ${isCompleted ? 'bg-slate-200/50 opacity-60 grayscale text-slate-500' : isCard ? 'row-card-payment hover:bg-white/40' : 'hover:bg-white/40'}`}>
                                         <td className="p-4">
-                                            {status === 'cooling' && <span className="status-badge status-cooling">🌟20日以内</span>}
-                                            {status === '90days' && <span className="status-badge status-90">🌙90日</span>}
+                                            {status === 'cooling' && <span className="status-badge status-cooling">【クーリングオフ】</span>}
+                                            {status === '90days' && <span className="status-badge status-90">【90日返品ルール】</span>}
                                             {status === 'expired' && <span className="status-badge status-expired">☄️期限切れ</span>}
                                             {status === 'unknown' && <span className="opacity-20 text-xs text-center block">--</span>}
                                         </td>
@@ -718,13 +792,13 @@ const CoolingOffManagement = () => {
 
             {isDetailModalOpen && editingRow && (
                 <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-sky-900/40 backdrop-blur-sm" onClick={closeDetailModal}>
-                    <div className="bg-white/95 glass-panel p-8 max-w-4xl w-full mx-4 shadow-2xl border-2 border-white relative overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white/95 glass-panel p-8 detail-modal-content w-full mx-4 shadow-2xl border-2 border-white relative overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
                         <button onClick={closeDetailModal} className="absolute top-6 right-6 text-slate-400 hover:text-sky-500 transition-colors z-10 bg-white/50 rounded-full p-2">
                             <X className="w-6 h-6" />
                         </button>
                         
                         <h2 className="text-2xl font-black text-slate-700 mb-6 flex items-center gap-3 border-b-2 border-slate-100 pb-4">
-                            <Sparkles className="w-6 h-6 text-sky-400" /> クーリングオフの詳細
+                            <Sparkles className="w-6 h-6 text-sky-400" /> {editingRowIdx === null ? 'クーリングオフの新規登録' : 'クーリングオフの詳細'}
                         </h2>
 
                         <form onSubmit={handleDetailSave} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -785,7 +859,7 @@ const CoolingOffManagement = () => {
                             
                             <div className="flex justify-end gap-3 pt-6 border-t border-slate-100 mt-4 bg-white/80 sticky bottom-0 z-20 pb-2">
                                 <button type="button" onClick={closeDetailModal} className="px-6 py-2.5 font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">キャンセル</button>
-                                <button type="submit" className="px-6 py-2.5 font-bold text-white bg-sky-500 hover:bg-sky-400 transition-colors shadow-lg shadow-sky-200 disabled:opacity-50">変更を保存</button>
+                                <button type="submit" className="px-6 py-2.5 font-bold text-white bg-sky-500 hover:bg-sky-400 transition-colors shadow-lg shadow-sky-200 disabled:opacity-50">保存する</button>
                             </div>
                         </form>
                     </div>
