@@ -189,7 +189,7 @@ const CoolingOffManagement = () => {
         
         const { state } = calculateStatus(startDateStr, endDateStr);
         if (state === 'cooling') return { text: '【クーリングオフ】', color: 'text-sky-500 font-bold' };
-        if (state === '90days') return { text: '【190日返品ルール】', color: 'text-emerald-500 font-bold' };
+        if (state === '90days') return { text: '【90日返品ルール】', color: 'text-emerald-500 font-bold' };
         if (state === 'expired') return { text: '☄️期限切れ', color: 'text-rose-500 font-bold' };
         return { text: '--', color: 'text-slate-400 font-bold' };
     };
