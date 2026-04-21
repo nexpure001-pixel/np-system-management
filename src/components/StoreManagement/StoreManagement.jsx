@@ -689,7 +689,7 @@ const StoreManagement = () => {
                                                 <option value="提出済み">提出済み</option>
                                                 <option value="原本のみ">原本のみ</option>
                                                 <option value="電子のみ">電子のみ</option>
-                                                <option value="未確認">未確認</option>
+                                                <option value="不要">不要</option>
                                                 <option value="未提出">未提出</option>
                                             </select>
                                         </div>
@@ -699,7 +699,7 @@ const StoreManagement = () => {
                                                 <option value="提出済み">提出済み</option>
                                                 <option value="原本のみ">原本のみ</option>
                                                 <option value="電子のみ">電子のみ</option>
-                                                <option value="未確認">未確認</option>
+                                                <option value="不要">不要</option>
                                                 <option value="未提出">未提出</option>
                                             </select>
                                         </div>
@@ -709,7 +709,7 @@ const StoreManagement = () => {
                                                 <option value="提出済み">提出済み</option>
                                                 <option value="原本のみ">原本のみ</option>
                                                 <option value="電子のみ">電子のみ</option>
-                                                <option value="未確認">未確認</option>
+                                                <option value="不要">不要</option>
                                                 <option value="未提出">未提出</option>
                                             </select>
                                         </div>
@@ -743,6 +743,7 @@ const StoreManagement = () => {
                                             <label>年間契約更新状況</label>
                                             <select name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''}>
                                                 <option value="">未設定</option>
+                                                <option value="2025年支払済">2025年支払済</option>
                                                 <option value="2026年支払済">2026年支払済</option>
                                                 <option value="2027年支払済">2027年支払済</option>
                                                 <option value="2028年支払済">2028年支払済</option>
@@ -753,6 +754,7 @@ const StoreManagement = () => {
                                             <label>更新月</label>
                                             <select name="renewal_month" defaultValue={editingStore?.raw?.renewal_month || ''}>
                                                 <option value="">未設定</option>
+                                                <option value="更新なし">更新なし</option>
                                                 <option value="1">1月</option>
                                                 <option value="2">2月</option>
                                                 <option value="3">3月</option>
