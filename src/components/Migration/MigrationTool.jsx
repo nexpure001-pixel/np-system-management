@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { db } from '../../lib/firebase';
-import { collection, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { Database, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 const TABLES_TO_MIGRATE = [
@@ -24,9 +24,10 @@ export default function MigrationTool() {
   const addLog = (msg) => setLog(prev => [msg, ...prev].slice(0, 50));
 
   const runMigration = async () => {
-    if (!window.confirm('SupabaseからFirebaseへのデータ移行を開始しますか？')) return;
+    if (!window.confirm('SupabaseからFirebaseへのデータ移行を開始しますか？（マニュアル履歴は除外されます）')) return;
     
     setStatus('migrating');
+    setLog([]);
     addLog('🚀 移行開始...');
 
     try {
@@ -42,34 +43,31 @@ export default function MigrationTool() {
           continue;
         }
 
-        addLog(`✅ ${records.length} 件見つかりました。Firebaseへ書き込み中...`);
+        addLog(`✅ ${records.length} 件見つかりました。Firebaseへ個別書き込み中...`);
         
-        const BATCH_SIZE = 50;
-        for (let i = 0; i < records.length; i += BATCH_SIZE) {
-          const batch = writeBatch(db);
-          const chunk = records.slice(i, i + BATCH_SIZE);
-          
-          for (const record of chunk) {
-            // --- Firestore Sanitization: Fix nested arrays ---
-            const sanitizedRecord = { ...record };
-            Object.keys(sanitizedRecord).forEach(key => {
-              const value = sanitizedRecord[key];
-              // Nested arrays check: if it's an array and contains an array
-              if (Array.isArray(value) && value.some(item => Array.isArray(item))) {
-                sanitizedRecord[key] = JSON.stringify(value); // Convert to string to avoid error
-                console.warn(`[Sanitize] Flattened nested array in ${table}.${key}`);
-              } else if (value === undefined) {
-                delete sanitizedRecord[key]; // Firestore doesn't like undefined
-              }
-            });
+        let count = 0;
+        for (const record of records) {
+          // --- Firestore Sanitization: Fix nested arrays and undefined ---
+          const sanitizedRecord = { ...record };
+          Object.keys(sanitizedRecord).forEach(key => {
+            const value = sanitizedRecord[key];
+            if (Array.isArray(value) && value.some(item => Array.isArray(item))) {
+              sanitizedRecord[key] = JSON.stringify(value);
+            } else if (value === undefined || value === null) {
+              delete sanitizedRecord[key]; // Keep it clean
+            }
+          });
 
-            const docId = String(record.id || record.store_id || record.np_seller_id || Math.random().toString(36).substring(2));
-            const docRef = doc(collection(db, table), docId);
-            batch.set(docRef, sanitizedRecord);
-          }
+          const docId = String(record.id || record.store_id || record.np_seller_id || Math.random().toString(36).substring(2));
+          const docRef = doc(collection(db, table), docId);
           
-          await batch.commit();
-          addLog(`   - ${Math.min(i + BATCH_SIZE, records.length)} / ${records.length} 件完了`);
+          // Use setDoc for individual write to bypass batch limits
+          await setDoc(docRef, sanitizedRecord);
+          
+          count++;
+          if (count % 10 === 0 || count === records.length) {
+            addLog(`   - ${count} / ${records.length} 件完了`);
+          }
         }
       }
       
@@ -87,16 +85,16 @@ export default function MigrationTool() {
       <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
         <div className="bg-indigo-600 p-6 text-white text-center">
           <Database className="mx-auto mb-2" size={48} />
-          <h2 className="text-2xl font-bold">Firebase データ移行ツール</h2>
-          <p className="opacity-80 text-sm mt-1">SupabaseからFirebaseへデータを引っ越します</p>
+          <h2 className="text-2xl font-bold">Firebase データ移行ツール (安定版)</h2>
+          <p className="opacity-80 text-sm mt-1">※マニュアル以外の全データを1件ずつ確実に移行します</p>
         </div>
 
         <div className="p-8 space-y-6 text-center">
           {status === 'idle' && (
             <div className="space-y-4">
               <p className="text-slate-600">
-                このボタンを押すと、現在のデータをすべてFirebaseへ転送します。<br/>
-                数分かかる場合がありますが、一度だけ実行すればOKです。
+                このボタンを押すと、現在のデータをFirebaseへ転送します。<br/>
+                個別送信モードのため、少し時間がかかりますが確実です。
               </p>
               <button
                 onClick={runMigration}
@@ -122,8 +120,7 @@ export default function MigrationTool() {
               <CheckCircle2 className="mx-auto text-green-500" size={64} />
               <h3 className="text-xl font-bold text-slate-800">移行完了！</h3>
               <p className="text-slate-500">
-                データの移行が正常に終わりました。<br/>
-                これから各画面をFirebase版に切り替えていきます。
+                データの移行が正常に終わりました。
               </p>
             </div>
           )}
@@ -142,7 +139,7 @@ export default function MigrationTool() {
           )}
 
           <div className="mt-8 text-left h-48 overflow-y-auto bg-slate-900 rounded-lg p-4 font-mono text-xs text-green-400">
-            {log.length === 0 && <div className="text-slate-600 italic">ログがここに表示されます...</div>}
+            {log.length === 0 && <div className="text-slate-600 italic">プログレスログが表示されます...</div>}
             {log.map((m, i) => <div key={i} className="mb-1">{m}</div>)}
           </div>
         </div>
