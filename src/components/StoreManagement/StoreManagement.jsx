@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, getDocs, doc, setDoc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, query, getDocs, doc, setDoc, updateDoc, addDoc } from 'firebase/firestore';
 import Papa from 'papaparse';
 
 const StoreManagement = () => {
@@ -17,10 +17,8 @@ const StoreManagement = () => {
 
     // データ表示用のキーに変換 (Firestore -> UI)
     const mapStoreFromDB = (item) => {
-        // 「【両方済み】」または従来の「提出済み」の両方を正解として、段階的に移行をサポート
         const isCompleted = (val) => val === '【両方済み】' || val === '提出済み' || val === '両方完了';
-        
-        const hasConsent = isCompleted(item.doc_consent) || item.doc_consent === '電子のみ' || item.doc_consent === '原本のみ';
+        const hasConsent = isCompleted(item.doc_consent) || item.doc_consent === '電子のみ';
         const hasRegistry = isCompleted(item.doc_registry) || item.doc_registry === '原本のみ' || item.doc_registry === '電子のみ';
         const hasResident = isCompleted(item.doc_resident) || item.doc_resident === '原本のみ' || item.doc_resident === '電子のみ';
         const isDocComplete = hasConsent && (hasRegistry || hasResident);
@@ -87,37 +85,31 @@ const StoreManagement = () => {
         }
     };
 
-    useEffect(() => {
-        fetchStores();
-    }, []);
+    useEffect(() => { fetchStores(); }, []);
 
     const handleInlineSalesStatus = async (id, newStatus) => {
         try {
             const docRef = doc(db, 'stores', id);
             await updateDoc(docRef, { sales_ok: newStatus });
-            setStores(prev => prev.map(s =>
-                s.id === id ? { ...s, salesStatus: newStatus, raw: { ...s.raw, sales_ok: newStatus } } : s
-            ));
-        } catch (err) {
-            alert('ステータスの更新に失敗しました: ' + err.message);
-        }
+            setStores(prev => prev.map(s => s.id === id ? { ...s, salesStatus: newStatus, raw: { ...s.raw, sales_ok: newStatus } } : s));
+        } catch (err) { alert('更新失敗: ' + err.message); }
     };
 
     const handleSave = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         const formData = new FormData(e.target);
-        
         const dbData = {
             store_id: formData.get('store_id'),
             no: formData.get('no'),
+            np_seller_id: formData.get('np_seller_id'),
+            introducer: formData.get('introducer'),
             store_name: formData.get('store_name'),
             corporate_name: formData.get('corporate_name'),
             representative: formData.get('representative'),
             contact_person: formData.get('contact_person'),
             email: formData.get('email'),
             password: formData.get('password'),
-            np_seller_id: formData.get('np_seller_id'),
             sales_ok: formData.get('sales_ok'),
             distinction: formData.get('distinction'),
             payment_status: formData.get('payment_status'),
@@ -126,29 +118,23 @@ const StoreManagement = () => {
             doc_resident: formData.get('doc_resident'),
             initial_plan: formData.get('initial_plan'),
             plan_addition: formData.get('plan_addition'),
+            application_form: formData.get('application_form'),
             application_date: formData.get('application_date') || null,
-            login_info_sent_date: formData.get('login_info_sent_date') || null,
+            initial_cost: formData.get('initial_cost'),
             payment_date: formData.get('payment_date') || null,
-            renewal_month: formData.get('renewal_month') || null,
-            yearly_renewal_legacy: formData.get('yearly_renewal_legacy') || '',
-            remarks: formData.get('remarks') || '',
+            email_arrival_date: formData.get('email_arrival_date') || null,
+            original_arrival_date: formData.get('original_arrival_date') || null,
+            login_info_sent_date: formData.get('login_info_sent_date') || null,
+            yearly_renewal_legacy: formData.get('yearly_renewal_legacy'),
+            renewal_month: formData.get('renewal_month'),
+            remarks: formData.get('remarks'),
             updated_at: new Date().toISOString()
         };
-
         try {
-            if (editingStore) {
-                await setDoc(doc(db, 'stores', editingStore.id), dbData, { merge: true });
-            } else {
-                await addDoc(collection(db, 'stores'), { ...dbData, created_at: new Date().toISOString() });
-            }
-            await fetchStores();
-            setIsModalOpen(false);
-            setEditingStore(null);
-        } catch (err) {
-            alert('保存に失敗しました: ' + err.message);
-        } finally {
-            setIsLoading(false);
-        }
+            if (editingStore) { await setDoc(doc(db, 'stores', editingStore.id), dbData, { merge: true }); }
+            else { await addDoc(collection(db, 'stores'), { ...dbData, created_at: new Date().toISOString() }); }
+            await fetchStores(); setIsModalOpen(false); setEditingStore(null);
+        } catch (err) { alert('保存失敗: ' + err.message); } finally { setIsLoading(false); }
     };
 
     const getBadgeClass = (status) => {
@@ -170,24 +156,22 @@ const StoreManagement = () => {
     const now = new Date();
     const currentMonthStr = `${now.getMonth() + 1}月`;
 
-    const sortedStores = [...stores].sort((a, b) => {
+    const filteredStores = stores.filter(store => {
+        const matchesSearch = store.storeName?.includes(searchTerm) || store.representative?.includes(searchTerm) || store.storeId?.includes(searchTerm);
+        if (!matchesSearch) return false;
+        if (filterMode === 'document-pending') return !store.isDocComplete;
+        if (filterMode === 'unpaid') return store.payment === '未入金';
+        if (filterMode === 'renewal-current') { return store.salesStatus === '販売OK' && parseInt(store.renewalMonth) === (now.getMonth() + 1); }
+        return true;
+    }).sort((a, b) => {
         const { key, direction } = sortConfig;
-        let valA = a[key] ?? '';
-        let valB = b[key] ?? '';
-        if (key === 'no' || key === 'storeId') {
+        let valA = a[key] ?? ''; let valB = b[key] ?? '';
+        if (key === 'no' || key === 'storeId') { 
             const nA = parseInt(String(valA).replace(/\D/g, ''), 10) || 0;
             const nB = parseInt(String(valB).replace(/\D/g, ''), 10) || 0;
             return direction === 'asc' ? nA - nB : nB - nA;
         }
         return direction === 'asc' ? String(valA).localeCompare(String(valB), 'ja') : String(valB).localeCompare(String(valA), 'ja');
-    });
-
-    const filteredStores = sortedStores.filter(store => {
-        const matchesSearch = store.storeName?.includes(searchTerm) || store.representative?.includes(searchTerm) || store.storeId?.includes(searchTerm);
-        if (!matchesSearch) return false;
-        if (filterMode === 'document-pending') return !store.isDocComplete;
-        if (filterMode === 'unpaid') return store.payment === '未入金';
-        return true;
     });
 
     return (
@@ -198,29 +182,14 @@ const StoreManagement = () => {
             </header>
 
             <div className="stats-grid">
-                <div className={`glass-panel stat-card clickable ${filterMode === 'all' ? 'active' : ''}`} onClick={() => setFilterMode('all')}>
-                    <h3>総店舗数</h3>
-                    <div className="value">{stores.length}</div>
-                </div>
-                <div className={`glass-panel stat-card clickable ${filterMode === 'renewal-current' ? 'active' : ''}`} onClick={() => setFilterMode('renewal-current')}>
-                    <h3>今月更新 ({currentMonthStr}・販売OK)</h3>
-                    <div className="value">{stores.filter(s => s.salesStatus === '販売OK' && parseInt(s.renewalMonth) === (now.getMonth() + 1)).length}</div>
-                </div>
-                <div className={`glass-panel stat-card clickable ${filterMode === 'document-pending' ? 'active' : ''}`} onClick={() => setFilterMode('document-pending')}>
-                    <h3>書類未提出</h3>
-                    <div className="value">{stores.filter(s => !s.isDocComplete).length}</div>
-                </div>
-                <div className={`glass-panel stat-card clickable ${filterMode === 'unpaid' ? 'active' : ''}`} onClick={() => setFilterMode('unpaid')}>
-                    <h3>未入金</h3>
-                    <div className="value">{stores.filter(s => s.payment === '未入金').length}</div>
-                </div>
+                <div className={`glass-panel stat-card clickable ${filterMode === 'all' ? 'active' : ''}`} onClick={() => setFilterMode('all')}><h3>総店舗数</h3><div className="value">{stores.length}</div></div>
+                <div className={`glass-panel stat-card clickable ${filterMode === 'renewal-current' ? 'active' : ''}`} onClick={() => setFilterMode('renewal-current')}><h3>今月更新 ({currentMonthStr})</h3><div className="value">{stores.filter(s => s.salesStatus === '販売OK' && parseInt(s.renewalMonth) === (now.getMonth() + 1)).length}</div></div>
+                <div className={`glass-panel stat-card clickable ${filterMode === 'document-pending' ? 'active' : ''}`} onClick={() => setFilterMode('document-pending')}><h3>書類未提出</h3><div className="value">{stores.filter(s => !s.isDocComplete).length}</div></div>
+                <div className={`glass-panel stat-card clickable ${filterMode === 'unpaid' ? 'active' : ''}`} onClick={() => setFilterMode('unpaid')}><h3>未入金</h3><div className="value">{stores.filter(s => s.payment === '未入金').length}</div></div>
             </div>
 
             <div className="glass-panel table-panel">
-                <div className="controls-bar">
-                    <input type="text" className="search-input" placeholder="店舗名・ID・代表者名で検索..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                </div>
-
+                <div className="controls-bar"><input type="text" className="search-input" placeholder="店舗名・ID・代表者名で検索..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
                 <div className="table-container">
                     <table>
                         <thead>
@@ -230,71 +199,25 @@ const StoreManagement = () => {
                                 <th onClick={() => handleSort('salesStatus')} className="sortable">販売ステータス</th>
                                 <th onClick={() => handleSort('storeName')} className="sortable">店舗名</th>
                                 <th onClick={() => handleSort('representative')} className="sortable">代表者</th>
-                                <th>メール</th>
-                                <th>パスワード</th>
-                                <th>アクション</th>
-                                <th onClick={() => handleSort('np_seller_id')} className="sortable">個人ID</th>
+                                <th>メール</th><th>パスワード</th><th>アクション</th><th onClick={() => handleSort('np_seller_id')} className="sortable">個人ID</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredStores.map(store => {
-                                const copyKey = (field) => `${store.id}-${field}`;
-                                const handleCopy = (text, field) => {
-                                    if (!text) return;
-                                    navigator.clipboard.writeText(text).then(() => {
-                                        setCopiedCell(copyKey(field));
-                                        setTimeout(() => setCopiedCell(null), 1500);
-                                    });
-                                };
+                                const copyKey = (f) => `${store.id}-${f}`;
+                                const handleCopy = (t, f) => { if (!t) return; navigator.clipboard.writeText(t).then(() => { setCopiedCell(copyKey(f)); setTimeout(() => setCopiedCell(null), 1500); }); };
                                 return (
                                     <tr key={store.id}>
-                                        <td>{store.no}</td>
-                                        <td>{store.storeId}</td>
+                                        <td>{store.no}</td><td>{store.storeId}</td>
                                         <td>
-                                            <select
-                                                value={store.salesStatus || '準備中'}
-                                                onChange={(e) => handleInlineSalesStatus(store.id, e.target.value)}
-                                                className={getBadgeClass(store.salesStatus)}
-                                                style={{ 
-                                                    border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem', padding: '3px 6px', borderRadius: '4px',
-                                                    color: store.classification === 'FD店舗' ? '#f97316' : store.classification === '特別店舗' ? '#a855f7' : '#333'
-                                                }}
-                                            >
-                                                <option value="準備中">準備中</option>
-                                                <option value="未申請">未申請</option>
-                                                <option value="販売OK">販売OK</option>
-                                                <option value="一時停止">一時停止</option>
-                                                <option value="退会">退会</option>
+                                            <select value={store.salesStatus || '準備中'} onChange={(e) => handleInlineSalesStatus(store.id, e.target.value)} className={getBadgeClass(store.salesStatus)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem', padding: '3px 6px', borderRadius: '4px', color: store.classification === 'FD店舗' ? '#f97316' : store.classification === '特別店舗' ? '#a855f7' : '#333' }}>
+                                                <option value="準備中">準備中</option><option value="未申請">未申請</option><option value="販売OK">販売OK</option><option value="一時停止">一時停止</option><option value="退会">退会</option>
                                             </select>
                                         </td>
-                                        <td>
-                                            <strong style={{
-                                                color: store.classification === 'FD店舗' ? '#f97316' : store.classification === '特別店舗' ? '#a855f7' : 'inherit',
-                                            }}>
-                                                {store.storeName}
-                                            </strong>
-                                        </td>
+                                        <td><strong style={{ color: store.classification === 'FD店舗' ? '#f97316' : store.classification === '特別店舗' ? '#a855f7' : 'inherit' }}>{store.storeName}</strong></td>
                                         <td>{store.representative}</td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <button
-                                                className="action-btn"
-                                                style={{ fontSize: '0.75rem', padding: '4px 10px', minWidth: '80px', background: copiedCell === copyKey('email') ? 'var(--success-accent, #22c55e)' : '' }}
-                                                onClick={() => handleCopy(store.email, 'email')}
-                                                disabled={!store.email}
-                                            >
-                                                {copiedCell === copyKey('email') ? '✓ コピー済み' : '📋 コピー'}
-                                            </button>
-                                        </td>
-                                        <td style={{ textAlign: 'center' }}>
-                                            <button
-                                                className="action-btn"
-                                                style={{ fontSize: '0.75rem', padding: '4px 10px', minWidth: '80px', background: copiedCell === copyKey('password') ? 'var(--success-accent, #22c55e)' : '' }}
-                                                onClick={() => handleCopy(store.password, 'password')}
-                                                disabled={!store.password}
-                                            >
-                                                {copiedCell === copyKey('password') ? '✓ コピー済み' : '📋 コピー'}
-                                            </button>
-                                        </td>
+                                        <td style={{ textAlign: 'center' }}><button className="action-btn" style={{ fontSize: '0.75rem', padding: '4px 10px', minWidth: '80px', background: copiedCell === copyKey('email') ? '#22c55e' : '' }} onClick={() => handleCopy(store.email, 'email')} disabled={!store.email}>{copiedCell === copyKey('email') ? '✓ コピー済み' : '📋 コピー'}</button></td>
+                                        <td style={{ textAlign: 'center' }}><button className="action-btn" style={{ fontSize: '0.75rem', padding: '4px 10px', minWidth: '80px', background: copiedCell === copyKey('password') ? '#22c55e' : '' }} onClick={() => handleCopy(store.password, 'password')} disabled={!store.password}>{copiedCell === copyKey('password') ? '✓ コピー済み' : '📋 コピー'}</button></td>
                                         <td><button className="action-btn edit-btn" onClick={() => { setEditingStore(store); setIsModalOpen(true); }}>詳細・編集</button></td>
                                         <td>{store.np_seller_id || '-'}</td>
                                     </tr>
@@ -322,56 +245,35 @@ const StoreManagement = () => {
                                         <div className="form-group"><label>担当者名</label><input type="text" name="contact_person" defaultValue={editingStore?.contactPerson || ''} /></div>
                                         <div className="form-group"><label>メールアドレス</label><input type="email" name="email" defaultValue={editingStore?.email || ''} /></div>
                                         <div className="form-group"><label>パスワード</label><input type="text" name="password" defaultValue={editingStore?.password || ''} /></div>
-                                        <div className="form-group"><label>個人会員ID</label><input type="text" name="np_seller_id" defaultValue={editingStore?.np_seller_id || ''} /></div>
+                                        <div className="form-group"><label>個人会員ID</label><input type="text" name="np_seller_id" defaultValue={editingStore?.raw?.np_seller_id || ''} /></div>
+                                        <div className="form-group"><label>紹介者</label><input type="text" name="introducer" defaultValue={editingStore?.raw?.introducer || ''} /></div>
                                     </div>
                                 </section>
                                 <section>
                                     <h3>ステータス・進捗</h3>
                                     <div className="form-grid">
-                                        <div className="form-group"><label>販売ステータス</label>
-                                            <select name="sales_ok" defaultValue={editingStore?.raw?.sales_ok || '準備中'}>
-                                                <option value="準備中">準備中</option><option value="未申請">未申請</option><option value="販売OK">販売OK</option><option value="一時停止">一時停止</option><option value="退会">退会</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group"><label>区別</label>
-                                            <select name="distinction" defaultValue={editingStore?.raw?.distinction || '通常'}>
-                                                <option value="通常">通常</option><option value="FD店舗">FD店舗</option><option value="特別店舗">特別店舗</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group"><label>入金状況</label>
-                                            <select name="payment_status" defaultValue={editingStore?.raw?.payment_status || '未入金'}>
-                                                <option value="完了">完了</option><option value="免除">免除</option><option value="未入金">未入金</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group"><label>同意書</label>
-                                            <select name="doc_consent" defaultValue={editingStore?.raw?.doc_consent || '未提出'}>
-                                                <option value="【両方済み】">【両方済み】</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group"><label>登記簿謄本</label>
-                                            <select name="doc_registry" defaultValue={editingStore?.raw?.doc_registry || '未提出'}>
-                                                <option value="【両方済み】">【両方済み】</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group"><label>住民票</label>
-                                            <select name="doc_resident" defaultValue={editingStore?.raw?.doc_resident || '未提出'}>
-                                                <option value="【両方済み】">【両方済み】</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option>
-                                            </select>
-                                        </div>
+                                        <div className="form-group"><label>販売ステータス</label><select name="sales_ok" defaultValue={editingStore?.raw?.sales_ok || '準備中'}><option value="準備中">準備中</option><option value="未申請">未申請</option><option value="販売OK">販売OK</option><option value="一時停止">一時停止</option><option value="退会">退会</option></select></div>
+                                        <div className="form-group"><label>区別</label><select name="distinction" defaultValue={editingStore?.raw?.distinction || '通常'}><option value="通常">通常</option><option value="FD店舗">FD店舗</option><option value="特別店舗">特別店舗</option></select></div>
+                                        <div className="form-group"><label>入金状況</label><select name="payment_status" defaultValue={editingStore?.raw?.payment_status || '未入金'}><option value="完了">完了</option><option value="免除">免除</option><option value="未入金">未入金</option></select></div>
+                                        <div className="form-group"><label>同意書</label><select name="doc_consent" defaultValue={editingStore?.raw?.doc_consent || '未提出'}><option value="【両方済み】">【両方済み】</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option></select></div>
+                                        <div className="form-group"><label>登記簿謄本</label><select name="doc_registry" defaultValue={editingStore?.raw?.doc_registry || '未提出'}><option value="【両方済み】">【両方済み】</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option></select></div>
+                                        <div className="form-group"><label>住民票</label><select name="doc_resident" defaultValue={editingStore?.raw?.doc_resident || '未提出'}><option value="【両方済み】">【両方済み】</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option></select></div>
                                     </div>
                                 </section>
                                 <section>
-                                    <h3>契約・更新</h3>
+                                    <h3>契約・プラン・日付</h3>
                                     <div className="form-grid">
-                                        <div className="form-group"><label>契約プラン</label><input type="text" name="initial_plan" defaultValue={editingStore?.plan || ''} /></div>
-                                        <div className="form-group"><label>更新月</label>
-                                            <select name="renewal_month" defaultValue={editingStore?.raw?.renewal_month || ''}>
-                                                <option value="">未設定</option>
-                                                {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{i+1}月</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="form-group"><label>申請日</label><input type="date" name="application_date" defaultValue={editingStore?.dateSigned || ''} /></div>
-                                        <div className="form-group"><label>入金日</label><input type="date" name="payment_date" defaultValue={editingStore?.paymentDate || ''} /></div>
+                                        <div className="form-group"><label>契約プラン</label><select name="initial_plan" defaultValue={editingStore?.raw?.initial_plan || ''}><option value="">未設定</option><option value="FD30品目プラン">FD30品目プラン</option><option value="10品目プラン">10品目プラン</option><option value="30品目プラン">30品目プラン</option><option value="50品目プラン">50品目プラン</option><option value="無制限プラン">無制限プラン</option></select></div>
+                                        <div className="form-group"><label>プラン追加</label><select name="plan_addition" defaultValue={editingStore?.raw?.plan_addition || 'なし'}><option value="なし">なし</option><option value="追加20品目">追加20品目</option></select></div>
+                                        <div className="form-group"><label>申込フォーム</label><input type="text" name="application_form" defaultValue={editingStore?.raw?.application_form || ''} /></div>
+                                        <div className="form-group"><label>申請フォーム受理日</label><input type="date" name="application_date" defaultValue={editingStore?.dateSigned ? editingStore.dateSigned.slice(0, 10) : ''} /></div>
+                                        <div className="form-group"><label>初期費用</label><input type="text" name="initial_cost" defaultValue={editingStore?.raw?.initial_cost || ''} /></div>
+                                        <div className="form-group"><label>入金日</label><input type="date" name="payment_date" defaultValue={editingStore?.paymentDate ? editingStore.paymentDate.slice(0, 10) : ''} /></div>
+                                        <div className="form-group"><label>メール着</label><input type="date" name="email_arrival_date" defaultValue={editingStore?.raw?.email_arrival_date ? editingStore.raw.email_arrival_date.slice(0, 10) : ''} /></div>
+                                        <div className="form-group"><label>原本着</label><input type="date" name="original_arrival_date" defaultValue={editingStore?.raw?.original_arrival_date ? editingStore.raw.original_arrival_date.slice(0, 10) : ''} /></div>
+                                        <div className="form-group"><label>契約締結日（ログイン情報送付日）</label><input type="date" name="login_info_sent_date" defaultValue={editingStore?.raw?.login_info_sent_date ? editingStore.raw.login_info_sent_date.slice(0, 10) : ''} /></div>
+                                        <div className="form-group"><label>年間契約更新状況</label><select name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''}><option value="">未設定</option><option value="2025年支払済">2025年支払済</option><option value="2026年支払済">2026年支払済</option><option value="2027年支払済">2027年支払済</option><option value="2028年支払済">2028年支払済</option><option value="2029年支払済">2029年支払済</option></select></div>
+                                        <div className="form-group"><label>更新月</label><select name="renewal_month" defaultValue={editingStore?.raw?.renewal_month || ''}><option value="">未設定</option><option value="更新なし">更新なし</option>{[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{i+1}月</option>)}</select></div>
                                     </div>
                                 </section>
                                 <section>
@@ -379,10 +281,7 @@ const StoreManagement = () => {
                                     <div className="form-group full-width"><textarea name="remarks" defaultValue={editingStore?.remarks || ''}></textarea></div>
                                 </section>
                             </div>
-                            <div className="modal-actions">
-                                <button type="button" className="action-btn cancel-btn" onClick={() => setIsModalOpen(false)}>キャンセル</button>
-                                <button type="submit" className="glass-btn">{isLoading ? '保存中...' : '保存する'}</button>
-                            </div>
+                            <div className="modal-actions"><button type="button" className="action-btn cancel-btn" onClick={() => setIsModalOpen(false)}>キャンセル</button><button type="submit" className="glass-btn">{isLoading ? '保存中...' : '保存する'}</button></div>
                         </form>
                     </div>
                 </div>
@@ -390,5 +289,4 @@ const StoreManagement = () => {
         </>
     );
 };
-
 export default StoreManagement;
