@@ -51,9 +51,22 @@ export default function MigrationTool() {
           const chunk = records.slice(i, i + BATCH_SIZE);
           
           for (const record of chunk) {
+            // --- Firestore Sanitization: Fix nested arrays ---
+            const sanitizedRecord = { ...record };
+            Object.keys(sanitizedRecord).forEach(key => {
+              const value = sanitizedRecord[key];
+              // Nested arrays check: if it's an array and contains an array
+              if (Array.isArray(value) && value.some(item => Array.isArray(item))) {
+                sanitizedRecord[key] = JSON.stringify(value); // Convert to string to avoid error
+                console.warn(`[Sanitize] Flattened nested array in ${table}.${key}`);
+              } else if (value === undefined) {
+                delete sanitizedRecord[key]; // Firestore doesn't like undefined
+              }
+            });
+
             const docId = String(record.id || record.store_id || record.np_seller_id || Math.random().toString(36).substring(2));
             const docRef = doc(collection(db, table), docId);
-            batch.set(docRef, record);
+            batch.set(docRef, sanitizedRecord);
           }
           
           await batch.commit();
