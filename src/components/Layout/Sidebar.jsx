@@ -69,6 +69,13 @@ const Sidebar = ({ activeSystem, setActiveSystem }) => {
                 >
                     <span className="nav-icon">🔄</span> データ移行
                 </button>
+                <button
+                    className={`nav-item ${activeSystem === 'refresh' ? 'active' : ''}`}
+                    onClick={() => setActiveSystem('refresh')}
+                    style={{ color: '#6366f1' }}
+                >
+                    <span className="nav-icon">🗄️</span> データ刷新
+                </button>
             </nav>
         </aside>
     );
