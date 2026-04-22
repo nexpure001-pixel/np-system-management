@@ -13,8 +13,7 @@ const TABLES_TO_MIGRATE = [
   'users',
   'leave_grants',
   'leave_requests',
-  'leave_consumptions',
-  'manuals'
+  'leave_consumptions'
 ];
 
 export default function MigrationTool() {
@@ -45,7 +44,7 @@ export default function MigrationTool() {
 
         addLog(`✅ ${records.length} 件見つかりました。Firebaseへ書き込み中...`);
         
-        const BATCH_SIZE = 400;
+        const BATCH_SIZE = 50;
         for (let i = 0; i < records.length; i += BATCH_SIZE) {
           const batch = writeBatch(db);
           const chunk = records.slice(i, i + BATCH_SIZE);
