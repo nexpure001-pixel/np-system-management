@@ -17,9 +17,12 @@ const StoreManagement = () => {
 
     // データ表示用のキーに変換 (Firestore -> UI)
     const mapStoreFromDB = (item) => {
-        const hasConsent = item.doc_consent === '提出済み' || item.doc_consent === '両方完了' || item.doc_consent === '電子のみ' || item.doc_consent === '原本のみ';
-        const hasRegistry = item.doc_registry === '提出済み' || item.doc_registry === '両方完了' || item.doc_registry === '原本のみ' || item.doc_registry === '電子のみ';
-        const hasResident = item.doc_resident === '提出済み' || item.doc_resident === '両方完了' || item.doc_resident === '原本のみ' || item.doc_resident === '電子のみ';
+        // 「【両方済み】」または従来の「提出済み」の両方を正解として、段階的に移行をサポート
+        const isCompleted = (val) => val === '【両方済み】' || val === '提出済み' || val === '両方完了';
+        
+        const hasConsent = isCompleted(item.doc_consent) || item.doc_consent === '電子のみ' || item.doc_consent === '原本のみ';
+        const hasRegistry = isCompleted(item.doc_registry) || item.doc_registry === '原本のみ' || item.doc_registry === '電子のみ';
+        const hasResident = isCompleted(item.doc_resident) || item.doc_resident === '原本のみ' || item.doc_resident === '電子のみ';
         const isDocComplete = hasConsent && (hasRegistry || hasResident);
 
         const dist = item.distinction;
@@ -150,7 +153,7 @@ const StoreManagement = () => {
 
     const getBadgeClass = (status) => {
         switch (status) {
-            case '販売OK': case 'OK': case '完了': case '提出済み': return 'badge success';
+            case '販売OK': case 'OK': case '完了': case '【両方済み】': return 'badge success';
             case '未申請': return 'badge warning';
             case '免除': return 'badge info';
             case '一時停止': case '未入金': case '未提出': case '未確認': return 'badge danger';
@@ -203,11 +206,11 @@ const StoreManagement = () => {
                     <h3>今月更新 ({currentMonthStr}・販売OK)</h3>
                     <div className="value">{stores.filter(s => s.salesStatus === '販売OK' && parseInt(s.renewalMonth) === (now.getMonth() + 1)).length}</div>
                 </div>
-                <div className="glass-panel stat-card clickable" onClick={() => setFilterMode('document-pending')}>
+                <div className={`glass-panel stat-card clickable ${filterMode === 'document-pending' ? 'active' : ''}`} onClick={() => setFilterMode('document-pending')}>
                     <h3>書類未提出</h3>
                     <div className="value">{stores.filter(s => !s.isDocComplete).length}</div>
                 </div>
-                <div className="glass-panel stat-card clickable" onClick={() => setFilterMode('unpaid')}>
+                <div className={`glass-panel stat-card clickable ${filterMode === 'unpaid' ? 'active' : ''}`} onClick={() => setFilterMode('unpaid')}>
                     <h3>未入金</h3>
                     <div className="value">{stores.filter(s => s.payment === '未入金').length}</div>
                 </div>
@@ -319,7 +322,7 @@ const StoreManagement = () => {
                                         <div className="form-group"><label>担当者名</label><input type="text" name="contact_person" defaultValue={editingStore?.contactPerson || ''} /></div>
                                         <div className="form-group"><label>メールアドレス</label><input type="email" name="email" defaultValue={editingStore?.email || ''} /></div>
                                         <div className="form-group"><label>パスワード</label><input type="text" name="password" defaultValue={editingStore?.password || ''} /></div>
-                                        <div className="form-group"><label>個人会員ID</label><input type="text" name="np_seller_id" defaultValue={editingStore?.raw?.np_seller_id || ''} /></div>
+                                        <div className="form-group"><label>個人会員ID</label><input type="text" name="np_seller_id" defaultValue={editingStore?.np_seller_id || ''} /></div>
                                     </div>
                                 </section>
                                 <section>
@@ -342,17 +345,17 @@ const StoreManagement = () => {
                                         </div>
                                         <div className="form-group"><label>同意書</label>
                                             <select name="doc_consent" defaultValue={editingStore?.raw?.doc_consent || '未提出'}>
-                                                <option value="提出済み">提出済み</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option>
+                                                <option value="【両方済み】">【両方済み】</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option>
                                             </select>
                                         </div>
                                         <div className="form-group"><label>登記簿謄本</label>
                                             <select name="doc_registry" defaultValue={editingStore?.raw?.doc_registry || '未提出'}>
-                                                <option value="提出済み">提出済み</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option>
+                                                <option value="【両方済み】">【両方済み】</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option>
                                             </select>
                                         </div>
                                         <div className="form-group"><label>住民票</label>
                                             <select name="doc_resident" defaultValue={editingStore?.raw?.doc_resident || '未提出'}>
-                                                <option value="提出済み">提出済み</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option>
+                                                <option value="【両方済み】">【両方済み】</option><option value="原本のみ">原本のみ</option><option value="電子のみ">電子のみ</option><option value="不要">不要</option><option value="未提出">未提出</option>
                                             </select>
                                         </div>
                                     </div>
