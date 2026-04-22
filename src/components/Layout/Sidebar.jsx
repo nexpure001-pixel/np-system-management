@@ -61,6 +61,14 @@ const Sidebar = ({ activeSystem, setActiveSystem }) => {
                 >
                     <span className="nav-icon">📅</span> 有給管理
                 </button>
+                <div style={{ height: '1px', background: '#eee', margin: '10px 0' }}></div>
+                <button
+                    className={`nav-item ${activeSystem === 'migration' ? 'active' : ''}`}
+                    onClick={() => setActiveSystem('migration')}
+                    style={{ color: '#6366f1' }}
+                >
+                    <span className="nav-icon">🔄</span> データ移行
+                </button>
             </nav>
         </aside>
     );

@@ -9,6 +9,7 @@ import ManualManagement from './components/Manual/ManualManagement';
 import ProductReviewApp from './components/ProductReview/ProductReviewApp';
 import ManualPortal from './components/Manual/Portal/ManualPortal';
 import RequestWorkManagement from './components/RequestWork/RequestWorkManagement';
+import MigrationTool from './components/Migration/MigrationTool';
 
 // 送信前チェックシート：public フォルダの HTML を iframe で表示
 const MailCheckSheet = () => (
@@ -35,6 +36,7 @@ function App() {
       case 'mail-check': return <MailCheckSheet />;
       case 'manual': return <ManualManagement />;
       case 'manual-portal': return <ManualPortal />;
+      case 'migration': return <MigrationTool />;
       default: return <StoreManagement />;
     }
   };
