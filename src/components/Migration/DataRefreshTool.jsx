@@ -79,7 +79,6 @@ export default function DataRefreshTool() {
         let val = row[csvKey];
         if (val && val !== '' && val !== '-') {
           if (val === '提出済み') return '【両方済み】';
-          // 更新月の「月」を取り払って数字だけにする（例：6月 -> 6）
           if (csvKey === '更新月' && val.includes('月') && val !== '更新なし') {
             return val.replace('月', '');
           }
@@ -115,12 +114,13 @@ export default function DataRefreshTool() {
         plan_addition: smartMap('プラン追加', 'plan_addition'),
         application_form: smartMap('申込フォーム', 'application_form'),
         application_date: smartMapDate('申請フォーム受理日', 'application_date'),
+        login_info_sent_date: smartMapDate('契約締結日（ログイン情報送付日）', 'login_info_sent_date'),
         payment_date: smartMapDate('入金日', 'payment_date'),
         yearly_renewal_legacy: smartMap('契約更新状況', 'yearly_renewal_legacy'),
         renewal_month: smartMap('更新月', 'renewal_month'),
         remarks: smartMap('備考', 'remarks'),
         updated_at: new Date().toISOString(),
-        migration_refreshed_v5: true
+        migration_refreshed_v6: true
       };
 
       await setDoc(doc(collection(db, 'stores'), targetDocId), updatedData, { merge: true });
@@ -129,7 +129,7 @@ export default function DataRefreshTool() {
 
     setStats({ matched: matchedCount, added: addedCount, total: csvData.length });
     setStatus('completed');
-    addLog(`✨ 更新月を含め、すべての補正が完了しました。`);
+    addLog(`✨ 欠落していた契約締結日を含め、すべて正常に処理されました。`);
   };
 
   return (
@@ -140,7 +140,7 @@ export default function DataRefreshTool() {
             <div>
               <RefreshCw className={`mb-2 ${status === 'processing' ? 'animate-spin' : ''}`} size={40} />
               <h2 className="text-3xl font-bold">店舗データ刷新</h2>
-              <p className="opacity-90 mt-2">更新月の月表記（6月➔6）などの自動補正に対応しました。</p>
+              <p className="opacity-90 mt-2">契約締結日も含めたフルマッピングを復元しました。</p>
             </div>
             {status === 'idle' && (
               <div className="bg-white/20 p-4 rounded-xl backdrop-blur-sm border border-white/30">
@@ -165,7 +165,7 @@ export default function DataRefreshTool() {
           {status === 'completed' && (
             <div className="text-center py-12 space-y-6">
               <CheckCircle className="mx-auto text-emerald-500" size={64} />
-              <div className="text-2xl font-bold text-slate-800">更新月の補正も完了しました！</div>
+              <div className="text-2xl font-bold text-slate-800">すべてのデータの刷新が完了しました！</div>
               <button onClick={() => window.location.href = '/'} className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold font-sans">ダッシュボードへ戻る</button>
             </div>
           )}
