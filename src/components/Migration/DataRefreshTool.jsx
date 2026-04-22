@@ -190,8 +190,8 @@ export default function DataRefreshTool() {
                 CSVの最新情報を基に、既存の空欄データが埋められました。
               </p>
               <button 
-                onClick={() => window.location.href = '/stores'}
-                className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 transition-all"
+                onClick={() => window.location.href = '/'}
+                className="bg-emerald-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-900 transition-all font-sans"
               >
                 店舗ダッシュボードで確認する
               </button>
