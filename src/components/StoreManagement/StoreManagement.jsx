@@ -106,7 +106,6 @@ const StoreManagement = () => {
             plan_addition: f.get('plan_addition'),
             application_date: f.get('application_date') || null,
             payment_date: f.get('payment_date') || null,
-            email_arrival_date: f.get('email_arrival_date') || null,
             original_arrival_date: f.get('original_arrival_date') || null,
             login_info_sent_date: f.get('login_info_sent_date') || null,
             yearly_renewal_legacy: f.get('yearly_renewal_legacy'),
@@ -159,6 +158,7 @@ const StoreManagement = () => {
 
             <div className="stats-grid">
                 <div className={`glass-panel stat-card clickable ${filterMode === 'all' ? 'active' : ''}`} onClick={() => setFilterMode('all')}><h3>総店舗数</h3><div className="value">{stores.length}</div></div>
+                <div className={`glass-panel stat-card clickable ${filterMode === 'renewal-current' ? 'active' : ''}`} onClick={() => setFilterMode('renewal-current')}><h3>今月更新 ({new Date().getMonth() + 1}月)</h3><div className="value">{stores.filter(s => s.salesStatus === '販売OK' && parseInt(s.renewalMonth) === (new Date().getMonth() + 1)).length}</div></div>
                 <div className={`glass-panel stat-card clickable ${filterMode === 'document-pending' ? 'active' : ''}`} onClick={() => setFilterMode('document-pending')}><h3>書類未提出</h3><div className="value">{stores.filter(s => !s.isDocComplete).length}</div></div>
                 <div className={`glass-panel stat-card clickable ${filterMode === 'unpaid' ? 'active' : ''}`} onClick={() => setFilterMode('unpaid')}><h3>未入金</h3><div className="value">{stores.filter(s => s.payment === '未入金').length}</div></div>
             </div>
@@ -234,7 +234,6 @@ const StoreManagement = () => {
                                         <div className="form-group"><label>プラン追加</label><select name="plan_addition" defaultValue={editingStore?.raw?.plan_addition || 'なし'}><option value="なし">なし</option><option value="追加20品目">追加20品目</option></select></div>
                                         <div className="form-group"><label>申請フォーム受理日</label><input type="date" name="application_date" defaultValue={editingStore?.dateSigned?.slice(0, 10) || ''} /></div>
                                         <div className="form-group"><label>入金日</label><input type="date" name="payment_date" defaultValue={editingStore?.paymentDate?.slice(0, 10) || ''} /></div>
-                                        <div className="form-group"><label>メール着</label><input type="date" name="email_arrival_date" defaultValue={editingStore?.raw?.email_arrival_date?.slice(0, 10) || ''} /></div>
                                         <div className="form-group"><label>原本着</label><input type="date" name="original_arrival_date" defaultValue={editingStore?.raw?.original_arrival_date?.slice(0, 10) || ''} /></div>
                                         <div className="form-group"><label>契約締結日</label><input type="date" name="login_info_sent_date" defaultValue={editingStore?.raw?.login_info_sent_date?.slice(0, 10) || ''} /></div>
                                         <div className="form-group"><label>更新状況</label><select name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''}><option value="">未設定</option><option value="2025年支払済">2025年支払済</option><option value="2026年支払済">2026年支払済</option></select></div>
