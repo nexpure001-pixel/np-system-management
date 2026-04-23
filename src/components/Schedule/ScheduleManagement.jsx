@@ -64,7 +64,7 @@ const ScheduleManagement = () => {
     const [selectedTask, setSelectedTask] = useState(null);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [viewMode, setViewMode] = useState('month');
-    const [filterCategory, setFilterCategory] = useState('all'); // 追加：フィルタリング状態
+    const [filterCategory, setFilterCategory] = useState('all');
     const [isImporting, setIsImporting] = useState(false);
 
     const [editForm, setEditForm] = useState({
@@ -97,7 +97,6 @@ const ScheduleManagement = () => {
     const weeks = [];
     for (let i = 0; i < calendarDays.length; i += 7) weeks.push(calendarDays.slice(i, i + 7));
 
-    // フィルタリングされたタスク
     const filteredTasks = tasks.filter(t => filterCategory === 'all' || t.category === filterCategory);
 
     const openDetails = (task) => {
@@ -179,10 +178,7 @@ const ScheduleManagement = () => {
         <div className="schedule-ux-wrapper">
             <header className="ux-top-header">
                 <div className="ux-logo-area"><div className="ux-logo-circle"></div><div><h1>カスタマー業務スケジュール</h1><p>毎日の業務を、もっとやさしく、もっと確実に。</p></div></div>
-                <div className="ux-user-area">
-                   <div className="ux-icon-btn"><Bell size={20} /><span className="ux-badge">3</span></div>
-                   <div className="ux-user-profile"><img src="https://ui-avatars.com/api/?name=田中+花子&background=E8F5E9&color=2E7D32" alt="Avatar" /><div className="ux-user-info"><span className="name">田中 花子</span><span className="role">管理者</span></div><ChevronLeft size={16} style={{ transform: 'rotate(-90deg)' }} /></div>
-                </div>
+                {/* 修正：右側のユーザー情報エリア（ベルマーク・田中花子）を削除 */}
             </header>
 
             <div className="ux-main-layout">
@@ -197,7 +193,6 @@ const ScheduleManagement = () => {
                     </nav>
                     <div className="ux-category-filter">
                         <label>表示設定</label>
-                        {/* 修正：バインドされたカテゴリー選択 */}
                         <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
                             <option value="all">すべてのカテゴリ</option>
                             <option value="customer">カスタマー</option>
@@ -251,7 +246,6 @@ const ScheduleManagement = () => {
                                         <span className="range">{format(week[0], 'M/d')}〜{format(week[4], 'M/d')}</span>
                                     </div>
                                     {week.slice(0, 5).map((day, dIdx) => {
-                                        // 修正：フィルタリングされたタスクを使用
                                         const dayTasks = filteredTasks.filter(t => isSameDay(t.date, day));
                                         return (
                                             <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''}`} onClick={() => { setEditForm({...editForm, date: format(day, 'yyyy-MM-dd')}); setIsPanelOpen(true); }}>
@@ -271,7 +265,6 @@ const ScheduleManagement = () => {
                                         );
                                     })}
                                     <div className="ux-day-cell weekend">
-                                        {/* 修正：フィルタリングされたタスクを使用 */}
                                         {filteredTasks.filter(t => (isSameDay(t.date, week[5]) || isSameDay(t.date, week[6]))).map(t => (
                                             <div key={t.id} className="ux-task-mini weekend-memo" onClick={(e) => { e.stopPropagation(); openDetails(t); }}>{format(t.date, 'd')}日：{t.title}</div>
                                         ))}
