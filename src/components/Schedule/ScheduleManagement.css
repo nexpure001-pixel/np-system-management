@@ -55,35 +55,6 @@
     font-weight: 600;
 }
 
-.ux-user-area {
-    display: flex;
-    align-items: center;
-    gap: 25px;
-}
-
-.ux-user-profile {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    background: rgba(255, 255, 255, 0.8);
-    padding: 5px 15px 5px 5px;
-    border-radius: 40px;
-}
-
-.ux-user-profile img {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-}
-
-.ux-user-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.ux-user-info .name { font-weight: 700; font-size: 0.9rem; }
-.ux-user-info .role { font-size: 0.7rem; color: var(--ux-text-muted); }
-
 /* 2. Main Layout Structure */
 .ux-main-layout {
     flex: 1;
@@ -91,7 +62,6 @@
     overflow: hidden;
 }
 
-/* Sidebar */
 .ux-side-nav {
     width: 240px;
     padding: 20px;
@@ -142,7 +112,6 @@
 .ux-dot-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.85rem; font-weight: 600; }
 .ux-dot-item .dot { width: 12px; height: 12px; border-radius: 50%; }
 
-/* Content Area */
 .ux-content-area {
     flex: 1;
     padding: 30px 40px;
@@ -244,7 +213,6 @@
 
 .day-num { font-weight: 800; font-size: 1.1rem; color: #94a3b8; }
 
-/* Individual Task Card in Grid */
 .ux-task-mini {
     background: white;
     padding: 8px 10px;
@@ -284,7 +252,30 @@
 
 .ux-panel-content { padding: 0 30px 30px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
 
-.ux-panel-tag { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; width: fit-content; }
+.ux-panel-cat-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.ux-cat-choice {
+    padding: 8px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
+    background: var(--cat-bg);
+    color: var(--cat-color);
+    transition: all 0.2s;
+}
+
+.ux-cat-choice.active {
+    border-color: var(--cat-color);
+    transform: scale(1.02);
+}
+
 .ux-panel-title { border: none; font-size: 1.4rem; font-weight: 800; padding: 5px 0; outline: none; width: 100%; }
 
 .ux-field { display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #f1f5f9; padding: 12px 0; font-size: 0.9rem; }
@@ -300,7 +291,6 @@
 .ux-save-btn { background: var(--ux-green-dark); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .ux-del-btn { background: #fff1f2; color: #e11d48; border: 1px solid #fecaca; padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
-/* 5. Footer & Decorations */
 .ux-footer { margin-top: 30px; text-align: center; font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
 
 .ux-panel-deco {
@@ -311,7 +301,6 @@
     opacity: 0.1;
 }
 
-/* Responsive adjustments */
 @media (max-width: 1400px) {
     .ux-week-row { grid-template-columns: 60px repeat(5, 1fr) 1.2fr; }
     .ux-side-nav { width: 200px; }

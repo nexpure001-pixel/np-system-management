@@ -178,7 +178,6 @@ const ScheduleManagement = () => {
         <div className="schedule-ux-wrapper">
             <header className="ux-top-header">
                 <div className="ux-logo-area"><div className="ux-logo-circle"></div><div><h1>カスタマー業務スケジュール</h1><p>毎日の業務を、もっとやさしく、もっと確実に。</p></div></div>
-                {/* 修正：右側のユーザー情報エリア（ベルマーク・田中花子）を削除 */}
             </header>
 
             <div className="ux-main-layout">
@@ -227,7 +226,7 @@ const ScheduleManagement = () => {
                                 <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}><LayoutGrid size={16} />週表示</button>
                                 <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}><List size={16} />リスト表示</button>
                             </div>
-                            <button className="ux-add-btn" onClick={() => { setSelectedTask(null); setIsPanelOpen(true); }}>
+                            <button className="ux-add-btn" onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(new Date(), 'yyyy-MM-dd'), category: 'customer'}); setIsPanelOpen(true); }}>
                                 <Plus size={18} /> タスクを追加
                             </button>
                         </div>
@@ -248,7 +247,7 @@ const ScheduleManagement = () => {
                                     {week.slice(0, 5).map((day, dIdx) => {
                                         const dayTasks = filteredTasks.filter(t => isSameDay(t.date, day));
                                         return (
-                                            <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''}`} onClick={() => { setEditForm({...editForm, date: format(day, 'yyyy-MM-dd')}); setIsPanelOpen(true); }}>
+                                            <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''}`} onClick={() => { setEditForm({...editForm, title: '', date: format(day, 'yyyy-MM-dd'), category: 'customer'}); setIsPanelOpen(true); }}>
                                                 <span className="day-num">{format(day, 'd')}</span>
                                                 <div className="ux-cell-tasks">
                                                     {dayTasks.map(t => (
@@ -278,10 +277,20 @@ const ScheduleManagement = () => {
                 <aside className={`ux-detail-panel ${isPanelOpen ? 'is-open' : ''}`}>
                     <div className="ux-panel-header"><h3>タスク詳細</h3><button onClick={() => setIsPanelOpen(false)}><X size={20} /></button></div>
                     <div className="ux-panel-content">
-                        <span className="ux-panel-tag" style={{ background: CATEGORIES.find(c => c.id === editForm.category)?.bg, color: CATEGORIES.find(c => c.id === editForm.category)?.color }}>{CATEGORIES.find(c => c.id === editForm.category)?.label}</span>
+                        {/* 修正：カテゴリー選択ボタン（さっき伝えた4つ） */}
+                        <div className="ux-panel-cat-selector">
+                            {CATEGORIES.map(cat => (
+                                <button key={cat.id} type="button" 
+                                        className={`ux-cat-choice ${editForm.category === cat.id ? 'active' : ''}`}
+                                        style={{ '--cat-bg': cat.bg, '--cat-color': cat.color }}
+                                        onClick={() => setEditForm({...editForm, category: cat.id})}>
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+                        
                         <input type="text" className="ux-panel-title" value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} placeholder="タイトルを入力" />
                         <div className="ux-field"><label><CalendarIcon size={14} /> 予定日</label><input type="date" value={editForm.date} onChange={e => setEditForm({...editForm, date: e.target.value})} /></div>
-                        <div className="ux-field"><label><Clock size={14} /> 繰り返し</label><span>毎月1日</span></div>
                         <div className="ux-field column"><label>詳細</label><textarea value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} /></div>
                         <div className="ux-field column"><label>チェックリスト</label><div className="ux-checklist"><div className="ux-check-item"><input type="checkbox" id="check-done" checked={selectedTask?.completed} onChange={() => toggleTask(selectedTask.id, selectedTask.completed)} /><label htmlFor="check-done">完了</label></div></div></div>
                         <div className="ux-field column"><label>メモ</label><textarea value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} className="ux-memo-area" /></div>
