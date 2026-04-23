@@ -47,7 +47,7 @@ function App() {
   return (
     <div className={`app-layout theme-${activeSystem}`}>
       <Sidebar activeSystem={activeSystem} setActiveSystem={setActiveSystem} />
-      <main className="main-content">
+      <main className={`main-content ${activeSystem === 'schedule' ? 'full-bleed' : ''}`}>
         {renderContent()}
       </main>
     </div>

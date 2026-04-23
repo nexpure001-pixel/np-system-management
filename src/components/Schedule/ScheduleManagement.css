@@ -7,29 +7,32 @@
 
 .schedule-container {
     padding: 0;
-    min-height: calc(100vh - 40px);
-    background-color: var(--botanical-bg);
-}
-
-/* スケジュールボード本体に画像を設定 */
-.schedule-board-frame {
-    margin: 0 auto;
-    width: 100vw;
-    height: calc(100vh - 40px);
+    min-height: 100vh; /* メイン領域全体を占有 */
     background-image: url('/カスタマースケジュールバック画像.png');
     background-size: 100% 100%;
     background-position: center;
     background-repeat: no-repeat;
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ボードとしての枠組み（以前の背景画像があった部分は透明に） */
+.schedule-board-frame {
+    margin: 0 auto;
+    width: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 4% 8%; /* 額縁との重なりを防ぐための内側余白 */
+    padding: 4% 8%; /* 背景の額縁イラストの内側に収まるように調整 */
 }
 
 .schedule-header, .calendar-grid {
     width: 100%;
-    max-width: 1100px; /* 枠の内部に収まるサイズ */
+    max-width: 1100px;
 }
 
 .schedule-header {
@@ -37,8 +40,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
-    background: rgba(255, 255, 255, 0.4); /* 背景が見えるよう透明度を調整 */
-    backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
     padding: 1rem 2rem;
     border-radius: 1.2rem;
     box-shadow: 0 4px 20px rgba(0,0,0,0.05);
@@ -46,15 +49,14 @@
 }
 
 .calendar-grid {
-    background: rgba(255, 255, 255, 0.6); /* 背景が見えるよう透明度を調整 */
-    backdrop-filter: blur(2px);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(4px);
     border-radius: 1rem;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0,0,0,0.03);
     border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-/* 他のスタイル */
 .header-left { display: flex; align-items: center; gap: 2rem; }
 .header-left h1 { font-size: 1.3rem; font-weight: 900; color: var(--botanical-green-dark); margin: 0; }
 .month-control { display: flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.5); padding: 0.4rem; border-radius: 0.8rem; }
@@ -68,7 +70,13 @@
 .day-cell.today { background: rgba(240, 247, 237, 0.5); }
 .day-number { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem; }
 .task-card { padding: 4px 6px; border-radius: 5px; font-size: 0.7rem; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; }
-.task-card.completed { opacity: 0.6; grayscale: 100%; }
+.task-card.completed { opacity: 0.6; }
 .task-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.important-toggle { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.2rem; border-radius: 0.8rem; border: 1px solid #e2e8f0; background: white; cursor: pointer; color: #94a3b8; }
+.important-toggle.active { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
 .side-panel { width: 500px; height: 100%; background: white; padding: 2rem; box-shadow: -20px 0 50px rgba(0,0,0,0.1); }
 .save-btn { background: var(--botanical-green-dark); color: white; padding: 1rem; border-radius: 0.8rem; font-weight: 800; border: none; width: 100%; }
+.main-input { font-size: 1.5rem; font-weight: 700; border: none; border-bottom: 2px solid #f1f5f9; width: 100%; margin-bottom: 1rem; }
+.category-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.cat-btn { padding: 0.6rem; border: 2px solid transparent; border-radius: 0.5rem; cursor: pointer; background: var(--cat-bg); color: var(--cat-color); font-weight: 700; }
+.cat-btn.active { border-color: var(--cat-color); }

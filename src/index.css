@@ -57,7 +57,6 @@ body {
   background: rgba(49, 151, 149, 0.1);
 }
 
-/* Header Styles */
 .app-layout {
   display: flex;
   min-height: 100vh;
@@ -79,7 +78,7 @@ body {
 .sidebar {
   width: 260px;
   background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(200px);
   border-right: 1px solid #000;
   padding: 30px 20px;
   display: flex;
@@ -148,6 +147,10 @@ body {
   overflow-x: hidden;
 }
 
+.main-content.full-bleed {
+  padding: 0 !important;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -165,7 +168,6 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* Table Styles */
 .table-container {
   overflow-x: auto;
   margin-top: 20px;
@@ -216,7 +218,6 @@ tr:hover td {
   background: rgba(255, 255, 255, 0.6);
 }
 
-/* Badges */
 .badge {
   padding: 6px 12px;
   border-radius: 4px;
@@ -250,7 +251,6 @@ tr:hover td {
   border: 1px solid rgba(74, 85, 104, 0.3);
 }
 
-/* Search and Filters */
 .controls-bar {
   display: flex;
   gap: 16px;
@@ -274,7 +274,6 @@ tr:hover td {
   box-shadow: 0 0 0 3px rgba(49, 151, 149, 0.3);
 }
 
-/* Stats Cards */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
