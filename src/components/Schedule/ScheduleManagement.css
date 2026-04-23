@@ -12,6 +12,10 @@
 .schedule-container {
     padding: 1.5rem;
     min-height: calc(100vh - 40px);
+    background-image: url('/カスタマースケジュールバック画像.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     background-color: var(--botanical-bg);
     color: var(--botanical-text);
 }
@@ -155,6 +159,29 @@
 
 .task-card:hover { filter: brightness(0.95); transform: translateX(2px); }
 
+.task-card.completed {
+    background: #f1f5f9 !important;
+    border-left-color: #cbd5e1;
+    opacity: 0.5;
+}
+
+.task-card.compact {
+    padding: 2px 5px;
+    background: #f8fafc !important;
+    border-left: 2px solid #e2e8f0;
+}
+
+.task-card.compact .task-main {
+    gap: 4px;
+}
+
+.task-card.compact .task-title {
+    font-size: 0.65rem;
+}
+
+.task-card.compact .important-icon {
+    display: none;
+}
 
 .task-card.completed .task-title {
     text-decoration: line-through;
