@@ -84,8 +84,6 @@ const ScheduleManagement = () => {
                 return { id: doc.id, ...data, date: isValid(taskDate) ? taskDate : new Date() };
             });
             setTasks(taskList);
-            
-            // 選択中のタスクがあれば、最新データで同期
             if (selectedTask) {
                 const updated = taskList.find(t => t.id === selectedTask.id);
                 if (updated) setSelectedTask(updated);
@@ -125,19 +123,14 @@ const ScheduleManagement = () => {
     };
 
     const toggleTask = async (taskId, currentStatus) => {
-        // 即座にUIを反映させるための楽観的アップデート（画面上のタスクリストを一時的に書き換える）
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: !currentStatus } : t));
         if (selectedTask?.id === taskId) setSelectedTask(prev => ({ ...prev, completed: !currentStatus }));
-
         try { 
             await updateDoc(doc(db, 'schedule_tasks', taskId), { 
                 completed: !currentStatus, 
                 completed_at: !currentStatus ? Timestamp.now() : null 
             }); 
-        } catch (err) { 
-            console.error(err); 
-            // 失敗時は元に戻す（再取得されるまでの一時的な不整合防止）
-        }
+        } catch (err) { console.error(err); }
     };
 
     const handleDelete = async () => {
@@ -244,7 +237,7 @@ const ScheduleManagement = () => {
                                 <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}><LayoutGrid size={16} />週表示</button>
                                 <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}><List size={16} />リスト表示</button>
                             </div>
-                            <button className="ux-add-btn" onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(new Date(), 'yyyy-MM-dd'), category: 'customer'}); setIsPanelOpen(true); }}>
+                            <button className="ux-add-btn" onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(new Date(), 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
                                 <Plus size={18} /> タスクを追加
                             </button>
                         </div>
@@ -265,36 +258,23 @@ const ScheduleManagement = () => {
                                     {week.slice(0, 5).map((day, dIdx) => {
                                         const dayTasks = filteredTasks.filter(t => isSameDay(t.date, day));
                                         return (
-                                            <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''}`} onClick={() => { setEditForm({...editForm, title: '', date: format(day, 'yyyy-MM-dd'), category: 'customer'}); setIsPanelOpen(true); }}>
+                                            <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''}`} onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(day, 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
                                                 <span className="day-num">{format(day, 'd')}</span>
                                                 <div className="ux-cell-tasks">
                                                     {dayTasks.map(t => (
                                                         <div key={t.id} className={`ux-task-mini ${t.completed ? 'is-done' : ''}`} style={{ borderLeftColor: CATEGORIES.find(c => c.id === t.category)?.dot }} onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
-                                                            <div className="mini-header">
-                                                                <div className="title">{t.title}</div>
-                                                                {/* 追加：カレンダー上で直接トグルできるボタン */}
-                                                                <button className="mini-check-btn" onClick={(e) => { e.stopPropagation(); toggleTask(t.id, t.completed); }}>
-                                                                    {t.completed ? <CheckCircle2 size={16} color="#689f38" /> : <div className="circle-placeholder"></div>}
-                                                                </button>
-                                                            </div>
-                                                            <div className="footer">
-                                                                <span className="tag" style={{ background: CATEGORIES.find(c => c.id === t.category)?.bg, color: CATEGORIES.find(c => c.id === t.category)?.color }}>{CATEGORIES.find(c => c.id === t.category)?.label}</span>
-                                                            </div>
+                                                            <div className="mini-header"><div className="title">{t.title}</div><button className="mini-check-btn" onClick={(e) => { e.stopPropagation(); toggleTask(t.id, t.completed); }}>{t.completed ? <CheckCircle2 size={16} color="#689f38" /> : <div className="circle-placeholder"></div>}</button></div>
+                                                            <div className="footer"><span className="tag" style={{ background: CATEGORIES.find(c => c.id === t.category)?.bg, color: CATEGORIES.find(c => c.id === t.category)?.color }}>{CATEGORIES.find(c => c.id === t.category)?.label}</span></div>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         );
                                     })}
-                                    <div className="ux-day-cell weekend">
+                                    <div className="ux-day-cell weekend" onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(week[5], 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
                                         {filteredTasks.filter(t => (isSameDay(t.date, week[5]) || isSameDay(t.date, week[6]))).map(t => (
                                             <div key={t.id} className={`ux-task-mini weekend-memo ${t.completed ? 'is-done' : ''}`} onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
-                                                <div className="mini-header">
-                                                    <span>{format(t.date, 'd')}日：{t.title}</span>
-                                                    <button className="mini-check-btn" onClick={(e) => { e.stopPropagation(); toggleTask(t.id, t.completed); }}>
-                                                        {t.completed ? <CheckCircle2 size={14} color="#689f38" /> : <div className="circle-placeholder small"></div>}
-                                                    </button>
-                                                </div>
+                                                <div className="mini-header"><span>{format(t.date, 'd')}日：{t.title}</span><button className="mini-check-btn" onClick={(e) => { e.stopPropagation(); toggleTask(t.id, t.completed); }}>{t.completed ? <CheckCircle2 size={14} color="#689f38" /> : <div className="circle-placeholder small"></div>}</button></div>
                                             </div>
                                         ))}
                                     </div>
@@ -317,18 +297,10 @@ const ScheduleManagement = () => {
                                 </button>
                             ))}
                         </div>
-                        
                         <input type="text" className="ux-panel-title" value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} placeholder="タイトルを入力" />
                         <div className="ux-field"><label><CalendarIcon size={14} /> 予定日</label><input type="date" value={editForm.date} onChange={e => setEditForm({...editForm, date: e.target.value})} /></div>
                         <div className="ux-field column"><label>詳細</label><textarea value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} /></div>
-                        <div className="ux-field column"><label>チェックリスト</label>
-                            <div className="ux-checklist">
-                                <div className="ux-check-item">
-                                    <input type="checkbox" id="check-done" checked={selectedTask?.completed || false} onChange={() => toggleTask(selectedTask.id, selectedTask.completed)} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
-                                    <label htmlFor="check-done" style={{ fontSize: '1rem', cursor: 'pointer' }}>完了にする</label>
-                                </div>
-                            </div>
-                        </div>
+                        <div className="ux-field column"><label>チェックリスト</label><div className="ux-checklist"><div className="ux-check-item"><input type="checkbox" id="check-done" checked={selectedTask?.completed || false} onChange={() => toggleTask(selectedTask.id, selectedTask.completed)} style={{ width: '20px', height: '20px', cursor: 'pointer' }} /><label htmlFor="check-done" style={{ fontSize: '1rem', cursor: 'pointer' }}>完了にする</label></div></div></div>
                         <div className="ux-field column"><label>メモ</label><textarea value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} className="ux-memo-area" /></div>
                         <div className="ux-panel-actions"><button className="ux-save-btn" onClick={handleSave}><Save size={16} /> 保存</button>{selectedTask && <button className="ux-del-btn" onClick={handleDelete}>タスクを削除</button>}</div>
                     </div>
