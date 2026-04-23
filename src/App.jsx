@@ -10,6 +10,8 @@ import ProductReviewApp from './components/ProductReview/ProductReviewApp';
 import ManualPortal from './components/Manual/Portal/ManualPortal';
 import RequestWorkManagement from './components/RequestWork/RequestWorkManagement';
 import MigrationTool from './components/Migration/MigrationTool';
+import DataRefreshTool from './components/Migration/DataRefreshTool.jsx';
+import ScheduleManagement from './components/Schedule/ScheduleManagement';
 
 // 送信前チェックシート：public フォルダの HTML を iframe で表示
 const MailCheckSheet = () => (
@@ -33,6 +35,7 @@ function App() {
       case 'cooling-off': return <CoolingOffManagement />;
       case 'product-review': return <ProductReviewApp />;
       case 'request-work': return <RequestWorkManagement />;
+      case 'schedule': return <ScheduleManagement />;
       case 'mail-check': return <MailCheckSheet />;
       case 'manual': return <ManualManagement />;
       case 'manual-portal': return <ManualPortal />;
