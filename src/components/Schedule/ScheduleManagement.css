@@ -1,82 +1,318 @@
+/* スケジュール管理システム：完成イメージ再現用 CSS */
+
 :root {
-    --botanical-bg: #fdfdfb;
-    --botanical-green-light: #f1f8e9;
-    --botanical-green-mid: #c5e1a5;
-    --botanical-green-dark: #689f38;
+    --ux-green-dark: #689f38;
+    --ux-green-light: #f1f8e9;
+    --ux-text: #2e3b23;
+    --ux-text-muted: #78909c;
+    --ux-shadow: 0 10px 40px rgba(0,0,0,0.06);
+    --ux-border: rgba(0,0,0,0.05);
 }
 
-.schedule-container {
-    padding: 0;
-    min-height: 100vh; /* メイン領域全体を占有 */
+.schedule-ux-wrapper {
+    width: 100%;
+    height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
     background-image: url('/カスタマースケジュールバック画像.png');
     background-size: 100% 100%;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    color: var(--ux-text);
+    overflow: hidden;
 }
 
-/* ボードとしての枠組み（以前の背景画像があった部分は透明に） */
-.schedule-board-frame {
-    margin: 0 auto;
-    width: 100%;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4% 8%; /* 背景の額縁イラストの内側に収まるように調整 */
-}
-
-.schedule-header, .calendar-grid {
-    width: 100%;
-    max-width: 1100px;
-}
-
-.schedule-header {
+/* 1. Top Header */
+.ux-top-header {
+    height: 80px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(8px);
-    padding: 1rem 2rem;
-    border-radius: 1.2rem;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    padding: 0 40px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--ux-border);
 }
 
-.calendar-grid {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(4px);
-    border-radius: 1rem;
+.ux-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.ux-logo-area h1 {
+    font-size: 1.6rem;
+    font-weight: 900;
+    margin: 0;
+    color: #4a5d3d;
+}
+
+.ux-logo-area p {
+    font-size: 0.8rem;
+    margin: 0;
+    color: #788d67;
+    font-weight: 600;
+}
+
+.ux-user-area {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.ux-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 5px 15px 5px 5px;
+    border-radius: 40px;
+}
+
+.ux-user-profile img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+}
+
+.ux-user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ux-user-info .name { font-weight: 700; font-size: 0.9rem; }
+.ux-user-info .role { font-size: 0.7rem; color: var(--ux-text-muted); }
+
+/* 2. Main Layout Structure */
+.ux-main-layout {
+    flex: 1;
+    display: flex;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
-    border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-.header-left { display: flex; align-items: center; gap: 2rem; }
-.header-left h1 { font-size: 1.3rem; font-weight: 900; color: var(--botanical-green-dark); margin: 0; }
-.month-control { display: flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.5); padding: 0.4rem; border-radius: 0.8rem; }
-.month-control h2 { font-size: 1.1rem; margin: 0; min-width: 110px; text-align: center; }
-.header-right { display: flex; align-items: center; gap: 1rem; }
-.task-count { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 2rem; font-size: 0.8rem; color: var(--botanical-green-dark); font-weight: 700; background: rgba(255, 255, 255, 0.5); }
-.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); background: rgba(255, 255, 255, 0.3); }
-.weekday { padding: 0.8rem; text-align: center; font-size: 0.7rem; font-weight: 800; color: #94a3b8; }
-.days { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(110px, auto); }
-.day-cell { border-right: 1px solid rgba(0, 0, 0, 0.03); border-bottom: 1px solid rgba(0, 0, 0, 0.03); padding: 0.5rem; cursor: pointer; }
-.day-cell.today { background: rgba(240, 247, 237, 0.5); }
-.day-number { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem; }
-.task-card { padding: 4px 6px; border-radius: 5px; font-size: 0.7rem; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; }
-.task-card.completed { opacity: 0.6; }
-.task-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-.important-toggle { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.2rem; border-radius: 0.8rem; border: 1px solid #e2e8f0; background: white; cursor: pointer; color: #94a3b8; }
-.important-toggle.active { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
-.side-panel { width: 500px; height: 100%; background: white; padding: 2rem; box-shadow: -20px 0 50px rgba(0,0,0,0.1); }
-.save-btn { background: var(--botanical-green-dark); color: white; padding: 1rem; border-radius: 0.8rem; font-weight: 800; border: none; width: 100%; }
-.main-input { font-size: 1.5rem; font-weight: 700; border: none; border-bottom: 2px solid #f1f5f9; width: 100%; margin-bottom: 1rem; }
-.category-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
-.cat-btn { padding: 0.6rem; border: 2px solid transparent; border-radius: 0.5rem; cursor: pointer; background: var(--cat-bg); color: var(--cat-color); font-weight: 700; }
-.cat-btn.active { border-color: var(--cat-color); }
+/* Sidebar */
+.ux-side-nav {
+    width: 240px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.ux-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.ux-nav-item.active {
+    background: #e8f5e9;
+    color: var(--ux-green-dark);
+}
+
+.ux-badge {
+    position: absolute;
+    right: 15px;
+    background: #f48fb1;
+    color: white;
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+}
+
+.ux-category-filter {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 15px;
+    margin-top: 50px;
+}
+
+.ux-category-filter label { font-size: 0.8rem; font-weight: 800; color: #94a3b8; display: block; margin-bottom: 10px; }
+.ux-category-filter select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; margin-bottom: 20px; }
+
+.ux-dot-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 0.85rem; font-weight: 600; }
+.ux-dot-item .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+/* Content Area */
+.ux-content-area {
+    flex: 1;
+    padding: 30px 40px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.ux-board-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.ux-date-selector {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.ux-current-year { font-size: 1.8rem; font-weight: 900; }
+.ux-arrow-group { display: flex; gap: 5px; }
+.ux-arrow-group button { background: white; border: 1px solid #eee; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+.ux-today-btn { background: white; border: 1px solid #eee; padding: 6px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+.ux-view-switcher { display: flex; gap: 20px; }
+.ux-switch-group { display: flex; background: #eaeee6; padding: 4px; border-radius: 10px; }
+.ux-switch-group button { border: none; padding: 8px 15px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: transparent; display: flex; align-items: center; gap: 8px; color: #78909c; }
+.ux-switch-group button.active { background: white; color: var(--ux-text); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+.ux-add-btn {
+    background: #62a17f;
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+/* 3. Calendar Grid Layout */
+.ux-calendar-grid {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid white;
+    box-shadow: var(--ux-shadow);
+}
+
+.ux-grid-header {
+    display: grid;
+    grid-template-columns: 80px repeat(5, 1fr) 1.2fr;
+    border-bottom: 1px solid #f1f5f2;
+}
+
+.ux-header-cell {
+    padding: 15px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #94a3b8;
+}
+
+.ux-week-row {
+    display: grid;
+    grid-template-columns: 80px repeat(5, 1fr) 1.2fr;
+    min-height: 150px;
+}
+
+.ux-week-info {
+    border-right: 1px solid #f1f5f2;
+    border-bottom: 1px solid #f1f5f2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(248, 250, 247, 0.3);
+}
+
+.ux-week-info .label { font-weight: 900; font-size: 0.9rem; }
+.ux-week-info .range { font-size: 0.7rem; color: #94a3b8; }
+
+.ux-day-cell {
+    border-right: 1px solid #f1f5f2;
+    border-bottom: 1px solid #f1f5f2;
+    padding: 10px;
+    position: relative;
+    cursor: pointer;
+}
+
+.ux-day-cell:hover { background: rgba(255, 255, 255, 0.3); }
+.ux-day-cell.dimmed { opacity: 0.3; }
+
+.day-num { font-weight: 800; font-size: 1.1rem; color: #94a3b8; }
+
+/* Individual Task Card in Grid */
+.ux-task-mini {
+    background: white;
+    padding: 8px 10px;
+    border-radius: 10px;
+    margin-bottom: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    border-left: 4px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ux-task-mini .title { font-size: 0.75rem; font-weight: 700; color: #334155; }
+.ux-task-mini .footer { display: flex; justify-content: space-between; align-items: center; }
+.ux-task-mini .tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; }
+
+.ux-task-mini.is-done { opacity: 0.5; background: #fdfdfd; }
+
+.weekend-memo { background: transparent !important; box-shadow: none !important; color: #e91d63; font-weight: 800; }
+
+/* 4. Side Detail Panel */
+.ux-detail-panel {
+    width: 0;
+    background: white;
+    box-shadow: -20px 0 50px rgba(0,0,0,0.05);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.ux-detail-panel.is-open { width: 380px; }
+
+.ux-panel-header { display: flex; justify-content: space-between; padding: 30px; align-items: center; }
+.ux-panel-header h3 { margin: 0; font-size: 1.2rem; font-weight: 900; color: var(--ux-green-dark); }
+.ux-panel-header button { background: none; border: none; cursor: pointer; color: #cbd5e1; }
+
+.ux-panel-content { padding: 0 30px 30px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+
+.ux-panel-tag { display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; width: fit-content; }
+.ux-panel-title { border: none; font-size: 1.4rem; font-weight: 800; padding: 5px 0; outline: none; width: 100%; }
+
+.ux-field { display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #f1f5f9; padding: 12px 0; font-size: 0.9rem; }
+.ux-field.column { flex-direction: column; align-items: flex-start; gap: 10px; }
+.ux-field label { font-weight: 800; color: #94a3b8; display: flex; align-items: center; gap: 8px; }
+.ux-field input, .ux-field textarea { border: none; outline: none; width: 100%; font-family: inherit; }
+
+.ux-checklist { display: flex; flex-direction: column; gap: 10px; }
+.ux-check-item { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.ux-check-item.plus { color: #94a3b8; cursor: pointer; }
+
+.ux-panel-actions { margin-top: 30px; display: flex; flex-direction: column; gap: 10px; }
+.ux-save-btn { background: var(--ux-green-dark); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.ux-del-btn { background: #fff1f2; color: #e11d48; border: 1px solid #fecaca; padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+
+/* 5. Footer & Decorations */
+.ux-footer { margin-top: 30px; text-align: center; font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+
+.ux-panel-deco {
+    margin-top: auto;
+    width: 100%;
+    height: 150px;
+    background-image: url('https://www.transparenttextures.com/patterns/white-wall.png');
+    opacity: 0.1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+    .ux-week-row { grid-template-columns: 60px repeat(5, 1fr) 1.2fr; }
+    .ux-side-nav { width: 200px; }
+}

@@ -12,9 +12,8 @@ import {
     subMonths,
     parseISO,
     isValid,
-    setMonth,
-    setYear,
-    setDate
+    differenceInCalendarDays,
+    addDays
 } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { 
@@ -32,7 +31,14 @@ import {
     AlertTriangle,
     EyeOff,
     Eye,
-    FileUp
+    FileUp,
+    LayoutGrid,
+    List,
+    Settings,
+    Bell,
+    CheckSquare,
+    Paperclip,
+    ArrowRight
 } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { 
@@ -50,22 +56,23 @@ import Papa from 'papaparse';
 import './ScheduleManagement.css';
 
 const CATEGORIES = [
-    { id: 'customer', label: 'カスタマー', bg: '#FFEBEE', color: '#B71C1C' },
-    { id: 'store', label: '店舗', bg: '#FFF3E0', color: '#E65100' },
-    { id: 'autoship', label: 'オートシップ', bg: '#E8F5E9', color: '#1B5E20' },
-    { id: 'billing', label: '請求', bg: '#E3F2FD', color: '#0D47A1' },
+    { id: 'customer', label: 'カスタマー', bg: '#FFEBEE', color: '#B71C1C', dot: '#F48FB1' },
+    { id: 'store', label: '店舗', bg: '#FFF3E0', color: '#E65100', dot: '#FFB74D' },
+    { id: 'autoship', label: 'オートシップ', bg: '#E8F5E9', color: '#1B5E20', dot: '#81C784' },
+    { id: 'billing', label: '請求', bg: '#E3F2FD', color: '#0D47A1', dot: '#64B5F6' },
 ];
 
 const ScheduleManagement = () => {
-    const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1)); // 2026年4月に初期化
+    const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1));
     const [tasks, setTasks] = useState([]);
     const [selectedTask, setSelectedTask] = useState(null);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
-    const [compactCompleted, setCompactCompleted] = useState(false);
+    const [viewMode, setViewMode] = useState('month'); // month, week, list
     const [isImporting, setIsImporting] = useState(false);
 
     const [editForm, setEditForm] = useState({
-        title: '', category: 'customer', date: format(new Date(), 'yyyy-MM-dd'), isImportant: false, description: '', subtasks: []
+        title: '', category: 'customer', date: format(new Date(), 'yyyy-MM-dd'), 
+        isImportant: false, description: '', subtasks: [], memo: ''
     });
 
     useEffect(() => {
@@ -77,78 +84,12 @@ const ScheduleManagement = () => {
                 if (data.date instanceof Timestamp) taskDate = data.date.toDate();
                 else if (typeof data.date === 'string') taskDate = parseISO(data.date);
                 else taskDate = new Date();
-                if (!isValid(taskDate)) taskDate = new Date();
-                return { id: doc.id, ...data, date: taskDate };
+                return { id: doc.id, ...data, date: isValid(taskDate) ? taskDate : new Date() };
             });
             setTasks(taskList);
         });
         return () => unsubscribe();
     }, []);
-
-    // CSVインポートロジック（2026.4月分専用）
-    const importCSVData = async () => {
-        setIsImporting(true);
-        try {
-            const response = await fetch('/schedule_202604.csv');
-            const csvText = await response.text();
-            const results = Papa.parse(csvText, { header: false });
-            const data = results.data;
-
-            const newTasks = [];
-            let currentWeekDates = [null, null, null, null, null, null, null, null]; // [0, Mon, Tue, Wed, Thu, Fri, SatSun, SatSun]
-
-            for (let i = 0; i < data.length; i++) {
-                const row = data[i];
-                const firstCol = row[0] || '';
-
-                // 週の開始行
-                if (firstCol.startsWith('week')) {
-                    currentWeekDates = [null]; // リセット
-                    for (let c = 1; c <= 6; c++) {
-                        const dayVal = row[c]?.trim();
-                        if (dayVal && !isNaN(dayVal)) {
-                            currentWeekDates[c] = parseInt(dayVal);
-                        } else {
-                            currentWeekDates[c] = null;
-                        }
-                    }
-                    continue;
-                }
-
-                // カテゴリー行の処理
-                const categoryMap = { 'カスタマー': 'customer', '店舗': 'store', 'オートシップ': 'autoship', '請求': 'billing' };
-                if (categoryMap[firstCol]) {
-                    const categoryId = categoryMap[firstCol];
-                    for (let c = 1; c <= 6; c++) {
-                        const dayDate = currentWeekDates[c];
-                        const taskText = row[c]?.trim();
-                        if (dayDate && taskText) {
-                            const dateObj = new Date(2026, 3, dayDate);
-                            newTasks.push({
-                                title: taskText.split('\n')[0], // 1行目をタイトルに
-                                description: taskText,
-                                category: categoryId,
-                                date: format(dateObj, 'yyyy-MM-dd'),
-                                completed: false,
-                                isImportant: taskText.includes('⚠️') || taskText.includes('【〆切】'),
-                                created_at: Timestamp.now()
-                            });
-                        }
-                    }
-                }
-            }
-
-            // Firestoreへ保存
-            for (const t of newTasks) {
-                await addDoc(collection(db, 'schedule_tasks'), t);
-            }
-            alert(`${newTasks.length}件の予定を取り込みました。`);
-        } catch (err) {
-            console.error(err);
-            alert("インポートに失敗しました。");
-        }
-        setIsImporting(false);
-    };
 
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
@@ -156,25 +97,28 @@ const ScheduleManagement = () => {
     const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
     const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-    const openEditor = (task = null, defaultDate = null) => {
-        if (task) {
-            setSelectedTask(task);
-            setEditForm({
-                title: task.title || '', category: task.category || 'customer', date: format(task.date, 'yyyy-MM-dd'),
-                isImportant: task.isImportant || false, description: task.description || '', subtasks: task.subtasks || []
-            });
-        } else {
-            setSelectedTask(null);
-            setEditForm({
-                title: '', category: 'customer', date: defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
-                isImportant: false, description: '', subtasks: []
-            });
-        }
+    // 週ごとにグループ化（完成イメージの左列 week1... 用）
+    const weeks = [];
+    for (let i = 0; i < calendarDays.length; i += 7) {
+        weeks.push(calendarDays.slice(i, i + 7));
+    }
+
+    const openDetails = (task) => {
+        setSelectedTask(task);
+        setEditForm({
+            title: task.title || '',
+            category: task.category || 'customer',
+            date: format(task.date, 'yyyy-MM-dd'),
+            isImportant: task.isImportant || false,
+            description: task.description || '',
+            subtasks: task.subtasks || [],
+            memo: task.memo || ''
+        });
         setIsPanelOpen(true);
     };
 
     const handleSave = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         const taskData = { ...editForm, updated_at: Timestamp.now() };
         try {
             if (selectedTask) await updateDoc(doc(db, 'schedule_tasks', selectedTask.id), taskData);
@@ -200,85 +144,238 @@ const ScheduleManagement = () => {
         } catch (err) { console.error(err); }
     };
 
-    return (
-        <div className="schedule-container">
-            <div className="schedule-board-frame">
-                <header className="schedule-header">
-                    <div className="header-left">
-                        <h1>業務進捗ボード</h1>
-                        <div className="month-control">
-                            <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="icon-btn"><ChevronLeft size={16} /></button>
-                            <h2>{format(currentDate, 'yyyy年 M月', { locale: ja })}</h2>
-                            <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="icon-btn"><ChevronRight size={16} /></button>
-                        </div>
-                    </div>
-                    <div className="header-right">
-                        <button className="glass-btn secondary" onClick={importCSVData} disabled={isImporting}>
-                            <FileUp size={16} /> {isImporting ? '読込中...' : 'CSV読込(2026.4)'}
-                        </button>
-                        <button className={`icon-btn ${compactCompleted ? 'active' : ''}`} onClick={() => setCompactCompleted(!compactCompleted)}>
-                            {compactCompleted ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                        <div className="task-count">
-                            <Clock size={14} />
-                            <span>未完了: {tasks.filter(t => !t.completed).length}件</span>
-                        </div>
-                        <button className="glass-btn primary" onClick={() => openEditor()}>
-                            <Plus size={18} /> 新規業務
-                        </button>
-                    </div>
-                </header>
+    const importCSVData = async () => {
+        setIsImporting(true);
+        try {
+            const response = await fetch('/schedule_202604.csv');
+            const csvText = await response.text();
+            const results = Papa.parse(csvText, { header: false });
+            const data = results.data;
+            const newTasks = [];
+            let currentWeekDates = [null, null, null, null, null, null, null, null];
+            for (let i = 0; i < data.length; i++) {
+                const row = data[i];
+                const firstCol = row[0] || '';
+                if (firstCol.startsWith('week')) {
+                    currentWeekDates = [null];
+                    for (let c = 1; c <= 6; c++) {
+                        const dayVal = row[c]?.trim();
+                        if (dayVal && !isNaN(dayVal)) currentWeekDates[c] = parseInt(dayVal);
+                        else currentWeekDates[c] = null;
+                    }
+                    continue;
+                }
+                const categoryMap = { 'カスタマー': 'customer', '店舗': 'store', 'オートシップ': 'autoship', '請求': 'billing' };
+                if (categoryMap[firstCol]) {
+                    const categoryId = categoryMap[firstCol];
+                    for (let c = 1; c <= 6; c++) {
+                        const dayDate = currentWeekDates[c];
+                        const taskText = row[c]?.trim();
+                        if (dayDate && taskText) {
+                            newTasks.push({
+                                title: taskText.split('\n')[0],
+                                description: taskText,
+                                category: categoryId,
+                                date: format(new Date(2026, 3, dayDate), 'yyyy-MM-dd'),
+                                completed: false,
+                                isImportant: taskText.includes('⚠️') || taskText.includes('【〆切】'),
+                                created_at: Timestamp.now()
+                            });
+                        }
+                    }
+                }
+            }
+            for (const t of newTasks) await addDoc(collection(db, 'schedule_tasks'), t);
+            alert(`${newTasks.length}件取り込みました`);
+        } catch (err) { alert("失敗しました"); }
+        setIsImporting(false);
+    };
 
-                <div className="calendar-grid">
-                    <div className="weekdays">
-                        {['月', '火', '水', '木', '金', '土', '日'].map(day => <div key={day} className="weekday">{day}</div>)}
+    return (
+        <div className="schedule-ux-wrapper">
+            {/* 完成イメージの上部ヘッダー */}
+            <header className="ux-top-header">
+                <div className="ux-logo-area">
+                    <div className="ux-logo-circle"></div>
+                    <div>
+                        <h1>カスタマー業務スケジュール</h1>
+                        <p>毎日の業務を、もっとやさしく、もっと確実に。</p>
                     </div>
-                    <div className="days">
-                        {calendarDays.map((day, idx) => {
-                            const dayTasks = tasks.filter(task => isSameDay(task.date, day));
-                            const isCurrentMonth = isSameMonth(day, monthStart);
-                            return (
-                                <div key={idx} className={`day-cell ${!isCurrentMonth ? 'outside' : ''} ${isSameDay(day, new Date()) ? 'today' : ''}`}
-                                     onClick={() => openEditor(null, day)}>
-                                    <div className="day-number">{format(day, 'd')}</div>
-                                    <div className="day-tasks">
-                                        {dayTasks.map(task => (
-                                            <div key={task.id} 
-                                                 className={`task-card ${task.completed ? 'completed' : ''} ${compactCompleted && task.completed ? 'compact' : ''}`}
-                                                 style={{ backgroundColor: task.completed ? '' : (CATEGORIES.find(c => c.id === task.category)?.bg || '#eee') }}
-                                                 onClick={(e) => { e.stopPropagation(); if (!(compactCompleted && task.completed)) openEditor(task); }}>
-                                                <div className="task-main">
-                                                    <button className="check-btn" onClick={(e) => { e.stopPropagation(); toggleTask(task.id, task.completed); }}>
-                                                        {task.completed ? <CheckCircle2 size={13} color="#689f38" /> : <Circle size={13} />}
-                                                    </button>
-                                                    <span className={`task-title ${task.isImportant ? 'important' : ''}`}>{task.title}</span>
+                    <div className="ux-bird-deco"></div>
+                </div>
+                <div className="ux-user-area">
+                   <div className="ux-icon-btn"><Bell size={20} /><span className="ux-badge">3</span></div>
+                   <div className="ux-user-profile">
+                        <img src="https://ui-avatars.com/api/?name=田中+花子&background=E8F5E9&color=2E7D32" alt="Avatar" />
+                        <div className="ux-user-info">
+                            <span className="name">田中 花子</span>
+                            <span className="role">管理者</span>
+                        </div>
+                        <ChevronLeft size={16} style={{ transform: 'rotate(-90deg)' }} />
+                   </div>
+                </div>
+            </header>
+
+            <div className="ux-main-layout">
+                {/* イメージの左側ナビゲーション */}
+                <aside className="ux-side-nav">
+                    <nav className="ux-nav-menu">
+                        <div className="ux-nav-item active"><CalendarIcon size={18} /><span>カレンダー</span></div>
+                        <div className="ux-nav-item"><List size={18} /><span>タスク一覧</span></div>
+                        <div className="ux-nav-item"><LayoutGrid size={18} /><span>カテゴリ</span></div>
+                        <div className="ux-nav-item"><CheckSquare size={18} /><span>完了履歴</span></div>
+                        <div className="ux-nav-item"><Bell size={18} /><span>お知らせ</span><span className="ux-badge">2</span></div>
+                        <div className="ux-nav-item"><Settings size={18} /><span>設定</span></div>
+                    </nav>
+                    <div className="ux-category-filter">
+                        <label>表示設定</label>
+                        <select defaultValue="all">
+                            <option value="all">すべてのカテゴリ</option>
+                        </select>
+                        <div className="ux-cat-dots">
+                            {CATEGORIES.map(c => (
+                                <div key={c.id} className="ux-dot-item">
+                                    <span className="dot" style={{ background: c.dot }}></span>
+                                    <span>{c.label}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </aside>
+
+                {/* メインコンテンツ */}
+                <main className="ux-content-area">
+                    <div className="ux-board-control">
+                        <div className="ux-date-selector">
+                            <span className="ux-current-year">{format(currentDate, 'yyyy年M月', { locale: ja })}</span>
+                            <div className="ux-arrow-group">
+                                <button onClick={() => setCurrentDate(subMonths(currentDate, 1))}><ChevronLeft size={16} /></button>
+                                <button onClick={() => setCurrentDate(addMonths(currentDate, 1))}><ChevronRight size={16} /></button>
+                            </div>
+                            <button className="ux-today-btn" onClick={() => setCurrentDate(new Date(2026, 3, 1))}>今日</button>
+                        </div>
+                        <div className="ux-view-switcher">
+                            <div className="ux-switch-group">
+                                <button className={viewMode === 'month' ? 'active' : ''} onClick={() => setViewMode('month')}><CalendarIcon size={16} />月表示</button>
+                                <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}><LayoutGrid size={16} />週表示</button>
+                                <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}><List size={16} />リスト表示</button>
+                            </div>
+                            <button className="ux-add-btn" onClick={() => { setSelectedTask(null); setIsPanelOpen(true); }}>
+                                <Plus size={18} /> タスクを追加
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="ux-calendar-grid">
+                        <div className="ux-grid-header">
+                            <div className="ux-week-col"></div>
+                            {['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土日（メモ）'].map(d => <div key={d} className="ux-header-cell">{d}</div>)}
+                        </div>
+                        <div className="ux-grid-body">
+                            {weeks.map((week, wIdx) => (
+                                <div key={wIdx} className="ux-week-row">
+                                    <div className="ux-week-info">
+                                        <span className="label">week{wIdx+1}</span>
+                                        <span className="range">{format(week[0], 'M/d')}〜{format(week[4], 'M/d')}</span>
+                                    </div>
+                                    {week.slice(0, 5).map((day, dIdx) => {
+                                        const dayTasks = tasks.filter(t => isSameDay(t.date, day));
+                                        return (
+                                            <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''}`} onClick={() => { setEditForm({...editForm, date: format(day, 'yyyy-MM-dd')}); setIsPanelOpen(true); }}>
+                                                <span className="day-num">{format(day, 'd')}</span>
+                                                <div className="ux-cell-tasks">
+                                                    {dayTasks.map(t => (
+                                                        <div key={t.id} className={`ux-task-mini ${t.completed ? 'is-done' : ''}`} style={{ borderLeftColor: CATEGORIES.find(c => c.id === t.category)?.dot }} onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
+                                                            <div className="title">{t.title}</div>
+                                                            <div className="footer">
+                                                                <span className="tag" style={{ background: CATEGORIES.find(c => c.id === t.category)?.bg, color: CATEGORIES.find(c => c.id === t.category)?.color }}>{CATEGORIES.find(c => c.id === t.category)?.label}</span>
+                                                                {t.completed && <CheckCircle2 size={12} className="done-icon" />}
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                                {task.isImportant && !task.completed && <AlertCircle size={10} className="important-icon" />}
+                                            </div>
+                                        );
+                                    })}
+                                    {/* 土日まとめ列 */}
+                                    <div className="ux-day-cell weekend">
+                                        {tasks.filter(t => (isSameDay(t.date, week[5]) || isSameDay(t.date, week[6]))).map(t => (
+                                            <div key={t.id} className="ux-task-mini weekend-memo" onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
+                                                {format(t.date, 'd')}日：{t.title}
                                             </div>
                                         ))}
                                     </div>
                                 </div>
-                            );
-                        })}
+                            ))}
+                        </div>
                     </div>
-                </div>
-            </div>
-            {/* 詳細エディタ（サイドパネル）は維持 */}
-            <div className={`side-panel-overlay ${isPanelOpen ? 'open' : ''}`} onClick={() => setIsPanelOpen(false)}>
-                <div className="side-panel" onClick={e => e.stopPropagation()}>
-                    <div className="side-header">
-                        <div className="header-title"><CalendarIcon size={20} /><h3>{selectedTask ? '業務詳細' : '新規登録'}</h3></div>
-                        <button onClick={() => setIsPanelOpen(false)} className="close-btn"><X size={24} /></button>
+
+                    <footer className="ux-footer">
+                        © 2026 カスタマー業務スケジュール All Rights reserved.
+                    </footer>
+                </main>
+
+                {/* 右側詳細パネル（イメージの「タスク詳細」） */}
+                <aside className={`ux-detail-panel ${isPanelOpen ? 'is-open' : ''}`}>
+                    <div className="ux-panel-header">
+                        <h3>タスク詳細</h3>
+                        <button onClick={() => setIsPanelOpen(false)}><X size={20} /></button>
                     </div>
-                    <form onSubmit={handleSave} className="editor-form">
-                        <section className="form-section"><label>タイトル</label><input type="text" value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} required className="main-input" /></section>
-                        <section className="form-section"><label>カテゴリー</label><div className="category-selector">{CATEGORIES.map(cat => (<button key={cat.id} type="button" className={`cat-btn ${editForm.category === cat.id ? 'active' : ''}`} style={{ '--cat-bg': cat.bg, '--cat-color': cat.color }} onClick={() => setEditForm({...editForm, category: cat.id})}>{cat.label}</button>))}</div></section>
-                        <div className="form-row"><section className="form-section flex-1"><label>予定日</label><input type="date" value={editForm.date} onChange={e => setEditForm({...editForm, date: e.target.value})} required /></section><section className="form-section"><label>重要度</label><button type="button" className={`important-toggle ${editForm.isImportant ? 'active' : ''}`} onClick={() => setEditForm({...editForm, isImportant: !editForm.isImportant})}><AlertTriangle size={18} /><span>重要設定</span></button></section></div>
-                        <section className="form-section"><label>詳細</label><textarea value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} /></section>
-                        <div className="editor-actions">{selectedTask && (<button type="button" className="delete-btn" onClick={handleDelete}><Trash2 size={18} /> 削除</button>)}<button type="submit" className="save-btn"><Save size={18} /> 保存</button></div>
-                    </form>
-                </div>
+                    <div className="ux-panel-content">
+                        <span className="ux-panel-tag" style={{ background: CATEGORIES.find(c => c.id === editForm.category)?.bg, color: CATEGORIES.find(c => c.id === editForm.category)?.color }}>{CATEGORIES.find(c => c.id === editForm.category)?.label}</span>
+                        <input type="text" className="ux-panel-title" value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} placeholder="タイトルを入力" />
+                        
+                        <div className="ux-field">
+                            <label><CalendarIcon size={14} /> 予定日</label>
+                            <input type="date" value={editForm.date} onChange={e => setEditForm({...editForm, date: e.target.value})} />
+                        </div>
+                        
+                        <div className="ux-field">
+                            <label><Clock size={14} /> 繰り返し</label>
+                            <span>毎月1日</span>
+                        </div>
+
+                        <div className="ux-field column">
+                            <label>詳細</label>
+                            <textarea value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} placeholder="詳細情報を入力..." />
+                        </div>
+
+                        <div className="ux-field column">
+                            <label>チェックリスト</label>
+                            <div className="ux-checklist">
+                                <div className="ux-check-item">
+                                    <input type="checkbox" id="check-done" checked={selectedTask?.completed} onChange={() => toggleTask(selectedTask.id, selectedTask.completed)} />
+                                    <label htmlFor="check-done">完了</label>
+                                </div>
+                                <div className="ux-check-item plus">
+                                    <Plus size={14} /> <span>メモを追加</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="ux-field column">
+                            <label>メモ</label>
+                            <textarea value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} className="ux-memo-area" />
+                        </div>
+
+                        <div className="ux-field column">
+                            <label>添付ファイル</label>
+                            <div className="ux-attachment-btn">
+                                <Paperclip size={14} /> <span>ファイルを添付</span>
+                            </div>
+                        </div>
+
+                        <div className="ux-panel-actions">
+                            <button className="ux-save-btn" onClick={handleSave}><Save size={16} /> 保存</button>
+                            {selectedTask && <button className="ux-del-btn" onClick={handleDelete}>タスクを削除</button>}
+                        </div>
+                    </div>
+                    {/* イメージ下部のイラスト装飾はCSSで配置 */}
+                    <div className="ux-panel-deco"></div>
+                </aside>
             </div>
+            {/* 一時的なインポートボタン */}
+            {!tasks.length && <button onClick={importCSVData} style={{ position: 'fixed', bottom: 20, right: 20, opacity: 0.5 }}>CSVインポート</button>}
         </div>
     );
 };
