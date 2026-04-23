@@ -1,34 +1,35 @@
 :root {
     --botanical-bg: #fdfdfb;
-    --botanical-white: #ffffff;
     --botanical-green-light: #f1f8e9;
     --botanical-green-mid: #c5e1a5;
     --botanical-green-dark: #689f38;
-    --botanical-text: #2e3b23;
-    --botanical-text-muted: #78909c;
-    --botanical-shadow: 0 10px 40px rgba(0,0,0,0.04);
 }
 
 .schedule-container {
-    padding: 2rem 4rem;
+    padding: 0;
     min-height: calc(100vh - 40px);
-    /* 修正：画像を拡大させず、画面の枠内に必ず収める（歪みを防ぎつつ全体を表示） */
-    background-image: url('/カスタマースケジュールバック画像.png');
-    background-size: 100% 100%; /* 枠にぴったり合わせる */
-    background-position: top center;
-    background-repeat: no-repeat;
-    background-attachment: fixed; /* 背景を固定 */
     background-color: var(--botanical-bg);
-    color: var(--botanical-text);
+}
+
+/* スケジュールボード本体に画像を設定 */
+.schedule-board-frame {
+    margin: 0 auto;
+    width: 100vw;
+    height: calc(100vh - 40px);
+    background-image: url('/カスタマースケジュールバック画像.png');
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    padding: 4% 8%; /* 額縁との重なりを防ぐための内側余白 */
 }
 
-/* 他のスタイルは維持 */
 .schedule-header, .calendar-grid {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1100px; /* 枠の内部に収まるサイズ */
 }
 
 .schedule-header {
@@ -36,48 +37,38 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(8px);
-    padding: 1rem 2.5rem;
-    border-radius: 1.5rem;
-    box-shadow: var(--botanical-shadow);
+    background: rgba(255, 255, 255, 0.4); /* 背景が見えるよう透明度を調整 */
+    backdrop-filter: blur(4px);
+    padding: 1rem 2rem;
+    border-radius: 1.2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     border: 1px solid rgba(255, 255, 255, 0.5);
-    margin-top: 2rem; /* 上の装飾を避けるため少し下げる */
 }
 
 .calendar-grid {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(4px);
-    border-radius: 1.5rem;
+    background: rgba(255, 255, 255, 0.6); /* 背景が見えるよう透明度を調整 */
+    backdrop-filter: blur(2px);
+    border-radius: 1rem;
     overflow: hidden;
-    box-shadow: var(--botanical-shadow);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
     border: 1px solid rgba(255, 255, 255, 0.6);
-    margin-bottom: 2rem; /* 下の装飾を避ける */
 }
 
-/* 略：カード等の詳細なスタイル */
-.header-left { display: flex; align-items: center; gap: 3rem; }
-.header-left h1 { font-size: 1.4rem; font-weight: 900; color: var(--botanical-green-dark); margin: 0; }
-.month-control { display: flex; align-items: center; gap: 0.75rem; background: rgba(197, 225, 165, 0.3); padding: 0.4rem; border-radius: 0.8rem; }
-.month-control h2 { font-size: 1.1rem; margin: 0; min-width: 120px; text-align: center; }
+/* 他のスタイル */
+.header-left { display: flex; align-items: center; gap: 2rem; }
+.header-left h1 { font-size: 1.3rem; font-weight: 900; color: var(--botanical-green-dark); margin: 0; }
+.month-control { display: flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.5); padding: 0.4rem; border-radius: 0.8rem; }
+.month-control h2 { font-size: 1.1rem; margin: 0; min-width: 110px; text-align: center; }
 .header-right { display: flex; align-items: center; gap: 1rem; }
-.task-count { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 2rem; font-size: 0.85rem; color: var(--botanical-green-dark); font-weight: 700; background: rgba(232, 245, 233, 0.5); }
-.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); background: rgba(248, 250, 247, 0.5); border-bottom: 1px solid rgba(237, 242, 236, 0.5); }
-.weekday { padding: 1rem; text-align: center; font-size: 0.75rem; font-weight: 800; color: #94a3b8; }
-.days { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(130px, auto); }
-.day-cell { border-right: 1px solid rgba(0, 0, 0, 0.03); border-bottom: 1px solid rgba(0, 0, 0, 0.03); padding: 0.6rem; transition: all 0.2s; cursor: pointer; }
-.day-cell:nth-child(7n) { border-right: none; }
-.day-cell:hover { background: rgba(255, 255, 255, 0.4); }
-.day-cell.outside { opacity: 0.2; }
-.day-cell.today { background: rgba(240, 247, 237, 0.6); }
-.day-cell.today .day-number { background: var(--botanical-green-dark); color: white; border-radius: 6px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
-.day-number { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.6rem; }
-.task-card { padding: 5px 8px; border-radius: 6px; font-size: 0.75rem; margin-bottom: 3px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid rgba(0,0,0,0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-.task-card.completed { background: rgba(241, 245, 249, 0.8) !important; border-left-color: #cbd5e1; opacity: 0.6; }
-.task-card.compact { padding: 2px 5px; background: rgba(248, 250, 252, 0.8) !important; }
-.task-main { display: flex; align-items: center; gap: 5px; overflow: hidden; }
+.task-count { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 2rem; font-size: 0.8rem; color: var(--botanical-green-dark); font-weight: 700; background: rgba(255, 255, 255, 0.5); }
+.weekdays { display: grid; grid-template-columns: repeat(7, 1fr); background: rgba(255, 255, 255, 0.3); }
+.weekday { padding: 0.8rem; text-align: center; font-size: 0.7rem; font-weight: 800; color: #94a3b8; }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(110px, auto); }
+.day-cell { border-right: 1px solid rgba(0, 0, 0, 0.03); border-bottom: 1px solid rgba(0, 0, 0, 0.03); padding: 0.5rem; cursor: pointer; }
+.day-cell.today { background: rgba(240, 247, 237, 0.5); }
+.day-number { font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem; }
+.task-card { padding: 4px 6px; border-radius: 5px; font-size: 0.7rem; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; }
+.task-card.completed { opacity: 0.6; grayscale: 100%; }
 .task-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-.task-title.important { color: #cc0000; font-weight: 800; }
-.check-btn { color: #94a3b8; cursor: pointer; }
-.side-panel { width: 500px; height: 100%; background: rgba(255, 255, 255, 0.95); box-shadow: -20px 0 50px rgba(0,0,0,0.1); padding: 2.5rem; }
-.save-btn { background: var(--botanical-green-dark); box-shadow: 0 10px 20px rgba(104, 159, 56, 0.2); }
+.side-panel { width: 500px; height: 100%; background: white; padding: 2rem; box-shadow: -20px 0 50px rgba(0,0,0,0.1); }
+.save-btn { background: var(--botanical-green-dark); color: white; padding: 1rem; border-radius: 0.8rem; font-weight: 800; border: none; width: 100%; }
