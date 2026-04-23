@@ -10,10 +10,9 @@ import ProductReviewApp from './components/ProductReview/ProductReviewApp';
 import ManualPortal from './components/Manual/Portal/ManualPortal';
 import RequestWorkManagement from './components/RequestWork/RequestWorkManagement';
 import MigrationTool from './components/Migration/MigrationTool';
-import DataRefreshTool from './components/Migration/DataRefreshTool.jsx';
+import DataRefreshTool from './components/Migration/DataRefreshTool';
 import ScheduleManagement from './components/Schedule/ScheduleManagement';
 
-// 送信前チェックシート：public フォルダの HTML を iframe で表示
 const MailCheckSheet = () => (
   <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column' }}>
     <iframe
@@ -48,7 +47,6 @@ function App() {
   return (
     <div className={`app-layout theme-${activeSystem}`}>
       <Sidebar activeSystem={activeSystem} setActiveSystem={setActiveSystem} />
-
       <main className="main-content">
         {renderContent()}
       </main>
