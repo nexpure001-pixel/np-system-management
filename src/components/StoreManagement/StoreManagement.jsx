@@ -15,6 +15,8 @@ const StoreManagement = () => {
     const [sortConfig, setSortConfig] = useState({ key: 'no', direction: 'desc' });
     const [copiedCell, setCopiedCell] = useState(null); 
     const fileInputRef = useRef(null);
+    const bp50InputRef = useRef(null);
+    const [bp50Result, setBp50Result] = useState(null); // null | { ok, ng, noId }
 
     // CSVのヘッダー名 → Firestoreフィールド名 のマッピング
     const fieldMapping = {
@@ -250,6 +252,43 @@ const StoreManagement = () => {
         XLSX.writeFile(wb, `店舗管理_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
+    // 50BP照合処理
+    const handle50BPCheck = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                // CSV内の「会員ID」列を全てSetに格納（照合高速化のため）
+                const csvIds = new Set(
+                    results.data
+                        .map(row => String(row['会員ID'] || '').trim())
+                        .filter(id => id !== '')
+                );
+
+                const ok = [];   // DBにIDあり & CSVにも存在
+                const ng = [];   // DBにIDあり & CSVにない
+                const noId = []; // DBに個人会ID未登録
+
+                stores.forEach(s => {
+                    const dbId = String(s.raw?.np_seller_id || '').trim();
+                    if (!dbId) {
+                        noId.push(s);
+                    } else if (csvIds.has(dbId)) {
+                        ok.push(s);
+                    } else {
+                        ng.push(s);
+                    }
+                });
+
+                setBp50Result({ ok, ng, noId, total: stores.length, csvCount: csvIds.size });
+                if (bp50InputRef.current) bp50InputRef.current.value = '';
+            },
+            error: (err) => alert('CSVの解析に失敗しました: ' + err.message)
+        });
+    };
+
     const filteredStores = stores.filter(s => {
         const m = s.storeName?.includes(searchTerm) || s.representative?.includes(searchTerm) || s.storeId?.includes(searchTerm);
         if (!m) return false;
@@ -280,6 +319,8 @@ const StoreManagement = () => {
                 <h1>店舗管理ダッシュボード</h1>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button className="glass-btn secondary" onClick={handleExcelExport} disabled={isLoading}>📥 Excelエクスポート</button>
+                    <button className="glass-btn secondary" onClick={() => bp50InputRef.current?.click()} disabled={isLoading}>🔍 50BP照合</button>
+                    <input type="file" ref={bp50InputRef} onChange={handle50BPCheck} accept=".csv" style={{ display: 'none' }} />
                     <button className="glass-btn secondary" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>CSVインポート</button>
                     <input type="file" ref={fileInputRef} onChange={handleImportCSV} accept=".csv" style={{ display: 'none' }} />
                     <button className="glass-btn" onClick={() => { setEditingStore(null); setIsModalOpen(true); }} disabled={isLoading}>+ 新規追加</button>
@@ -377,6 +418,65 @@ const StoreManagement = () => {
                             </div>
                             <div className="modal-actions"><button type="button" className="action-btn cancel-btn" onClick={() => setIsModalOpen(false)}>閉じる</button><button type="submit" className="glass-btn">保存</button></div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* 50BP照合結果モーダル */}
+            {bp50Result && (
+                <div className="modal-overlay" onClick={() => setBp50Result(null)}>
+                    <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', width: '90%' }}>
+                        <h2>🔍 50BP照合結果</h2>
+                        <p style={{ color: '#64748b', marginBottom: '16px' }}>
+                            店舗数: {bp50Result.total}件 | CSV内ID数: {bp50Result.csvCount}件 | 
+                            <span style={{ color: '#22c55e', fontWeight: 700 }}>✅ OK: {bp50Result.ok.length}件</span> | 
+                            <span style={{ color: '#ef4444', fontWeight: 700 }}>❌ NG: {bp50Result.ng.length}件</span> | 
+                            <span style={{ color: '#94a3b8' }}>ID未登録: {bp50Result.noId.length}件</span>
+                        </p>
+                        <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                <thead>
+                                    <tr style={{ background: '#f8fafc', position: 'sticky', top: 0 }}>
+                                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>店舗名</th>
+                                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>個人会ID</th>
+                                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>販売ステータス</th>
+                                        <th style={{ padding: '10px', textAlign: 'center', borderBottom: '2px solid #e2e8f0' }}>50BP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {[...bp50Result.ng, ...bp50Result.ok, ...bp50Result.noId].map(s => {
+                                        const dbId = String(s.raw?.np_seller_id || '').trim();
+                                        const isOk = bp50Result.ok.includes(s);
+                                        const isNoId = !dbId;
+                                        return (
+                                            <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9', background: isOk ? '#f0fdf4' : isNoId ? '#f8fafc' : '#fff1f2' }}>
+                                                <td style={{ padding: '10px', fontWeight: 600 }}>{s.storeName}</td>
+                                                <td style={{ padding: '10px', fontFamily: 'monospace', color: '#64748b' }}>{dbId || '未登録'}</td>
+                                                <td style={{ padding: '10px' }}>{s.salesStatus}</td>
+                                                <td style={{ padding: '10px', textAlign: 'center', fontSize: '1.1rem' }}>
+                                                    {isNoId ? <span style={{ color: '#94a3b8' }}>–</span> : isOk ? <span style={{ color: '#22c55e', fontWeight: 700 }}>✅ OK</span> : <span style={{ color: '#ef4444', fontWeight: 700 }}>❌ NG</span>}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="modal-actions" style={{ marginTop: '20px' }}>
+                            <button className="glass-btn" onClick={() => {
+                                // 結果をExcelでダウンロード
+                                const data = [
+                                    ...bp50Result.ng.map(s => ({ '店舗名': s.storeName, '個人会ID': s.raw?.np_seller_id || '', '販売ステータス': s.salesStatus, '50BP': 'NG' })),
+                                    ...bp50Result.ok.map(s => ({ '店舗名': s.storeName, '個人会ID': s.raw?.np_seller_id || '', '販売ステータス': s.salesStatus, '50BP': 'OK' })),
+                                    ...bp50Result.noId.map(s => ({ '店舗名': s.storeName, '個人会ID': '未登録', '販売ステータス': s.salesStatus, '50BP': 'ID未登録' })),
+                                ];
+                                const ws = XLSX.utils.json_to_sheet(data);
+                                const wb = XLSX.utils.book_new();
+                                XLSX.utils.book_append_sheet(wb, ws, '50BP照合');
+                                XLSX.writeFile(wb, `50BP照合_${new Date().toISOString().split('T')[0]}.xlsx`);
+                            }}>📥 Excelで保存</button>
+                            <button className="action-btn cancel-btn" onClick={() => setBp50Result(null)}>閉じる</button>
+                        </div>
                     </div>
                 </div>
             )}
