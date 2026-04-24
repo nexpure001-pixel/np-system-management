@@ -199,9 +199,10 @@ const ScheduleManagement = () => {
                 <div className="eva-alert">
                     <div className="eva-stripes" />
                     <div className="eva-content">
-                        <Zap size={16} className="eva-icon" />
+                        <span className="eva-label">SYSTEM ALERT</span>
+                        <Zap size={20} className="eva-icon" />
                         <span className="eva-text">WARNING：重要タスクの最終取組み日時を超過しました。直ちに確認してください。</span>
-                        <span className="eva-count">[{urgentOverdueTasks.length}件]</span>
+                        <span className="eva-count">[ {urgentOverdueTasks.length}件 超過 ]</span>
                     </div>
                     <div className="eva-stripes" />
                 </div>
