@@ -616,4 +616,96 @@
     padding: 2px 4px;
 }
 
+/* ========== Phase 3: 担当者・リピート設定 ========== */
+
+/* 担当者入力エリア */
+.ux-operator-area {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    margin-bottom: 8px;
+}
+
+.ux-operator-area label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+}
+
+.ux-operator-input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #334155;
+    background: rgba(255,255,255,0.8);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.ux-operator-input:focus {
+    border-color: var(--ux-green-dark);
+}
+
+.ux-operator-input::placeholder {
+    color: #cbd5e1;
+}
+
+/* 繰り返し設定フィールド */
+.ux-repeat-field {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+}
+
+.ux-repeat-select {
+    padding: 5px 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+    background: white;
+    cursor: pointer;
+    outline: none;
+}
+
+.ux-repeat-sub {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #f0fdf4;
+    border-radius: 8px;
+    border: 1px solid #bbf7d0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #166534;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.ux-repeat-num {
+    width: 52px;
+    padding: 4px 6px;
+    border: 1px solid #86efac;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+    color: #166534;
+    background: white;
+    outline: none;
+}
+
+
 

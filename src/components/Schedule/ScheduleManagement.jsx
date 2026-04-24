@@ -96,9 +96,11 @@ const ScheduleManagement = () => {
     const [editForm, setEditForm] = useState({
         title: '', category: 'customer', date: format(new Date(), 'yyyy-MM-dd'), 
         isImportant: false, description: '', subtasks: [], memo: '',
-        isUrgent: false, urgentDeadline: ''
+        isUrgent: false, urgentDeadline: '',
+        repeatType: 'none', repeatConfig: { date: 1, weekday: 1, nth: 1 }, isRepeatTemplate: false
     });
     const [sharedMemos, setSharedMemos] = useState({});
+    const [operatorName, setOperatorName] = useState(() => localStorage.getItem('schedule_operator') || '');
 
     useEffect(() => {
         const q = query(collection(db, 'schedule_tasks'), orderBy('created_at', 'desc'));
@@ -136,6 +138,66 @@ const ScheduleManagement = () => {
         } catch (err) { console.error('メモ保存失敗', err); }
     };
 
+    // 操作ログ記録
+    const logAction = async (taskId, action, before = null, after = null) => {
+        try {
+            await addDoc(collection(db, 'task_logs'), {
+                task_id: taskId,
+                action,
+                before,
+                after,
+                operator: operatorName || '未設定',
+                operated_at: Timestamp.now()
+            });
+        } catch (err) { console.error('ログ記録失敗', err); }
+    };
+
+    // 自動リピート生成（ページ読み込み時に実行）
+    useEffect(() => {
+        if (!tasks.length) return;
+        const now = new Date();
+        const yearMonth = format(now, 'yyyy-MM');
+        const templates = tasks.filter(t => t.isRepeatTemplate && t.repeatType !== 'none');
+        templates.forEach(async (tmpl) => {
+            // 当月分がすでに生成済みかチェック
+            const alreadyExists = tasks.some(t => t.generatedFromTemplate === tmpl.id && t.generatedFor === yearMonth);
+            if (alreadyExists) return;
+            let targetDate = null;
+            const y = now.getFullYear(), m = now.getMonth();
+            if (tmpl.repeatType === 'monthly_date') {
+                const d = parseInt(tmpl.repeatConfig?.date || 1);
+                targetDate = new Date(y, m, d);
+            } else if (tmpl.repeatType === 'weekly') {
+                // 最初の対象曜日を生成
+                const wd = parseInt(tmpl.repeatConfig?.weekday ?? 1);
+                const first = new Date(y, m, 1);
+                const diff = (wd - first.getDay() + 7) % 7;
+                targetDate = new Date(y, m, 1 + diff);
+            } else if (tmpl.repeatType === 'monthly_nth') {
+                // 第N曜日
+                const wd = parseInt(tmpl.repeatConfig?.weekday ?? 1);
+                const nth = parseInt(tmpl.repeatConfig?.nth ?? 1);
+                const first = new Date(y, m, 1);
+                const diff = (wd - first.getDay() + 7) % 7;
+                targetDate = new Date(y, m, 1 + diff + (nth - 1) * 7);
+            }
+            if (!targetDate) return;
+            await addDoc(collection(db, 'schedule_tasks'), {
+                title: tmpl.title,
+                category: tmpl.category,
+                description: tmpl.description || '',
+                memo: tmpl.memo || '',
+                date: format(targetDate, 'yyyy-MM-dd'),
+                completed: false,
+                isImportant: tmpl.isImportant || false,
+                isUrgent: false,
+                generatedFromTemplate: tmpl.id,
+                generatedFor: yearMonth,
+                created_at: Timestamp.now()
+            });
+        });
+    }, [tasks.length]);
+
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
     const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -157,7 +219,10 @@ const ScheduleManagement = () => {
         setEditForm({
             title: task.title || '', category: task.category || 'customer', date: format(task.date, 'yyyy-MM-dd'),
             isImportant: task.isImportant || false, description: task.description || '', subtasks: task.subtasks || [], memo: task.memo || '',
-            isUrgent: task.isUrgent || false, urgentDeadline: task.urgentDeadline || ''
+            isUrgent: task.isUrgent || false, urgentDeadline: task.urgentDeadline || '',
+            repeatType: task.repeatType || 'none',
+            repeatConfig: task.repeatConfig || { date: 1, weekday: 1, nth: 1 },
+            isRepeatTemplate: task.isRepeatTemplate || false
         });
         setIsPanelOpen(true);
     };
@@ -166,8 +231,13 @@ const ScheduleManagement = () => {
         if (e) e.preventDefault();
         const taskData = { ...editForm, updated_at: Timestamp.now() };
         try {
-            if (selectedTask) await updateDoc(doc(db, 'schedule_tasks', selectedTask.id), taskData);
-            else await addDoc(collection(db, 'schedule_tasks'), { ...taskData, completed: false, created_at: Timestamp.now() });
+            if (selectedTask) {
+                await updateDoc(doc(db, 'schedule_tasks', selectedTask.id), taskData);
+                await logAction(selectedTask.id, 'タスク更新', { title: selectedTask.title }, { title: editForm.title });
+            } else {
+                const ref = await addDoc(collection(db, 'schedule_tasks'), { ...taskData, completed: false, created_at: Timestamp.now() });
+                await logAction(ref.id, 'タスク作成', null, { title: editForm.title });
+            }
             setIsPanelOpen(false);
         } catch (err) { alert("保存に失敗しました"); }
     };
@@ -179,13 +249,18 @@ const ScheduleManagement = () => {
             await updateDoc(doc(db, 'schedule_tasks', taskId), { 
                 completed: !currentStatus, 
                 completed_at: !currentStatus ? Timestamp.now() : null 
-            }); 
+            });
+            await logAction(taskId, !currentStatus ? '完了' : '完了解除', { completed: currentStatus }, { completed: !currentStatus });
         } catch (err) { console.error(err); }
     };
 
     const handleDelete = async () => {
         if (!selectedTask || !window.confirm("このタスクを削除しますか？")) return;
-        try { await deleteDoc(doc(db, 'schedule_tasks', selectedTask.id)); setIsPanelOpen(false); } catch (err) { console.error(err); }
+        try { 
+            await logAction(selectedTask.id, '削除', { title: selectedTask.title }, null);
+            await deleteDoc(doc(db, 'schedule_tasks', selectedTask.id)); 
+            setIsPanelOpen(false); 
+        } catch (err) { console.error(err); }
     };
 
     const importCSVData = async () => {
@@ -263,6 +338,16 @@ const ScheduleManagement = () => {
                         <div className="ux-nav-item"><Bell size={18} /><span>重要事項</span>{urgentPendingCount > 0 && <span className="ux-badge">{urgentPendingCount}</span>}</div>
                         <div className="ux-nav-item"><Settings size={18} /><span>設定</span></div>
                     </nav>
+                    <div className="ux-operator-area">
+                        <label>👤 今日の担当者</label>
+                        <input
+                            type="text"
+                            className="ux-operator-input"
+                            value={operatorName}
+                            onChange={e => { setOperatorName(e.target.value); localStorage.setItem('schedule_operator', e.target.value); }}
+                            placeholder="名前を入力..."
+                        />
+                    </div>
                     <div className="ux-category-filter">
                         <label>表示設定</label>
                         <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
@@ -379,6 +464,41 @@ const ScheduleManagement = () => {
                         <div className="ux-field column"><label>詳細</label><textarea value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} /></div>
                         <div className="ux-field column"><label>チェックリスト</label><div className="ux-checklist"><div className="ux-check-item"><input type="checkbox" id="check-done" checked={selectedTask?.completed || false} onChange={() => toggleTask(selectedTask.id, selectedTask.completed)} style={{ width: '20px', height: '20px', cursor: 'pointer' }} /><label htmlFor="check-done" style={{ fontSize: '1rem', cursor: 'pointer' }}>完了にする</label></div></div></div>
                         <div className="ux-field column"><label>メモ</label><textarea value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} className="ux-memo-area" /></div>
+
+                        {/* リピート設定 */}
+                        <div className="ux-field ux-repeat-field">
+                            <label style={{ fontWeight: 800, color: '#94a3b8', fontSize: '0.85rem' }}>🔄 繰り返し設定</label>
+                            <select value={editForm.repeatType} onChange={e => setEditForm({...editForm, repeatType: e.target.value, isRepeatTemplate: e.target.value !== 'none'})} className="ux-repeat-select">
+                                <option value="none">繰り返しなし</option>
+                                <option value="monthly_date">毎月指定日</option>
+                                <option value="monthly_nth">第N曜日</option>
+                                <option value="weekly">毎週指定曜日</option>
+                            </select>
+                            {editForm.repeatType === 'monthly_date' && (
+                                <div className="ux-repeat-sub">
+                                    <label>毎月</label>
+                                    <input type="number" min="1" max="28" value={editForm.repeatConfig.date} onChange={e => setEditForm({...editForm, repeatConfig: {...editForm.repeatConfig, date: e.target.value}})} className="ux-repeat-num" />
+                                    <label>日</label>
+                                </div>
+                            )}
+                            {editForm.repeatType === 'monthly_nth' && (
+                                <div className="ux-repeat-sub">
+                                    <label>第</label>
+                                    <input type="number" min="1" max="5" value={editForm.repeatConfig.nth} onChange={e => setEditForm({...editForm, repeatConfig: {...editForm.repeatConfig, nth: e.target.value}})} className="ux-repeat-num" />
+                                    <select value={editForm.repeatConfig.weekday} onChange={e => setEditForm({...editForm, repeatConfig: {...editForm.repeatConfig, weekday: e.target.value}})} className="ux-repeat-select">
+                                        <option value="0">日曜</option><option value="1">月曜</option><option value="2">火曜</option><option value="3">水曜</option><option value="4">木曜</option><option value="5">金曜</option>
+                                    </select>
+                                </div>
+                            )}
+                            {editForm.repeatType === 'weekly' && (
+                                <div className="ux-repeat-sub">
+                                    <label>毎週</label>
+                                    <select value={editForm.repeatConfig.weekday} onChange={e => setEditForm({...editForm, repeatConfig: {...editForm.repeatConfig, weekday: e.target.value}})} className="ux-repeat-select">
+                                        <option value="0">日曜</option><option value="1">月曜</option><option value="2">火曜</option><option value="3">水曜</option><option value="4">木曜</option><option value="5">金曜</option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
                         <div className="ux-panel-actions"><button className="ux-save-btn" onClick={handleSave}><Save size={16} /> 保存</button>{selectedTask && <button className="ux-del-btn" onClick={handleDelete}>タスクを削除</button>}</div>
                     </div>
                 </aside>
