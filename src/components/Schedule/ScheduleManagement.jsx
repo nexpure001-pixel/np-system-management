@@ -47,6 +47,7 @@ import {
     doc, 
     query, 
     orderBy,
+    setDoc,
     Timestamp 
 } from 'firebase/firestore';
 import Papa from 'papaparse';
@@ -58,6 +59,30 @@ const CATEGORIES = [
     { id: 'autoship', label: 'オートシップ', bg: '#E8F5E9', color: '#1B5E20', dot: '#81C784' },
     { id: 'billing', label: '請求', bg: '#E3F2FD', color: '#0D47A1', dot: '#64B5F6' },
 ];
+
+// 2026年 日本の祝日（天皮日・敷替休日含む）
+const HOLIDAYS_2026 = new Set([
+    '2026-01-01', // 元日
+    '2026-01-12', // 成人の日
+    '2026-02-11', // 建国記念の日
+    '2026-02-23', // 天皇誕生日
+    '2026-03-20', // 春分の日
+    '2026-04-29', // 昭和の日
+    '2026-05-03', // 憲法記念日
+    '2026-05-04', // みどりの日
+    '2026-05-05', // こどもの日
+    '2026-05-06', // 敷替休日（5/3が日曜のため）
+    '2026-07-20', // 海の日
+    '2026-08-11', // 山の日
+    '2026-09-21', // 敬老の日
+    '2026-09-22', // 国民の休日（敷替）
+    '2026-09-23', // 秋分の日
+    '2026-10-12', // スポーツの日
+    '2026-11-03', // 文化の日
+    '2026-11-23', // 勤労感謞の日
+]);
+
+const isHoliday = (date) => HOLIDAYS_2026.has(format(date, 'yyyy-MM-dd'));
 
 const ScheduleManagement = () => {
     const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1));
@@ -73,6 +98,7 @@ const ScheduleManagement = () => {
         isImportant: false, description: '', subtasks: [], memo: '',
         isUrgent: false, urgentDeadline: ''
     });
+    const [sharedMemos, setSharedMemos] = useState({});
 
     useEffect(() => {
         const q = query(collection(db, 'schedule_tasks'), orderBy('created_at', 'desc'));
@@ -93,6 +119,22 @@ const ScheduleManagement = () => {
         });
         return () => unsubscribe();
     }, [selectedTask?.id]);
+
+    useEffect(() => {
+        const unsubMemos = onSnapshot(collection(db, 'shared_memos'), (snapshot) => {
+            const memos = {};
+            snapshot.docs.forEach(d => { memos[d.id] = d.data().text || ''; });
+            setSharedMemos(memos);
+        });
+        return () => unsubMemos();
+    }, []);
+
+    const handleMemoChange = async (weekKey, text) => {
+        setSharedMemos(prev => ({ ...prev, [weekKey]: text }));
+        try {
+            await setDoc(doc(db, 'shared_memos', weekKey), { text, updated_at: Timestamp.now() });
+        } catch (err) { console.error('メモ保存失敗', err); }
+    };
 
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
@@ -266,7 +308,7 @@ const ScheduleManagement = () => {
                     <div className="ux-calendar-grid">
                         <div className="ux-grid-header">
                             <div className="ux-week-col"></div>
-                            {['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土日（メモ）'].map(d => <div key={d} className="ux-header-cell">{d}</div>)}
+                            {['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '共有メモ欄'].map(d => <div key={d} className="ux-header-cell">{d}</div>)}
                         </div>
                         <div className="ux-grid-body">
                             {weeks.map((week, wIdx) => (
@@ -277,9 +319,10 @@ const ScheduleManagement = () => {
                                     </div>
                                     {week.slice(0, 5).map((day, dIdx) => {
                                         const dayTasks = filteredTasks.filter(t => isSameDay(t.date, day));
+                                        const isHol = isHoliday(day);
                                         return (
-                                            <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''}`} onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(day, 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
-                                                <span className="day-num">{format(day, 'd')}</span>
+                                            <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''} ${isHol ? 'is-holiday' : ''}`} onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(day, 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
+                                                <span className={`day-num ${isHol ? 'holiday-num' : ''}`}>{format(day, 'd')}{isHol ? ' 🎌' : ''}</span>
                                                 <div className="ux-cell-tasks">
                                                     {dayTasks.map(t => (
                                                         <div key={t.id} className={`ux-task-mini ${t.completed ? 'is-done' : ''} ${t.isUrgent && !t.completed ? 'is-urgent' : ''}`} style={{ borderLeftColor: t.isUrgent && !t.completed ? '#ef4444' : CATEGORIES.find(c => c.id === t.category)?.dot }} onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
@@ -291,12 +334,15 @@ const ScheduleManagement = () => {
                                             </div>
                                         );
                                     })}
-                                    <div className="ux-day-cell weekend" onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(week[5], 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
-                                        {filteredTasks.filter(t => (isSameDay(t.date, week[5]) || isSameDay(t.date, week[6]))).map(t => (
-                                            <div key={t.id} className={`ux-task-mini weekend-memo ${t.completed ? 'is-done' : ''}`} onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
-                                                <div className="mini-header"><span>{format(t.date, 'd')}日：{t.title}</span><button className="mini-check-btn" onClick={(e) => { e.stopPropagation(); toggleTask(t.id, t.completed); }}>{t.completed ? <CheckCircle2 size={14} color="#689f38" /> : <div className="circle-placeholder small"></div>}</button></div>
-                                            </div>
-                                        ))}
+                                    <div className="ux-day-cell shared-memo-cell" onClick={e => e.stopPropagation()}>
+                                        <span className="memo-col-label">📝 共有メモ</span>
+                                        <textarea
+                                            className="shared-memo-textarea"
+                                            value={sharedMemos[format(week[0], 'yyyy-MM-dd')] || ''}
+                                            onChange={(e) => handleMemoChange(format(week[0], 'yyyy-MM-dd'), e.target.value)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            placeholder="休暇者・連絡事項など..."
+                                        />
                                     </div>
                                 </div>
                             ))}
