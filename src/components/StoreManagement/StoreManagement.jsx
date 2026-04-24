@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, query, getDocs, doc, setDoc, updateDoc, addDoc } from 'firebase/firestore';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 const StoreManagement = () => {
     const [stores, setStores] = useState([]);
@@ -204,9 +205,49 @@ const StoreManagement = () => {
         return 'badge neutral';
     };
 
+    // 販売ステータスのソート順（販売OKが先頭）
+    const SALES_STATUS_ORDER = { '販売OK': 0, '準備中': 1, '未申請': 2, '一時停止': 3, '退会': 4 };
+
     const handleSort = (k) => {
-        let d = 'asc'; if (sortConfig.key === k && sortConfig.direction === 'asc') d = 'desc';
-        setSortConfig({ key: k, direction: d });
+        if (sortConfig.key === k) {
+            setSortConfig({ key: k, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' });
+        } else {
+            setSortConfig({ key: k, direction: 'asc' });
+        }
+    };
+
+    const handleExcelExport = () => {
+        const exportData = filteredStores.map(s => ({
+            'No': s.no,
+            '店舗ID': s.storeId,
+            '店舗名': s.storeName,
+            '法人名': s.corporateName,
+            '代表者名': s.representative,
+            '担当者名': s.contactPerson,
+            'メールアドレス': s.email,
+            'パスワード': s.password,
+            '個人会員ID': s.raw?.np_seller_id || '',
+            '販売ステータス': s.salesStatus,
+            '区別': s.raw?.distinction || '',
+            '入金状況': s.payment,
+            '同意書': s.documents?.consent || '',
+            '登記簿': s.documents?.registry || '',
+            '住民票': s.documents?.residentCard || '',
+            '契約プラン': s.plan,
+            'プラン追加': s.raw?.plan_addition || '',
+            '申請フォーム受理日': s.dateSigned || '',
+            '入金日': s.paymentDate || '',
+            '電子データ着日': s.raw?.email_arrival_date || '',
+            '原本着日': s.raw?.original_arrival_date || '',
+            '契約締結日': s.raw?.login_info_sent_date || '',
+            '契約更新状況': s.yearlyRenewal || '',
+            '更新月': s.renewalMonth || '',
+            '備考': s.remarks || '',
+        }));
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '店舗一覧');
+        XLSX.writeFile(wb, `店舗管理_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
     const filteredStores = stores.filter(s => {
@@ -218,6 +259,12 @@ const StoreManagement = () => {
         return true;
     }).sort((a, b) => {
         const { key, direction } = sortConfig;
+        // 販売ステータスは専用の順序でソート（販売OK先頭）
+        if (key === 'salesStatus') {
+            const oA = SALES_STATUS_ORDER[a.salesStatus] ?? 9;
+            const oB = SALES_STATUS_ORDER[b.salesStatus] ?? 9;
+            return direction === 'asc' ? oA - oB : oB - oA;
+        }
         let valA = a[key] ?? ''; let valB = b[key] ?? '';
         if (key === 'no' || key === 'storeId') { 
             const nA = parseInt(String(valA).replace(/\D/g, ''), 10) || 0;
@@ -232,6 +279,7 @@ const StoreManagement = () => {
             <header className="header">
                 <h1>店舗管理ダッシュボード</h1>
                 <div style={{ display: 'flex', gap: '12px' }}>
+                    <button className="glass-btn secondary" onClick={handleExcelExport} disabled={isLoading}>📥 Excelエクスポート</button>
                     <button className="glass-btn secondary" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>CSVインポート</button>
                     <input type="file" ref={fileInputRef} onChange={handleImportCSV} accept=".csv" style={{ display: 'none' }} />
                     <button className="glass-btn" onClick={() => { setEditingStore(null); setIsModalOpen(true); }} disabled={isLoading}>+ 新規追加</button>
@@ -251,7 +299,7 @@ const StoreManagement = () => {
                     <table>
                         <thead>
                             <tr>
-                                <th onClick={() => handleSort('no')}>No.</th><th onClick={() => handleSort('storeId')}>ID</th><th>販売ステータス</th><th>店舗名</th><th>代表者</th><th>メール</th><th>パスワード</th><th>アクション</th>
+                                <th onClick={() => handleSort('no')} style={{cursor:'pointer'}}>No. {sortConfig.key==='no' ? (sortConfig.direction==='asc'?'↑':'↓') : ''}</th><th onClick={() => handleSort('storeId')} style={{cursor:'pointer'}}>ID {sortConfig.key==='storeId' ? (sortConfig.direction==='asc'?'↑':'↓') : ''}</th><th onClick={() => handleSort('salesStatus')} style={{cursor:'pointer'}}>販売ステータス {sortConfig.key==='salesStatus' ? (sortConfig.direction==='asc'?'↑':'↓') : '⇅'}</th><th>店舗名</th><th>代表者</th><th>メール</th><th>パスワード</th><th>アクション</th>
                             </tr>
                         </thead>
                         <tbody>
