@@ -15,6 +15,35 @@ const StoreManagement = () => {
     const [copiedCell, setCopiedCell] = useState(null); 
     const fileInputRef = useRef(null);
 
+    // CSVのヘッダー名 → Firestoreフィールド名 のマッピング
+    const fieldMapping = {
+        storeId: 'store_id',
+        no: 'no',
+        storeName: 'store_name',
+        corporateName: 'corporate_name',
+        representative: 'representative',
+        contactPerson: 'contact_person',
+        email: 'email',
+        password: 'password',
+        initialPlan: 'initial_plan',
+        planAddition: 'plan_addition',
+        applicationDate: 'application_date',
+        paymentDate: 'payment_date',
+        paymentStatus: 'payment_status',
+        docConsent: 'doc_consent',
+        docRegistry: 'doc_registry',
+        docResident: 'doc_resident',
+        emailArrivalDate: 'email_arrival_date',
+        originalArrivalDate: 'original_arrival_date',
+        loginInfoSentDate: 'login_info_sent_date',
+        renewalMonth: 'renewal_month',
+        yearlyRenewalLegacy: 'yearly_renewal_legacy',
+        distinction: 'distinction',
+        salesOk: 'sales_ok',
+        npSellerId: 'np_seller_id',
+        remarks: 'remarks',
+    };
+
     const mapStoreFromDB = (item) => {
         const isCompleted = (val) => val === '【両方済み】' || val === '提出済み' || val === '両方完了';
         const hasConsent = isCompleted(item.doc_consent) || item.doc_consent === '電子のみ';
@@ -74,6 +103,54 @@ const StoreManagement = () => {
     };
 
     useEffect(() => { fetchStores(); }, []);
+
+    const handleImportCSV = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsLoading(true);
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                try {
+                    const validData = results.data.filter(row => row.storeId && row.storeId !== '店舗ID');
+                    const bulkData = validData.map(row => {
+                        const mapped = {};
+                        Object.keys(fieldMapping).forEach(csvKey => {
+                            if (row[csvKey] !== undefined && row[csvKey] !== '') {
+                                mapped[fieldMapping[csvKey]] = row[csvKey];
+                            }
+                        });
+                        if (!mapped.store_id) mapped.store_id = row.storeId || Math.random().toString(36).substr(2, 9);
+                        mapped.updated_at = new Date().toISOString();
+                        return mapped;
+                    });
+                    if (bulkData.length === 0) { alert('有効なデータが見つかりませんでした。'); return; }
+                    const { writeBatch, doc: firestoreDoc } = await import('firebase/firestore');
+                    // Firestoreへバッチ書き込み（store_idをドキュメントIDとして使用）
+                    const BATCH_SIZE = 400;
+                    for (let i = 0; i < bulkData.length; i += BATCH_SIZE) {
+                        const chunk = bulkData.slice(i, i + BATCH_SIZE);
+                        const batch = writeBatch(db);
+                        chunk.forEach(record => {
+                            const docId = String(record.store_id);
+                            const ref = firestoreDoc(collection(db, 'stores'), docId);
+                            batch.set(ref, record, { merge: true });
+                        });
+                        await batch.commit();
+                    }
+                    alert(`${bulkData.length}件のデータをインポートしました。`);
+                    await fetchStores();
+                } catch (err) {
+                    alert('インポートに失敗しました: ' + err.message);
+                } finally {
+                    setIsLoading(false);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                }
+            },
+            error: (err) => { alert('CSVの解析に失敗しました: ' + err.message); setIsLoading(false); }
+        });
+    };
 
     const handleInlineSalesStatus = async (id, newStatus) => {
         try {
@@ -154,7 +231,11 @@ const StoreManagement = () => {
         <>
             <header className="header">
                 <h1>店舗管理ダッシュボード</h1>
-                <button className="glass-btn" onClick={() => { setEditingStore(null); setIsModalOpen(true); }} disabled={isLoading}>+ 新規追加</button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button className="glass-btn secondary" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>CSVインポート</button>
+                    <input type="file" ref={fileInputRef} onChange={handleImportCSV} accept=".csv" style={{ display: 'none' }} />
+                    <button className="glass-btn" onClick={() => { setEditingStore(null); setIsModalOpen(true); }} disabled={isLoading}>+ 新規追加</button>
+                </div>
             </header>
 
             <div className="stats-grid">
