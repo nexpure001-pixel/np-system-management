@@ -14,6 +14,7 @@ const StoreManagement = () => {
     const [filterMode, setFilterMode] = useState('all'); 
     const [sortConfig, setSortConfig] = useState({ key: 'no', direction: 'desc' });
     const [copiedCell, setCopiedCell] = useState(null); 
+    const [salesStatusFilter, setSalesStatusFilter] = useState('all'); // 販売ステータス絞り込み
     const fileInputRef = useRef(null);
     const bp50InputRef = useRef(null);
     const [bp50Result, setBp50Result] = useState(null); // null | { ok, ng, noId }
@@ -294,6 +295,7 @@ const StoreManagement = () => {
     const filteredStores = stores.filter(s => {
         const m = s.storeName?.includes(searchTerm) || s.representative?.includes(searchTerm) || s.storeId?.includes(searchTerm);
         if (!m) return false;
+        if (salesStatusFilter !== 'all' && s.salesStatus !== salesStatusFilter) return false;
         if (filterMode === 'document-pending') return !s.isDocComplete;
         if (filterMode === 'unpaid') return s.payment === '未入金';
         if (filterMode === 'renewal-current') return s.salesStatus === '販売OK' && parseInt(s.renewalMonth) === (new Date().getMonth() + 1);
@@ -337,7 +339,21 @@ const StoreManagement = () => {
             </div>
 
             <div className="glass-panel table-panel">
-                <div className="controls-bar"><input type="text" className="search-input" placeholder="店舗名・代表者名で検索..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+                <div className="controls-bar">
+                    <input type="text" className="search-input" placeholder="店舗名・代表者名で検索..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <select
+                        value={salesStatusFilter}
+                        onChange={(e) => setSalesStatusFilter(e.target.value)}
+                        style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer', background: 'white' }}
+                    >
+                        <option value="all">すべてのステータス ({stores.length})</option>
+                        <option value="販売OK">販売OK ({stores.filter(s => s.salesStatus === '販売OK').length})</option>
+                        <option value="準備中">準備中 ({stores.filter(s => s.salesStatus === '準備中').length})</option>
+                        <option value="未申請">未申請 ({stores.filter(s => s.salesStatus === '未申請').length})</option>
+                        <option value="一時停止">一時停止 ({stores.filter(s => s.salesStatus === '一時停止').length})</option>
+                        <option value="退会">退会 ({stores.filter(s => s.salesStatus === '退会').length})</option>
+                    </select>
+                </div>
                 <div className="table-container">
                     <table>
                         <thead>
