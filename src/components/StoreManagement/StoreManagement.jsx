@@ -106,6 +106,7 @@ const StoreManagement = () => {
             plan_addition: f.get('plan_addition'),
             application_date: f.get('application_date') || null,
             payment_date: f.get('payment_date') || null,
+            email_arrival_date: f.get('email_arrival_date') || null,
             original_arrival_date: f.get('original_arrival_date') || null,
             login_info_sent_date: f.get('login_info_sent_date') || null,
             yearly_renewal_legacy: f.get('yearly_renewal_legacy'),
@@ -208,8 +209,10 @@ const StoreManagement = () => {
                                         <div className="form-group"><label>店舗ID</label><input type="text" name="store_id" defaultValue={editingStore?.storeId || ''} /></div>
                                         <div className="form-group"><label>No</label><input type="text" name="no" defaultValue={editingStore?.no || ''} /></div>
                                         <div className="form-group"><label>店舗名</label><input type="text" name="store_name" required defaultValue={editingStore?.storeName || ''} /></div>
-                                        <div className="form-group"><label>法人名</label><input type="text" name="corporate_name" defaultValue={editingStore?.corporateName || ''} /></div>
-                                        <div className="form-group"><label>代表者名</label><input type="text" name="representative" required defaultValue={editingStore?.representative || ''} /></div>
+                                        <div className="form-grid full-width" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', gridColumn: '1 / -1' }}>
+                                            <div className="form-group"><label>法人名</label><input type="text" name="corporate_name" defaultValue={editingStore?.corporateName || ''} /></div>
+                                            <div className="form-group"><label>代表者名</label><input type="text" name="representative" required defaultValue={editingStore?.representative || ''} /></div>
+                                        </div>
                                         <div className="form-group"><label>担当者名</label><input type="text" name="contact_person" defaultValue={editingStore?.contactPerson || ''} /></div>
                                         <div className="form-group"><label>メール</label><input type="email" name="email" defaultValue={editingStore?.email || ''} /></div>
                                         <div className="form-group"><label>パスワード</label><input type="text" name="password" defaultValue={editingStore?.password || ''} /></div>
@@ -234,7 +237,8 @@ const StoreManagement = () => {
                                         <div className="form-group"><label>プラン追加</label><select name="plan_addition" defaultValue={editingStore?.raw?.plan_addition || 'なし'}><option value="なし">なし</option><option value="追加20品目">追加20品目</option></select></div>
                                         <div className="form-group"><label>申請フォーム受理日</label><input type="date" name="application_date" defaultValue={editingStore?.dateSigned?.slice(0, 10) || ''} /></div>
                                         <div className="form-group"><label>入金日</label><input type="date" name="payment_date" defaultValue={editingStore?.paymentDate?.slice(0, 10) || ''} /></div>
-                                        <div className="form-group"><label>原本着</label><input type="date" name="original_arrival_date" defaultValue={editingStore?.raw?.original_arrival_date?.slice(0, 10) || ''} /></div>
+                                        <div className="form-group"><label>原本着日</label><input type="date" name="original_arrival_date" defaultValue={editingStore?.raw?.original_arrival_date?.slice(0, 10) || ''} /></div>
+                                        <div className="form-group"><label>電子データ着日</label><input type="date" name="email_arrival_date" defaultValue={editingStore?.raw?.email_arrival_date?.slice(0, 10) || ''} /></div>
                                         <div className="form-group"><label>契約締結日</label><input type="date" name="login_info_sent_date" defaultValue={editingStore?.raw?.login_info_sent_date?.slice(0, 10) || ''} /></div>
                                         <div className="form-group"><label>更新状況</label><select name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''}><option value="">未設定</option><option value="2025年支払済">2025年支払済</option><option value="2026年支払済">2026年支払済</option></select></div>
                                         <div className="form-group"><label>更新月</label><select name="renewal_month" defaultValue={editingStore?.raw?.renewal_month || ''}><option value="">未設定</option><option value="更新なし">更新なし</option>{[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{i+1}月</option>)}</select></div>
