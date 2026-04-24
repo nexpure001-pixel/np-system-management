@@ -11,9 +11,9 @@ const StoreManagement = () => {
     const [editingStore, setEditingStore] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [filterMode, setFilterMode] = useState('all'); 
+    const [filterMode, setFilterMode] = useState('all');
     const [sortConfig, setSortConfig] = useState({ key: 'no', direction: 'desc' });
-    const [copiedCell, setCopiedCell] = useState(null); 
+    const [copiedCell, setCopiedCell] = useState(null);
     const [salesStatusFilter, setSalesStatusFilter] = useState('all'); // 販売ステータス絞り込み
     const fileInputRef = useRef(null);
     const bp50InputRef = useRef(null);
@@ -58,10 +58,10 @@ const StoreManagement = () => {
         const dist = item.distinction;
         const isSpecial = dist?.includes('特別');
         const isFounding = dist === 'FD店舗' || item.initial_plan?.includes('ファウンディング') || item.initial_plan?.includes('FD');
-        
+
         let classification = '通常店舗';
-        if (dist === '通常' || dist === '通常店舗') { classification = '通常店舗'; } 
-        else if (isSpecial) { classification = '特別店舗'; } 
+        if (dist === '通常' || dist === '通常店舗') { classification = '通常店舗'; }
+        else if (isSpecial) { classification = '特別店舗'; }
         else if (isFounding) { classification = 'FD店舗'; }
 
         let pStatus = item.payment_status;
@@ -309,7 +309,7 @@ const StoreManagement = () => {
             return direction === 'asc' ? oA - oB : oB - oA;
         }
         let valA = a[key] ?? ''; let valB = b[key] ?? '';
-        if (key === 'no' || key === 'storeId') { 
+        if (key === 'no' || key === 'storeId') {
             const nA = parseInt(String(valA).replace(/\D/g, ''), 10) || 0;
             const nB = parseInt(String(valB).replace(/\D/g, ''), 10) || 0;
             return direction === 'asc' ? nA - nB : nB - nA;
@@ -340,7 +340,7 @@ const StoreManagement = () => {
 
             <div className="glass-panel table-panel">
                 <div className="controls-bar">
-                    <input type="text" className="search-input" placeholder="店舗名・代表者名で検索..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ minWidth: '320px', flex: 1 }} />
+                    <input type="text" className="search-input" placeholder="店舗名・代表者名で検索..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ minWidth: '650px', flex: 1 }} />
                     <select
                         value={salesStatusFilter}
                         onChange={(e) => setSalesStatusFilter(e.target.value)}
@@ -358,12 +358,12 @@ const StoreManagement = () => {
                     <table>
                         <thead>
                             <tr>
-                                <th onClick={() => handleSort('no')} style={{cursor:'pointer'}}>No. {sortConfig.key==='no' ? (sortConfig.direction==='asc'?'↑':'↓') : ''}</th><th onClick={() => handleSort('storeId')} style={{cursor:'pointer'}}>ID {sortConfig.key==='storeId' ? (sortConfig.direction==='asc'?'↑':'↓') : ''}</th><th onClick={() => handleSort('salesStatus')} style={{cursor:'pointer'}}>販売ステータス {sortConfig.key==='salesStatus' ? (sortConfig.direction==='asc'?'↑':'↓') : '⇅'}</th><th>店舗名</th><th>代表者</th><th>メール</th><th>パスワード</th><th>アクション</th>
+                                <th onClick={() => handleSort('no')} style={{ cursor: 'pointer' }}>No. {sortConfig.key === 'no' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th><th onClick={() => handleSort('storeId')} style={{ cursor: 'pointer' }}>ID {sortConfig.key === 'storeId' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</th><th onClick={() => handleSort('salesStatus')} style={{ cursor: 'pointer' }}>販売ステータス {sortConfig.key === 'salesStatus' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</th><th>店舗名</th><th>代表者</th><th>メール</th><th>パスワード</th><th>アクション</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredStores.map(s => {
-                                const handleCopy = (t,f) => { if (!t) return; navigator.clipboard.writeText(t).then(() => { setCopiedCell(`${s.id}-${f}`); setTimeout(() => setCopiedCell(null), 1500); }); };
+                                const handleCopy = (t, f) => { if (!t) return; navigator.clipboard.writeText(t).then(() => { setCopiedCell(`${s.id}-${f}`); setTimeout(() => setCopiedCell(null), 1500); }); };
                                 return (
                                     <tr key={s.id}>
                                         <td>{s.no}</td><td>{s.storeId}</td>
@@ -429,7 +429,7 @@ const StoreManagement = () => {
                                         <div className="form-group"><label>電子データ着日</label><input type="date" name="email_arrival_date" defaultValue={editingStore?.raw?.email_arrival_date?.slice(0, 10) || ''} /></div>
                                         <div className="form-group"><label>契約締結日</label><input type="date" name="login_info_sent_date" defaultValue={editingStore?.raw?.login_info_sent_date?.slice(0, 10) || ''} /></div>
                                         <div className="form-group"><label>更新状況</label><select name="yearly_renewal_legacy" defaultValue={editingStore?.yearly_renewal_legacy || ''}><option value="">未設定</option><option value="2025年支払済">2025年支払済</option><option value="2026年支払済">2026年支払済</option></select></div>
-                                        <div className="form-group"><label>更新月</label><select name="renewal_month" defaultValue={editingStore?.raw?.renewal_month || ''}><option value="">未設定</option><option value="更新なし">更新なし</option>{[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{i+1}月</option>)}</select></div>
+                                        <div className="form-group"><label>更新月</label><select name="renewal_month" defaultValue={editingStore?.raw?.renewal_month || ''}><option value="">未設定</option><option value="更新なし">更新なし</option>{[...Array(12)].map((_, i) => <option key={i + 1} value={i + 1}>{i + 1}月</option>)}</select></div>
                                     </div>
                                 </section>
                                 <section><textarea name="remarks" placeholder="備考" defaultValue={editingStore?.remarks || ''} className="w-full h-24 p-2 mt-4 glass-panel"></textarea></section>
@@ -446,9 +446,9 @@ const StoreManagement = () => {
                     <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', width: '90%' }}>
                         <h2>🔍 50BP照合結果</h2>
                         <p style={{ color: '#64748b', marginBottom: '16px' }}>
-                            照合対象（販売OK & ID登録済）: {bp50Result.ok.length + bp50Result.ng.length}件 | CSV内ID数: {bp50Result.csvCount}件 | 
-                            <span style={{ color: '#22c55e', fontWeight: 700 }}> ✅ OK: {bp50Result.ok.length}件</span> | 
-                            <span style={{ color: '#ef4444', fontWeight: 700 }}> ❌ NG: {bp50Result.ng.length}件</span> | 
+                            照合対象（販売OK & ID登録済）: {bp50Result.ok.length + bp50Result.ng.length}件 | CSV内ID数: {bp50Result.csvCount}件 |
+                            <span style={{ color: '#22c55e', fontWeight: 700 }}> ✅ OK: {bp50Result.ok.length}件</span> |
+                            <span style={{ color: '#ef4444', fontWeight: 700 }}> ❌ NG: {bp50Result.ng.length}件</span> |
                             <span style={{ color: '#94a3b8' }}> 対象外: {bp50Result.excluded.length}件</span>
                         </p>
                         <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
