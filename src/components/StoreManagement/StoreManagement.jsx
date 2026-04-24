@@ -340,7 +340,7 @@ const StoreManagement = () => {
 
             <div className="glass-panel table-panel">
                 <div className="controls-bar">
-                    <input type="text" className="search-input" placeholder="店舗名・代表者名で検索..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    <input type="text" className="search-input" placeholder="店舗名・代表者名で検索..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ minWidth: '320px', flex: 1 }} />
                     <select
                         value={salesStatusFilter}
                         onChange={(e) => setSalesStatusFilter(e.target.value)}
