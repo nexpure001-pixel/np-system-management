@@ -260,21 +260,23 @@ const StoreManagement = () => {
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
-                // CSV内の「会員ID」列を全てSetに格納（照合高速化のため）
                 const csvIds = new Set(
                     results.data
                         .map(row => String(row['会員ID'] || '').trim())
                         .filter(id => id !== '')
                 );
 
-                const ok = [];   // DBにIDあり & CSVにも存在
-                const ng = [];   // DBにIDあり & CSVにない
-                const noId = []; // DBに個人会ID未登録
+                const ok = [];
+                const ng = [];
+                const excluded = [];
 
                 stores.forEach(s => {
                     const dbId = String(s.raw?.np_seller_id || '').trim();
-                    if (!dbId) {
-                        noId.push(s);
+                    const isSalesOk = s.salesStatus === '販売OK';
+
+                    // 対象条件：個人会員IDあり & 販売OK
+                    if (!dbId || !isSalesOk) {
+                        excluded.push({ store: s, reason: !dbId ? 'ID未登録' : `販売ステータス:${s.salesStatus}` });
                     } else if (csvIds.has(dbId)) {
                         ok.push(s);
                     } else {
@@ -282,7 +284,7 @@ const StoreManagement = () => {
                     }
                 });
 
-                setBp50Result({ ok, ng, noId, total: stores.length, csvCount: csvIds.size });
+                setBp50Result({ ok, ng, excluded, total: stores.length, csvCount: csvIds.size });
                 if (bp50InputRef.current) bp50InputRef.current.value = '';
             },
             error: (err) => alert('CSVの解析に失敗しました: ' + err.message)
@@ -428,37 +430,47 @@ const StoreManagement = () => {
                     <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '800px', width: '90%' }}>
                         <h2>🔍 50BP照合結果</h2>
                         <p style={{ color: '#64748b', marginBottom: '16px' }}>
-                            店舗数: {bp50Result.total}件 | CSV内ID数: {bp50Result.csvCount}件 | 
-                            <span style={{ color: '#22c55e', fontWeight: 700 }}>✅ OK: {bp50Result.ok.length}件</span> | 
-                            <span style={{ color: '#ef4444', fontWeight: 700 }}>❌ NG: {bp50Result.ng.length}件</span> | 
-                            <span style={{ color: '#94a3b8' }}>ID未登録: {bp50Result.noId.length}件</span>
+                            照合対象（販売OK & ID登録済）: {bp50Result.ok.length + bp50Result.ng.length}件 | CSV内ID数: {bp50Result.csvCount}件 | 
+                            <span style={{ color: '#22c55e', fontWeight: 700 }}> ✅ OK: {bp50Result.ok.length}件</span> | 
+                            <span style={{ color: '#ef4444', fontWeight: 700 }}> ❌ NG: {bp50Result.ng.length}件</span> | 
+                            <span style={{ color: '#94a3b8' }}> 対象外: {bp50Result.excluded.length}件</span>
                         </p>
                         <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                                 <thead>
                                     <tr style={{ background: '#f8fafc', position: 'sticky', top: 0 }}>
                                         <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>店舗名</th>
-                                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>個人会ID</th>
+                                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>個人会員ID</th>
                                         <th style={{ padding: '10px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' }}>販売ステータス</th>
                                         <th style={{ padding: '10px', textAlign: 'center', borderBottom: '2px solid #e2e8f0' }}>50BP</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {[...bp50Result.ng, ...bp50Result.ok, ...bp50Result.noId].map(s => {
-                                        const dbId = String(s.raw?.np_seller_id || '').trim();
-                                        const isOk = bp50Result.ok.includes(s);
-                                        const isNoId = !dbId;
-                                        return (
-                                            <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9', background: isOk ? '#f0fdf4' : isNoId ? '#f8fafc' : '#fff1f2' }}>
-                                                <td style={{ padding: '10px', fontWeight: 600 }}>{s.storeName}</td>
-                                                <td style={{ padding: '10px', fontFamily: 'monospace', color: '#64748b' }}>{dbId || '未登録'}</td>
-                                                <td style={{ padding: '10px' }}>{s.salesStatus}</td>
-                                                <td style={{ padding: '10px', textAlign: 'center', fontSize: '1.1rem' }}>
-                                                    {isNoId ? <span style={{ color: '#94a3b8' }}>–</span> : isOk ? <span style={{ color: '#22c55e', fontWeight: 700 }}>✅ OK</span> : <span style={{ color: '#ef4444', fontWeight: 700 }}>❌ NG</span>}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                    {/* NG → OK → 対象外 の順で表示 */}
+                                    {bp50Result.ng.map(s => (
+                                        <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9', background: '#fff1f2' }}>
+                                            <td style={{ padding: '10px', fontWeight: 600 }}>{s.storeName}</td>
+                                            <td style={{ padding: '10px', fontFamily: 'monospace', color: '#64748b' }}>{s.raw?.np_seller_id || ''}</td>
+                                            <td style={{ padding: '10px' }}>{s.salesStatus}</td>
+                                            <td style={{ padding: '10px', textAlign: 'center', fontSize: '1.1rem' }}><span style={{ color: '#ef4444', fontWeight: 700 }}>❌ NG</span></td>
+                                        </tr>
+                                    ))}
+                                    {bp50Result.ok.map(s => (
+                                        <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9', background: '#f0fdf4' }}>
+                                            <td style={{ padding: '10px', fontWeight: 600 }}>{s.storeName}</td>
+                                            <td style={{ padding: '10px', fontFamily: 'monospace', color: '#64748b' }}>{s.raw?.np_seller_id || ''}</td>
+                                            <td style={{ padding: '10px' }}>{s.salesStatus}</td>
+                                            <td style={{ padding: '10px', textAlign: 'center', fontSize: '1.1rem' }}><span style={{ color: '#22c55e', fontWeight: 700 }}>✅ OK</span></td>
+                                        </tr>
+                                    ))}
+                                    {bp50Result.excluded.map(({ store: s, reason }) => (
+                                        <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9', background: '#f8fafc', opacity: 0.6 }}>
+                                            <td style={{ padding: '10px', fontWeight: 600 }}>{s.storeName}</td>
+                                            <td style={{ padding: '10px', fontFamily: 'monospace', color: '#94a3b8' }}>{s.raw?.np_seller_id || '未登録'}</td>
+                                            <td style={{ padding: '10px', color: '#94a3b8' }}>{s.salesStatus}</td>
+                                            <td style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>対象外 ({reason})</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
