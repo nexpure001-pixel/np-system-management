@@ -34,7 +34,8 @@ import {
     Settings,
     Bell,
     CheckSquare,
-    Paperclip
+    Paperclip,
+    Zap
 } from 'lucide-react';
 import { db } from '../../lib/firebase';
 import { 
@@ -69,7 +70,8 @@ const ScheduleManagement = () => {
 
     const [editForm, setEditForm] = useState({
         title: '', category: 'customer', date: format(new Date(), 'yyyy-MM-dd'), 
-        isImportant: false, description: '', subtasks: [], memo: ''
+        isImportant: false, description: '', subtasks: [], memo: '',
+        isUrgent: false, urgentDeadline: ''
     });
 
     useEffect(() => {
@@ -103,11 +105,17 @@ const ScheduleManagement = () => {
 
     const filteredTasks = tasks.filter(t => filterCategory === 'all' || t.category === filterCategory);
 
+    // 緊急アラート・バッジ用
+    const now = new Date();
+    const urgentOverdueTasks = tasks.filter(t => t.isUrgent && !t.completed && t.urgentDeadline && new Date(t.urgentDeadline) < now);
+    const urgentPendingCount = tasks.filter(t => t.isUrgent && !t.completed).length;
+
     const openDetails = (task) => {
         setSelectedTask(task);
         setEditForm({
             title: task.title || '', category: task.category || 'customer', date: format(task.date, 'yyyy-MM-dd'),
-            isImportant: task.isImportant || false, description: task.description || '', subtasks: task.subtasks || [], memo: task.memo || ''
+            isImportant: task.isImportant || false, description: task.description || '', subtasks: task.subtasks || [], memo: task.memo || '',
+            isUrgent: task.isUrgent || false, urgentDeadline: task.urgentDeadline || ''
         });
         setIsPanelOpen(true);
     };
@@ -187,6 +195,17 @@ const ScheduleManagement = () => {
 
     return (
         <div className="schedule-ux-wrapper">
+            {urgentOverdueTasks.length > 0 && (
+                <div className="eva-alert">
+                    <div className="eva-stripes" />
+                    <div className="eva-content">
+                        <Zap size={16} className="eva-icon" />
+                        <span className="eva-text">WARNING：重要タスクの最終取組み日時を超過しました。直ちに確認してください。</span>
+                        <span className="eva-count">[{urgentOverdueTasks.length}件]</span>
+                    </div>
+                    <div className="eva-stripes" />
+                </div>
+            )}
             <header className="ux-top-header">
                 <div className="ux-logo-area"><div className="ux-logo-circle"></div><div><h1>カスタマー業務スケジュール</h1><p>毎日の業務を、もっとやさしく、もっと確実に。</p></div></div>
             </header>
@@ -198,7 +217,7 @@ const ScheduleManagement = () => {
                         <div className="ux-nav-item"><List size={18} /><span>タスク一覧</span></div>
                         <div className="ux-nav-item"><LayoutGrid size={18} /><span>カテゴリ</span></div>
                         <div className="ux-nav-item"><CheckSquare size={18} /><span>完了履歴</span></div>
-                        <div className="ux-nav-item"><Bell size={18} /><span>お知らせ</span><span className="ux-badge">2</span></div>
+                        <div className="ux-nav-item"><Bell size={18} /><span>重要事項</span>{urgentPendingCount > 0 && <span className="ux-badge">{urgentPendingCount}</span>}</div>
                         <div className="ux-nav-item"><Settings size={18} /><span>設定</span></div>
                     </nav>
                     <div className="ux-category-filter">
@@ -262,7 +281,7 @@ const ScheduleManagement = () => {
                                                 <span className="day-num">{format(day, 'd')}</span>
                                                 <div className="ux-cell-tasks">
                                                     {dayTasks.map(t => (
-                                                        <div key={t.id} className={`ux-task-mini ${t.completed ? 'is-done' : ''}`} style={{ borderLeftColor: CATEGORIES.find(c => c.id === t.category)?.dot }} onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
+                                                        <div key={t.id} className={`ux-task-mini ${t.completed ? 'is-done' : ''} ${t.isUrgent && !t.completed ? 'is-urgent' : ''}`} style={{ borderLeftColor: t.isUrgent && !t.completed ? '#ef4444' : CATEGORIES.find(c => c.id === t.category)?.dot }} onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
                                                             <div className="mini-header"><div className="title">{t.title}</div><button className="mini-check-btn" onClick={(e) => { e.stopPropagation(); toggleTask(t.id, t.completed); }}>{t.completed ? <CheckCircle2 size={16} color="#689f38" /> : <div className="circle-placeholder"></div>}</button></div>
                                                             <div className="footer"><span className="tag" style={{ background: CATEGORIES.find(c => c.id === t.category)?.bg, color: CATEGORIES.find(c => c.id === t.category)?.color }}>{CATEGORIES.find(c => c.id === t.category)?.label}</span></div>
                                                         </div>
@@ -299,6 +318,17 @@ const ScheduleManagement = () => {
                         </div>
                         <input type="text" className="ux-panel-title" value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} placeholder="タイトルを入力" />
                         <div className="ux-field"><label><CalendarIcon size={14} /> 予定日</label><input type="date" value={editForm.date} onChange={e => setEditForm({...editForm, date: e.target.value})} /></div>
+                        <div className="ux-field ux-urgent-field">
+                            <button type="button" className={`ux-urgent-btn ${editForm.isUrgent ? 'active' : ''}`} onClick={() => setEditForm({...editForm, isUrgent: !editForm.isUrgent})}>
+                                <Zap size={14} /> {editForm.isUrgent ? '🔴 重要設定中' : '重要！に設定'}
+                            </button>
+                            {editForm.isUrgent && (
+                                <div className="ux-deadline-picker">
+                                    <label>最終取組み日時</label>
+                                    <input type="datetime-local" value={editForm.urgentDeadline || ''} onChange={e => setEditForm({...editForm, urgentDeadline: e.target.value})} />
+                                </div>
+                            )}
+                        </div>
                         <div className="ux-field column"><label>詳細</label><textarea value={editForm.description} onChange={e => setEditForm({...editForm, description: e.target.value})} /></div>
                         <div className="ux-field column"><label>チェックリスト</label><div className="ux-checklist"><div className="ux-check-item"><input type="checkbox" id="check-done" checked={selectedTask?.completed || false} onChange={() => toggleTask(selectedTask.id, selectedTask.completed)} style={{ width: '20px', height: '20px', cursor: 'pointer' }} /><label htmlFor="check-done" style={{ fontSize: '1rem', cursor: 'pointer' }}>完了にする</label></div></div></div>
                         <div className="ux-field column"><label>メモ</label><textarea value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} className="ux-memo-area" /></div>
