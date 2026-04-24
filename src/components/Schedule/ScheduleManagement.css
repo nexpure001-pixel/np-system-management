@@ -707,5 +707,41 @@
     outline: none;
 }
 
+/* 担当者入力（タスク詳細パネル） */
+.ux-assignee-input {
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+    flex: 1;
+    padding: 2px 0;
+}
+
+.ux-assignee-input::placeholder {
+    color: #cbd5e1;
+    font-weight: 400;
+}
+
+/* カレンダーカード上の担当者バッジ */
+.assignee-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #6366f1;
+    background: #eef2ff;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+
 
 

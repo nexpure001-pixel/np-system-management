@@ -97,6 +97,7 @@ const ScheduleManagement = () => {
         title: '', category: 'customer', date: format(new Date(), 'yyyy-MM-dd'), 
         isImportant: false, description: '', subtasks: [], memo: '',
         isUrgent: false, urgentDeadline: '',
+        assignee: '',
         repeatType: 'none', repeatConfig: { date: 1, weekday: 1, nth: 1 }, isRepeatTemplate: false
     });
     const [sharedMemos, setSharedMemos] = useState({});
@@ -220,6 +221,7 @@ const ScheduleManagement = () => {
             title: task.title || '', category: task.category || 'customer', date: format(task.date, 'yyyy-MM-dd'),
             isImportant: task.isImportant || false, description: task.description || '', subtasks: task.subtasks || [], memo: task.memo || '',
             isUrgent: task.isUrgent || false, urgentDeadline: task.urgentDeadline || '',
+            assignee: task.assignee || '',
             repeatType: task.repeatType || 'none',
             repeatConfig: task.repeatConfig || { date: 1, weekday: 1, nth: 1 },
             isRepeatTemplate: task.isRepeatTemplate || false
@@ -412,7 +414,10 @@ const ScheduleManagement = () => {
                                                     {dayTasks.map(t => (
                                                         <div key={t.id} className={`ux-task-mini ${t.completed ? 'is-done' : ''} ${t.isUrgent && !t.completed ? 'is-urgent' : ''}`} style={{ borderLeftColor: t.isUrgent && !t.completed ? '#ef4444' : CATEGORIES.find(c => c.id === t.category)?.dot }} onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
                                                             <div className="mini-header"><div className="title">{t.title}</div><button className="mini-check-btn" onClick={(e) => { e.stopPropagation(); toggleTask(t.id, t.completed); }}>{t.completed ? <CheckCircle2 size={16} color="#689f38" /> : <div className="circle-placeholder"></div>}</button></div>
-                                                            <div className="footer"><span className="tag" style={{ background: CATEGORIES.find(c => c.id === t.category)?.bg, color: CATEGORIES.find(c => c.id === t.category)?.color }}>{CATEGORIES.find(c => c.id === t.category)?.label}</span></div>
+                                                            <div className="footer">
+                                                                <span className="tag" style={{ background: CATEGORIES.find(c => c.id === t.category)?.bg, color: CATEGORIES.find(c => c.id === t.category)?.color }}>{CATEGORIES.find(c => c.id === t.category)?.label}</span>
+                                                                {t.assignee && <span className="assignee-badge">👤 {t.assignee}</span>}
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -449,6 +454,7 @@ const ScheduleManagement = () => {
                             ))}
                         </div>
                         <input type="text" className="ux-panel-title" value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} placeholder="タイトルを入力" />
+                        <div className="ux-field"><label>👤 担当者</label><input type="text" className="ux-assignee-input" value={editForm.assignee} onChange={e => setEditForm({...editForm, assignee: e.target.value})} placeholder="担当者名を入力..." /></div>
                         <div className="ux-field"><label><CalendarIcon size={14} /> 予定日</label><input type="date" value={editForm.date} onChange={e => setEditForm({...editForm, date: e.target.value})} /></div>
                         <div className="ux-field ux-urgent-field">
                             <button type="button" className={`ux-urgent-btn ${editForm.isUrgent ? 'active' : ''}`} onClick={() => setEditForm({...editForm, isUrgent: !editForm.isUrgent})}>
