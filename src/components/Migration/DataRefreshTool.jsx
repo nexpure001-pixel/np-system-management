@@ -79,10 +79,8 @@ export default function DataRefreshTool() {
         initial_plan: smartMap('契約プラン', 'initial_plan'),
         plan_addition: smartMap('プラン追加', 'plan_addition'),
         application_date: smartMapDate('申請フォーム受理日', 'application_date'),
+        login_info_sent_date: smartMapDate('契約締結日（ログイン情報送付日）', 'login_info_sent_date'),
         payment_date: smartMapDate('入金日', 'payment_date'),
-        email_arrival_date: smartMapDate('電子データ着日', 'email_arrival_date'),
-        original_arrival_date: smartMapDate('原本着日', 'original_arrival_date'),
-        login_info_sent_date: smartMapDate('契約日（ログイン情報送付日）', 'login_info_sent_date'),
         yearly_renewal_legacy: smartMap('契約更新状況', 'yearly_renewal_legacy'),
         renewal_month: smartMap('更新月', 'renewal_month'),
         remarks: smartMap('備考', 'remarks'),
@@ -104,7 +102,7 @@ export default function DataRefreshTool() {
             </div>
             {status === 'idle' && (
               <label className="flex items-center gap-2 cursor-pointer bg-white/20 p-2 rounded-lg">
-                <input type="checkbox" checked={isDestructive} onChange={(e) => setIsDestructive(e.target.checked)}/>
+                <input type="checkbox" checked={isDestructive} onChange={(e) => setIsDestructive(e.target.checked)} />
                 <span className="text-sm font-bold">全削除モード</span>
               </label>
             )}

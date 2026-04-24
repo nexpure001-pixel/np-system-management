@@ -486,7 +486,7 @@ const PaymentManagement = () => {
                 touroku_jouhou: '',
                 rank_up_bikou: '',
                 soshikizu_kakunin: false,
-                chuumonbi: '',
+                chuumonbi: new Date().toISOString().split('T')[0],
                 shimei: '',
                 nyuukin_kingaku: '',
                 henkin_taishou: false,
