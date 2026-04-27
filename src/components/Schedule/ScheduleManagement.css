@@ -391,14 +391,13 @@
 
 .eva-stripes {
     flex-shrink: 0;
-    width: 52px;
+    width: 60px;
     height: 100%;
+    background: 
+        radial-gradient(circle at 50% 50%, rgba(255, 85, 0, 0.5) 0%, transparent 70%),
+        repeating-linear-gradient( 30deg, transparent, transparent 10px, rgba(255, 85, 0, 0.6) 10px, rgba(255, 85, 0, 0.6) 11px),
+        repeating-linear-gradient(-30deg, transparent, transparent 10px, rgba(255, 85, 0, 0.6) 10px, rgba(255, 85, 0, 0.6) 11px);
     background-color: #1a0000;
-    background-image:
-        radial-gradient(circle, #ff5500 2px, transparent 2px),
-        radial-gradient(circle, #ff3300 1.5px, transparent 1.5px);
-    background-size: 12px 14px, 12px 14px;
-    background-position: 0 0, 6px 7px;
     opacity: 0.9;
 }
 
@@ -566,17 +565,6 @@
 .day-num.holiday-num {
     color: #dc2626 !important;
     font-weight: 800;
-}
-
-/* 土日セル：グレー表示 */
-.ux-day-cell.is-weekend {
-    background: rgba(200, 210, 220, 0.18) !important;
-}
-
-/* 土日の日付番号：青グレー */
-.day-num.weekend-num {
-    color: #6b7280;
-    font-weight: 700;
 }
 
 /* 共有メモ欄セル */
