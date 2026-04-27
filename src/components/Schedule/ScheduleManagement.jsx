@@ -163,38 +163,45 @@ const ScheduleManagement = () => {
             // 当月分がすでに生成済みかチェック
             const alreadyExists = tasks.some(t => t.generatedFromTemplate === tmpl.id && t.generatedFor === yearMonth);
             if (alreadyExists) return;
-            let targetDate = null;
+            let targetDates = [];
             const y = now.getFullYear(), m = now.getMonth();
             if (tmpl.repeatType === 'monthly_date') {
                 const d = parseInt(tmpl.repeatConfig?.date || 1);
-                targetDate = new Date(y, m, d);
+                targetDates.push(new Date(y, m, d));
             } else if (tmpl.repeatType === 'weekly') {
-                // 最初の対象曜日を生成
+                // 対象曜日をその月すべて生成
                 const wd = parseInt(tmpl.repeatConfig?.weekday ?? 1);
                 const first = new Date(y, m, 1);
                 const diff = (wd - first.getDay() + 7) % 7;
-                targetDate = new Date(y, m, 1 + diff);
+                let current = new Date(y, m, 1 + diff);
+                while (current.getMonth() === m) {
+                    targetDates.push(new Date(current));
+                    current.setDate(current.getDate() + 7);
+                }
             } else if (tmpl.repeatType === 'monthly_nth') {
                 // 第N曜日
                 const wd = parseInt(tmpl.repeatConfig?.weekday ?? 1);
                 const nth = parseInt(tmpl.repeatConfig?.nth ?? 1);
                 const first = new Date(y, m, 1);
                 const diff = (wd - first.getDay() + 7) % 7;
-                targetDate = new Date(y, m, 1 + diff + (nth - 1) * 7);
+                targetDates.push(new Date(y, m, 1 + diff + (nth - 1) * 7));
             }
-            if (!targetDate) return;
-            await addDoc(collection(db, 'schedule_tasks'), {
-                title: tmpl.title,
-                category: tmpl.category,
-                description: tmpl.description || '',
-                memo: tmpl.memo || '',
-                date: format(targetDate, 'yyyy-MM-dd'),
-                completed: false,
-                isImportant: tmpl.isImportant || false,
-                isUrgent: false,
-                generatedFromTemplate: tmpl.id,
-                generatedFor: yearMonth,
-                created_at: Timestamp.now()
+            if (!targetDates.length) return;
+
+            targetDates.forEach(async (tDate) => {
+                await addDoc(collection(db, 'schedule_tasks'), {
+                    title: tmpl.title,
+                    category: tmpl.category,
+                    description: tmpl.description || '',
+                    memo: tmpl.memo || '',
+                    date: format(tDate, 'yyyy-MM-dd'),
+                    completed: false,
+                    isImportant: tmpl.isImportant || false,
+                    isUrgent: false,
+                    generatedFromTemplate: tmpl.id,
+                    generatedFor: yearMonth,
+                    created_at: Timestamp.now()
+                });
             });
         });
     }, [tasks.length]);
