@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { db } from './lib/firebase';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { Zap } from 'lucide-react';
 import './App.css';
 import Sidebar from './components/Layout/Sidebar';
 import StoreManagement from './components/StoreManagement/StoreManagement';
@@ -25,6 +28,28 @@ const MailCheckSheet = () => (
 
 function App() {
   const [activeSystem, setActiveSystem] = useState('stores');
+  const [urgentOverdueCount, setUrgentOverdueCount] = useState(0);
+
+  // 全システム共通で「スケジュール」の重要超過タスクを監視
+  useEffect(() => {
+    const q = query(
+      collection(db, 'schedule_tasks'),
+      where('completed', '==', false),
+      where('isUrgent', '==', true)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const now = new Date();
+      let count = 0;
+      snapshot.forEach(doc => {
+        const t = doc.data();
+        if (t.urgentDeadline && new Date(t.urgentDeadline) < now) {
+          count++;
+        }
+      });
+      setUrgentOverdueCount(count);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const renderContent = () => {
     switch (activeSystem) {
@@ -45,11 +70,25 @@ function App() {
   };
 
   return (
-    <div className={`app-layout theme-${activeSystem}`}>
-      <Sidebar activeSystem={activeSystem} setActiveSystem={setActiveSystem} />
-      <main className={`main-content ${activeSystem === 'schedule' ? 'full-bleed' : ''}`}>
-        {renderContent()}
-      </main>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {urgentOverdueCount > 0 && (
+        <div className="eva-alert">
+            <div className="eva-stripes" />
+            <div className="eva-content">
+                <span className="eva-label">SYSTEM ALERT</span>
+                <Zap size={20} className="eva-icon" />
+                <span className="eva-text">WARNING：重要タスクの最終取組み日時を超過しました。直ちに確認してください。</span>
+                <span className="eva-count">[ {urgentOverdueCount}件 超過 ]</span>
+            </div>
+            <div className="eva-stripes" />
+        </div>
+      )}
+      <div className={`app-layout theme-${activeSystem}`} style={{ flex: 1, minHeight: 'auto' }}>
+        <Sidebar activeSystem={activeSystem} setActiveSystem={setActiveSystem} />
+        <main className={`main-content ${activeSystem === 'schedule' ? 'full-bleed' : ''}`}>
+          {renderContent()}
+        </main>
+      </div>
     </div>
   );
 }

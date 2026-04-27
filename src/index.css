@@ -300,3 +300,110 @@ tr:hover td {
 .allow-wrap {
   white-space: normal !important;
 }
+
+/* EVA風緊急アラートバナー (全画面共通) */
+.eva-alert {
+    display: flex;
+    align-items: stretch;
+    background: #000;
+    overflow: hidden;
+    flex-shrink: 0;
+    border-bottom: 3px solid #ff4400;
+    border-top: 3px solid #ff2200;
+    position: relative;
+    height: 56px;
+    z-index: 9999;
+}
+
+/* スキャンライン演出 */
+.eva-alert::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(255, 100, 0, 0.04) 3px,
+        rgba(255, 100, 0, 0.04) 4px
+    );
+    pointer-events: none;
+    animation: eva-scan 6s linear infinite;
+}
+
+@keyframes eva-scan {
+    0% { background-position-y: 0; }
+    100% { background-position-y: 56px; }
+}
+
+@keyframes eva-pulse {
+    0%, 100% { opacity: 1; }
+    45% { opacity: 1; }
+    50% { opacity: 0.6; }
+    55% { opacity: 1; }
+}
+
+.eva-stripes {
+    flex-shrink: 0;
+    width: 60px;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 50% 50%, rgba(255, 85, 0, 0.5) 0%, transparent 70%),
+        repeating-linear-gradient( 30deg, transparent, transparent 10px, rgba(255, 85, 0, 0.6) 10px, rgba(255, 85, 0, 0.6) 11px),
+        repeating-linear-gradient(-30deg, transparent, transparent 10px, rgba(255, 85, 0, 0.6) 10px, rgba(255, 85, 0, 0.6) 11px);
+    background-color: #1a0000;
+    opacity: 0.9;
+}
+
+.eva-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+    animation: eva-pulse 2s ease-in-out infinite;
+}
+
+.eva-label {
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.25em;
+    color: #ff3300;
+    background: #ff330022;
+    border: 1px solid #ff3300;
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-shadow: 0 0 8px #ff3300;
+}
+
+.eva-icon {
+    color: #ff6600;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 6px #ff6600);
+    animation: eva-zap 1.2s ease-in-out infinite;
+}
+
+@keyframes eva-zap {
+    0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 6px #ff6600); }
+    50% { transform: scale(1.25) rotate(-8deg); filter: drop-shadow(0 0 14px #ff2200); }
+}
+
+.eva-text {
+    color: #ffaa00;
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-shadow: 0 0 10px #ff8800, 0 0 20px #ff440066;
+}
+
+.eva-count {
+    color: #ff2200;
+    font-size: 1.1rem;
+    font-weight: 900;
+    text-shadow: 0 0 8px #ff4400;
+    margin-left: auto;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}

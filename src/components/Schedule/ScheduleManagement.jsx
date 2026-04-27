@@ -321,18 +321,6 @@ const ScheduleManagement = () => {
 
     return (
         <div className="schedule-ux-wrapper">
-            {urgentOverdueTasks.length > 0 && (
-                <div className="eva-alert">
-                    <div className="eva-stripes" />
-                    <div className="eva-content">
-                        <span className="eva-label">SYSTEM ALERT</span>
-                        <Zap size={20} className="eva-icon" />
-                        <span className="eva-text">WARNING：重要タスクの最終取組み日時を超過しました。直ちに確認してください。</span>
-                        <span className="eva-count">[ {urgentOverdueTasks.length}件 超過 ]</span>
-                    </div>
-                    <div className="eva-stripes" />
-                </div>
-            )}
             <header className="ux-top-header">
                 <div className="ux-logo-area"><div className="ux-logo-circle"></div><div><h1>カスタマー業務スケジュール</h1><p>毎日の業務を、もっとやさしく、もっと確実に。</p></div></div>
             </header>
