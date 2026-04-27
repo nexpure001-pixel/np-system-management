@@ -213,7 +213,7 @@ const ScheduleManagement = () => {
     // 緊急アラート・バッジ用
     const now = new Date();
     const urgentOverdueTasks = tasks.filter(t => t.isUrgent && !t.completed && t.urgentDeadline && new Date(t.urgentDeadline) < now);
-    const urgentPendingCount = tasks.filter(t => t.isUrgent && !t.completed).length;
+    const urgentPendingCount = tasks.filter(t => t.isUrgent && !t.completed && t.urgentDeadline && new Date(t.urgentDeadline) <= now).length;
 
     const openDetails = (task) => {
         setSelectedTask(task);
@@ -407,9 +407,10 @@ const ScheduleManagement = () => {
                                     {week.slice(0, 5).map((day, dIdx) => {
                                         const dayTasks = filteredTasks.filter(t => isSameDay(t.date, day));
                                         const isHol = isHoliday(day);
+                                        const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                                         return (
-                                            <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''} ${isHol ? 'is-holiday' : ''}`} onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(day, 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
-                                                <span className={`day-num ${isHol ? 'holiday-num' : ''}`}>{format(day, 'd')}{isHol ? ' 🎌' : ''}</span>
+                                            <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''} ${isHol ? 'is-holiday' : ''} ${isWeekend && !isHol ? 'is-weekend' : ''}`} onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(day, 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
+                                                <span className={`day-num ${isHol ? 'holiday-num' : ''} ${isWeekend && !isHol ? 'weekend-num' : ''}`}>{format(day, 'd')}</span>
                                                 <div className="ux-cell-tasks">
                                                     {dayTasks.map(t => (
                                                         <div key={t.id} className={`ux-task-mini ${t.completed ? 'is-done' : ''} ${t.isUrgent && !t.completed ? 'is-urgent' : ''}`} style={{ borderLeftColor: t.isUrgent && !t.completed ? '#ef4444' : CATEGORIES.find(c => c.id === t.category)?.dot }} onClick={(e) => { e.stopPropagation(); openDetails(t); }}>
