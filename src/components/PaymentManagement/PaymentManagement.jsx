@@ -486,7 +486,7 @@ const PaymentManagement = () => {
                 touroku_jouhou: '',
                 rank_up_bikou: '',
                 soshikizu_kakunin: false,
-                chuumonbi: new Date().toISOString().split('T')[0],
+                chuumonbi: prev.chuumonbi, // 前回の入力を保持（1つ下の行と同じにする）
                 shimei: '',
                 nyuukin_kingaku: '',
                 henkin_taishou: false,
