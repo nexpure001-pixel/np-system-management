@@ -630,6 +630,141 @@
     max-width: 80px;
 }
 
+/* ========== 操作ログモーダル ========== */
+.ux-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
 
+.ux-log-modal {
+    background: white;
+    width: 90%;
+    max-width: 800px;
+    height: 80vh;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ux-log-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+}
+
+.ux-log-modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.ux-close-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 50%;
+    padding: 6px;
+    display: flex;
+    transition: all 0.2s;
+}
+
+.ux-close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.ux-log-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.ux-loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.ux-log-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ux-log-table th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+    z-index: 1;
+}
+
+.ux-log-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+    color: #334155;
+}
+
+.ux-log-table tr:hover td {
+    background: #f8fafc;
+}
+
+.ux-log-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ux-log-badge.action-create {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.ux-log-badge.action-update {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.ux-log-badge.action-complete {
+    background: #fef08a;
+    color: #854d0e;
+}
+
+.ux-log-badge.action-delete {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.ux-log-badge.action-other {
+    background: #f1f5f9;
+    color: #475569;
+}
 
 

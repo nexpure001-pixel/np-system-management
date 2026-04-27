@@ -48,7 +48,9 @@ import {
     query, 
     orderBy,
     setDoc,
-    Timestamp 
+    Timestamp,
+    limit,
+    getDocs
 } from 'firebase/firestore';
 import Papa from 'papaparse';
 import './ScheduleManagement.css';
@@ -103,6 +105,10 @@ const ScheduleManagement = () => {
     const [sharedMemos, setSharedMemos] = useState({});
     const [operatorName, setOperatorName] = useState(() => localStorage.getItem('schedule_operator') || '');
 
+    const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+    const [logs, setLogs] = useState([]);
+    const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
     useEffect(() => {
         const q = query(collection(db, 'schedule_tasks'), orderBy('created_at', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -137,6 +143,21 @@ const ScheduleManagement = () => {
         try {
             await setDoc(doc(db, 'shared_memos', weekKey), { text, updated_at: Timestamp.now() });
         } catch (err) { console.error('メモ保存失敗', err); }
+    };
+
+    const fetchLogs = async () => {
+        setIsLoadingLogs(true);
+        try {
+            const q = query(collection(db, 'task_logs'), orderBy('operated_at', 'desc'), limit(100));
+            const snapshot = await getDocs(q);
+            setLogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setIsLogModalOpen(true);
+        } catch (err) {
+            console.error(err);
+            alert("ログの取得に失敗しました");
+        } finally {
+            setIsLoadingLogs(false);
+        }
     };
 
     // 操作ログ記録
@@ -331,7 +352,7 @@ const ScheduleManagement = () => {
                         <div className="ux-nav-item active"><CalendarIcon size={18} /><span>カレンダー</span></div>
                         <div className="ux-nav-item"><List size={18} /><span>タスク一覧</span></div>
                         <div className="ux-nav-item"><LayoutGrid size={18} /><span>カテゴリ</span></div>
-                        <div className="ux-nav-item"><CheckSquare size={18} /><span>完了履歴</span></div>
+                        <div className="ux-nav-item" onClick={fetchLogs} style={{ cursor: 'pointer' }}><CheckSquare size={18} /><span>操作ログ</span></div>
                         <div className="ux-nav-item"><Bell size={18} /><span>重要事項</span>{urgentPendingCount > 0 && <span className="ux-badge">{urgentPendingCount}</span>}</div>
                         <div className="ux-nav-item"><Settings size={18} /><span>設定</span></div>
                     </nav>
@@ -505,6 +526,51 @@ const ScheduleManagement = () => {
                 </aside>
             </div>
             {!tasks.length && <button onClick={importCSVData} style={{ position: 'fixed', bottom: 20, right: 20, opacity: 0.5 }}>CSVインポート</button>}
+
+            {/* 操作ログモーダル */}
+            {isLogModalOpen && (
+                <div className="ux-modal-overlay">
+                    <div className="ux-log-modal">
+                        <div className="ux-log-modal-header">
+                            <h2>📜 操作ログ (直近100件)</h2>
+                            <button className="ux-close-btn" onClick={() => setIsLogModalOpen(false)}><X size={20} /></button>
+                        </div>
+                        <div className="ux-log-modal-content">
+                            {isLoadingLogs ? (
+                                <div className="ux-loading-spinner">読み込み中...</div>
+                            ) : (
+                                <table className="ux-log-table">
+                                    <thead>
+                                        <tr>
+                                            <th>日時</th>
+                                            <th>操作者</th>
+                                            <th>操作内容</th>
+                                            <th>タスク名</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {logs.map(log => (
+                                            <tr key={log.id}>
+                                                <td>{log.operated_at ? format(log.operated_at.toDate(), 'yyyy/MM/dd HH:mm') : ''}</td>
+                                                <td>{log.operator || '不明'}</td>
+                                                <td>
+                                                    <span className={`ux-log-badge action-${log.action === 'タスク作成' ? 'create' : log.action === 'タスク更新' ? 'update' : log.action === '完了' ? 'complete' : log.action === '削除' ? 'delete' : 'other'}`}>
+                                                        {log.action}
+                                                    </span>
+                                                </td>
+                                                <td>{log.after?.title || log.before?.title || '不明'}</td>
+                                            </tr>
+                                        ))}
+                                        {logs.length === 0 && (
+                                            <tr><td colSpan="4" style={{textAlign: 'center', padding: '20px'}}>ログがありません</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
