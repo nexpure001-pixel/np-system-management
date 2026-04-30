@@ -712,7 +712,7 @@ const PaymentManagement = () => {
                     (!normFilters.touroku || p._searchTouroku.includes(normFilters.touroku)) &&
                     (!normFilters.shimei || p._searchShimei.includes(normFilters.shimei)) &&
                     (!normFilters.nyuukin || p._searchNyuukin.includes(normFilters.nyuukin)) &&
-                    (!filters.kanryou || (filters.kanryou === '完了' ? p.kanryou === true : p.kanryou === false)) ||
+                    (!filters.kanryou || (filters.kanryou === '完了' ? p.kanryou === true : p.kanryou === false)) &&
                     (!filters.henkin_taishou || (filters.henkin_taishou === '対象' ? p.henkin_taishou === true : p.henkin_taishou === false))
                 );
 
