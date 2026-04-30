@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
     format, 
     startOfMonth, 
@@ -174,18 +174,28 @@ const ScheduleManagement = () => {
         } catch (err) { console.error('ログ記録失敗', err); }
     };
 
-    // 自動リピート生成（ページ読み込み時に実行）
+    const checkedTemplatesRef = useRef(new Set());
+
+    // 自動リピート生成（カレンダーの表示月が変わったとき、またはタスク読み込み時）
     useEffect(() => {
         if (!tasks.length) return;
-        const now = new Date();
-        const yearMonth = format(now, 'yyyy-MM');
+        
+        // カレンダーで「現在表示している月」を基準に生成する
+        const yearMonth = format(currentDate, 'yyyy-MM');
         const templates = tasks.filter(t => t.isRepeatTemplate && t.repeatType !== 'none');
+        
         templates.forEach(async (tmpl) => {
-            // 当月分がすでに生成済みかチェック
+            const checkKey = `${tmpl.id}-${yearMonth}`;
+            // このセッションで既にこのテンプレートのこの月の生成処理をチェック済みならスキップ（無限増殖防止）
+            if (checkedTemplatesRef.current.has(checkKey)) return;
+            checkedTemplatesRef.current.add(checkKey);
+
+            // 当月分がすでに生成済みかDBデータでチェック
             const alreadyExists = tasks.some(t => t.generatedFromTemplate === tmpl.id && t.generatedFor === yearMonth);
             if (alreadyExists) return;
+
             let targetDates = [];
-            const y = now.getFullYear(), m = now.getMonth();
+            const y = currentDate.getFullYear(), m = currentDate.getMonth();
             if (tmpl.repeatType === 'monthly_date') {
                 const d = parseInt(tmpl.repeatConfig?.date || 1);
                 targetDates.push(new Date(y, m, d));
@@ -225,7 +235,7 @@ const ScheduleManagement = () => {
                 });
             });
         });
-    }, [tasks.length]);
+    }, [tasks.length, currentDate]);
 
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
