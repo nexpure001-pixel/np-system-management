@@ -229,6 +229,8 @@ const ScheduleManagement = () => {
                     completed: false,
                     isImportant: tmpl.isImportant || false,
                     isUrgent: false,
+                    assignee: tmpl.assignee || '',
+                    subtasks: tmpl.subtasks || [],
                     generatedFromTemplate: tmpl.id,
                     generatedFor: yearMonth,
                     created_at: Timestamp.now()
@@ -431,7 +433,8 @@ const ScheduleManagement = () => {
                                         <span className="range">{format(week[0], 'M/d')}〜{format(week[4], 'M/d')}</span>
                                     </div>
                                     {week.slice(0, 5).map((day, dIdx) => {
-                                        const dayTasks = filteredTasks.filter(t => isSameDay(t.date, day));
+                                        // テンプレート自体（isRepeatTemplate: true）はカレンダーから隠す
+                                        const dayTasks = filteredTasks.filter(t => isSameDay(t.date, day) && !t.isRepeatTemplate);
                                         const isHol = isHoliday(day) || day.getDay() === 0 || day.getDay() === 6;
                                         return (
                                             <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''} ${isHol ? 'is-holiday' : ''}`} onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(day, 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
@@ -497,8 +500,24 @@ const ScheduleManagement = () => {
                         <div className="ux-field column"><label>チェックリスト</label><div className="ux-checklist"><div className="ux-check-item"><input type="checkbox" id="check-done" checked={selectedTask?.completed || false} onChange={() => toggleTask(selectedTask.id, selectedTask.completed)} style={{ width: '20px', height: '20px', cursor: 'pointer' }} /><label htmlFor="check-done" style={{ fontSize: '1rem', cursor: 'pointer' }}>完了にする</label></div></div></div>
                         <div className="ux-field column"><label>メモ</label><textarea value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} className="ux-memo-area" /></div>
 
+                        {selectedTask?.generatedFromTemplate && (
+                            <div className="ux-field" style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 4px 0' }}>💡 これは自動生成されたタスクです</p>
+                                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>リピートの曜日や日付を変更したい場合は、大元の設定（テンプレート）を編集してください。</p>
+                                </div>
+                                <button type="button" onClick={() => {
+                                    const tmpl = tasks.find(t => t.id === selectedTask.generatedFromTemplate);
+                                    if (tmpl) openDetails(tmpl);
+                                    else alert('大元の設定が見つかりません（すでに削除された可能性があります）');
+                                }} style={{ background: '#319795', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                    大元の設定を編集
+                                </button>
+                            </div>
+                        )}
+
                         {/* リピート設定 */}
-                        <div className="ux-field ux-repeat-field">
+                        <div className="ux-field ux-repeat-field" style={{ display: selectedTask?.generatedFromTemplate ? 'none' : 'flex' }}>
                             <label style={{ fontWeight: 800, color: '#94a3b8', fontSize: '0.85rem' }}>🔄 繰り返し設定</label>
                             <select value={editForm.repeatType} onChange={e => setEditForm({...editForm, repeatType: e.target.value, isRepeatTemplate: e.target.value !== 'none'})} className="ux-repeat-select">
                                 <option value="none">繰り返しなし</option>
