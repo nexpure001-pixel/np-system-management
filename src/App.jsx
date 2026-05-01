@@ -42,7 +42,7 @@ function App() {
       let count = 0;
       snapshot.forEach(doc => {
         const t = doc.data();
-        if (t.urgentDeadline && new Date(t.urgentDeadline) < now) {
+        if (!t.isRepeatTemplate && t.urgentDeadline && new Date(t.urgentDeadline) < now) {
           count++;
         }
       });
