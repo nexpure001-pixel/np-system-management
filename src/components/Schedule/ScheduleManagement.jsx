@@ -367,7 +367,6 @@ const ScheduleManagement = () => {
                 <aside className="ux-side-nav">
                     <nav className="ux-nav-menu">
                         <div className="ux-nav-item active"><CalendarIcon size={18} /><span>カレンダー</span></div>
-                        <div className="ux-nav-item"><List size={18} /><span>タスク一覧</span></div>
                         <div className="ux-nav-item" onClick={fetchLogs} style={{ cursor: 'pointer' }}><CheckSquare size={18} /><span>操作ログ</span></div>
                         <div className={`ux-nav-item ${filterCategory === 'urgent' ? 'active' : ''}`} onClick={() => setFilterCategory(filterCategory === 'urgent' ? 'all' : 'urgent')} style={{ cursor: 'pointer' }}><Bell size={18} /><span>重要事項</span>{urgentPendingCount > 0 && <span className="ux-badge">{urgentPendingCount}</span>}</div>
                         <div className="ux-nav-item"><Settings size={18} /><span>設定</span></div>
