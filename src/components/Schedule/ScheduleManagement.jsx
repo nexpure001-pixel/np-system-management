@@ -248,12 +248,17 @@ const ScheduleManagement = () => {
     const weeks = [];
     for (let i = 0; i < calendarDays.length; i += 7) weeks.push(calendarDays.slice(i, i + 7));
 
-    const filteredTasks = tasks.filter(t => filterCategory === 'all' || t.category === filterCategory);
+    const now = new Date();
+
+    const filteredTasks = tasks.filter(t => {
+        if (filterCategory === 'all') return true;
+        if (filterCategory === 'urgent') return t.isUrgent && !t.completed && t.urgentDeadline && new Date(t.urgentDeadline) <= now && !t.isRepeatTemplate;
+        return t.category === filterCategory;
+    });
 
     // 緊急アラート・バッジ用
-    const now = new Date();
-    const urgentOverdueTasks = tasks.filter(t => t.isUrgent && !t.completed && t.urgentDeadline && new Date(t.urgentDeadline) < now);
-    const urgentPendingCount = tasks.filter(t => t.isUrgent && !t.completed && t.urgentDeadline && new Date(t.urgentDeadline) <= now).length;
+    const urgentOverdueTasks = tasks.filter(t => !t.isRepeatTemplate && t.isUrgent && !t.completed && t.urgentDeadline && new Date(t.urgentDeadline) < now);
+    const urgentPendingCount = tasks.filter(t => !t.isRepeatTemplate && t.isUrgent && !t.completed && t.urgentDeadline && new Date(t.urgentDeadline) <= now).length;
 
     const openDetails = (task) => {
         setSelectedTask(task);
@@ -365,7 +370,7 @@ const ScheduleManagement = () => {
                         <div className="ux-nav-item"><List size={18} /><span>タスク一覧</span></div>
                         <div className="ux-nav-item"><LayoutGrid size={18} /><span>カテゴリ</span></div>
                         <div className="ux-nav-item" onClick={fetchLogs} style={{ cursor: 'pointer' }}><CheckSquare size={18} /><span>操作ログ</span></div>
-                        <div className="ux-nav-item"><Bell size={18} /><span>重要事項</span>{urgentPendingCount > 0 && <span className="ux-badge">{urgentPendingCount}</span>}</div>
+                        <div className={`ux-nav-item ${filterCategory === 'urgent' ? 'active' : ''}`} onClick={() => setFilterCategory(filterCategory === 'urgent' ? 'all' : 'urgent')} style={{ cursor: 'pointer' }}><Bell size={18} /><span>重要事項</span>{urgentPendingCount > 0 && <span className="ux-badge">{urgentPendingCount}</span>}</div>
                         <div className="ux-nav-item"><Settings size={18} /><span>設定</span></div>
                     </nav>
                     <div className="ux-operator-area">
