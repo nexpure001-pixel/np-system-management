@@ -252,7 +252,7 @@ const ScheduleManagement = () => {
 
     const filteredTasks = tasks.filter(t => {
         if (filterCategory === 'all') return true;
-        if (filterCategory === 'urgent') return t.isUrgent && !t.completed && t.urgentDeadline && new Date(t.urgentDeadline) <= now && !t.isRepeatTemplate;
+        if (filterCategory === 'urgent') return t.isUrgent && !t.isRepeatTemplate;
         return t.category === filterCategory;
     });
 
