@@ -87,7 +87,7 @@ const HOLIDAYS_2026 = new Set([
 const isHoliday = (date) => HOLIDAYS_2026.has(format(date, 'yyyy-MM-dd'));
 
 const ScheduleManagement = () => {
-    const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1));
+    const [currentDate, setCurrentDate] = useState(new Date());
     const [tasks, setTasks] = useState([]);
     const [selectedTask, setSelectedTask] = useState(null);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -406,7 +406,7 @@ const ScheduleManagement = () => {
                                 <button onClick={() => setCurrentDate(subMonths(currentDate, 1))}><ChevronLeft size={16} /></button>
                                 <button onClick={() => setCurrentDate(addMonths(currentDate, 1))}><ChevronRight size={16} /></button>
                             </div>
-                            <button className="ux-today-btn" onClick={() => setCurrentDate(new Date(2026, 3, 1))}>今日</button>
+                            <button className="ux-today-btn" onClick={() => setCurrentDate(new Date())}>今日</button>
                         </div>
                         <div className="ux-view-switcher">
                             <div className="ux-switch-group">
