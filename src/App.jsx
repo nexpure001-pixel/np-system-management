@@ -31,6 +31,7 @@ function App() {
   const [activeSystem, setActiveSystem] = useState('stores');
   const [urgentOverdueTasks, setUrgentOverdueTasks] = useState([]);
   const [isAlertDropdownOpen, setIsAlertDropdownOpen] = useState(false);
+  const [jumpTask, setJumpTask] = useState(null);
 
   // 全システム共通で「スケジュール」の重要超過タスクを監視
   useEffect(() => {
@@ -66,7 +67,7 @@ function App() {
       case 'cooling-off': return <CoolingOffManagement />;
       case 'product-review': return <ProductReviewApp />;
       case 'request-work': return <RequestWorkManagement />;
-      case 'schedule': return <ScheduleManagement />;
+      case 'schedule': return <ScheduleManagement jumpTask={jumpTask} onJumpComplete={() => setJumpTask(null)} />;
       case 'mail-check': return <MailCheckSheet />;
       case 'manual': return <ManualManagement />;
       case 'manual-portal': return <ManualPortal />;
@@ -102,7 +103,11 @@ function App() {
               </div>
               <div className="eva-dropdown-list">
                 {urgentOverdueTasks.map(task => (
-                  <div key={task.id} className="eva-dropdown-item" onClick={() => { setActiveSystem('schedule'); setIsAlertDropdownOpen(false); }}>
+                  <div key={task.id} className="eva-dropdown-item" onClick={() => { 
+                    setJumpTask(task);
+                    setActiveSystem('schedule'); 
+                    setIsAlertDropdownOpen(false); 
+                  }}>
                     <div className="eva-task-title">{task.title || 'タイトルなし'}</div>
                     <div className="eva-task-meta">
                       <span className="eva-deadline"><Clock size={12} /> 期限: {task.urgentDeadline ? format(new Date(task.urgentDeadline), 'yyyy/MM/dd HH:mm') : ''}</span>

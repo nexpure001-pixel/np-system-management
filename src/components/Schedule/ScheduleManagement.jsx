@@ -86,7 +86,7 @@ const HOLIDAYS_2026 = new Set([
 
 const isHoliday = (date) => HOLIDAYS_2026.has(format(date, 'yyyy-MM-dd'));
 
-const ScheduleManagement = () => {
+const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [tasks, setTasks] = useState([]);
     const [selectedTask, setSelectedTask] = useState(null);
@@ -273,6 +273,21 @@ const ScheduleManagement = () => {
         });
         setIsPanelOpen(true);
     };
+
+    useEffect(() => {
+        if (jumpTask) {
+            // タスクの日付の月にカレンダーを移動
+            if (jumpTask.date) {
+                setCurrentDate(new Date(jumpTask.date));
+            }
+            // 表示設定を「重要事項」に変更して見つけやすくする
+            setFilterCategory('urgent');
+            // 詳細パネルを開く
+            openDetails(jumpTask);
+            // ジャンプ処理完了を親に通知
+            if (onJumpComplete) onJumpComplete();
+        }
+    }, [jumpTask]);
 
     const handleSave = async (e) => {
         if (e) e.preventDefault();
