@@ -407,3 +407,95 @@ tr:hover td {
     letter-spacing: 0.05em;
     white-space: nowrap;
 }
+/* EVA Alert Dropdown Styles */
+.eva-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #000;
+  border: 2px solid #ff4d00;
+  border-top: none;
+  box-shadow: 0 10px 30px rgba(255, 77, 0, 0.2);
+  z-index: 9999;
+  max-height: 400px;
+  overflow-y: auto;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.eva-dropdown-header {
+  padding: 12px 20px;
+  background: rgba(255, 77, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 77, 0, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.eva-dropdown-header h3 {
+  margin: 0;
+  color: #ff4d00;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.eva-dropdown-header span {
+  color: #ffaa80;
+  font-size: 0.8rem;
+}
+
+.eva-dropdown-list {
+  padding: 8px 0;
+}
+
+.eva-dropdown-item {
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eva-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.eva-dropdown-item:hover {
+  background: rgba(255, 77, 0, 0.15);
+  padding-left: 24px;
+}
+
+.eva-task-title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.eva-task-meta {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.eva-deadline {
+  color: #ff4d00;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.eva-assignee {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
