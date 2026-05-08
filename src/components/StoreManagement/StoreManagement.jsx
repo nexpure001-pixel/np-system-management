@@ -260,6 +260,7 @@ const StoreManagement = () => {
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
+            encoding: 'Shift-JIS',
             complete: (results) => {
                 const csvIds = new Set(
                     results.data
