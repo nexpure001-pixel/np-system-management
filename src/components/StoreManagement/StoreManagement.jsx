@@ -257,40 +257,62 @@ const StoreManagement = () => {
     const handle50BPCheck = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            encoding: 'Shift-JIS',
-            complete: (results) => {
-                const csvIds = new Set(
-                    results.data
-                        .map(row => String(row['会員ID'] || '').trim())
-                        .filter(id => id !== '')
-                );
 
-                const ok = [];
-                const ng = [];
-                const excluded = [];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const buffer = event.target.result;
+            let text = '';
+            
+            try {
+                // まずUTF-8としてデコードを試みる（エラーが出ればShift-JISと判定）
+                const decoder = new TextDecoder('utf-8', { fatal: true });
+                text = decoder.decode(buffer);
+            } catch (err) {
+                // UTF-8でエラーが出た場合はShift-JISとしてデコード
+                const sjisDecoder = new TextDecoder('shift-jis');
+                text = sjisDecoder.decode(buffer);
+            }
 
-                stores.forEach(s => {
-                    const dbId = String(s.raw?.np_seller_id || '').trim();
-                    const isSalesOk = s.salesStatus === '販売OK';
+            Papa.parse(text, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => {
+                    // IDの列名が揺れている可能性も考慮し、複数の候補で探す
+                    const getMemberId = (row) => {
+                        return row['会員ID'] || row['顧客ID'] || row['ID'] || row['会員 ID'] || '';
+                    };
 
-                    // 対象条件：個人会員IDあり & 販売OK
-                    if (!dbId || !isSalesOk) {
-                        excluded.push({ store: s, reason: !dbId ? 'ID未登録' : `販売ステータス:${s.salesStatus}` });
-                    } else if (csvIds.has(dbId)) {
-                        ok.push(s);
-                    } else {
-                        ng.push(s);
-                    }
-                });
+                    const csvIds = new Set(
+                        results.data
+                            .map(row => String(getMemberId(row)).trim())
+                            .filter(id => id !== '')
+                    );
 
-                setBp50Result({ ok, ng, excluded, total: stores.length, csvCount: csvIds.size });
-                if (bp50InputRef.current) bp50InputRef.current.value = '';
-            },
-            error: (err) => alert('CSVの解析に失敗しました: ' + err.message)
-        });
+                    const ok = [];
+                    const ng = [];
+                    const excluded = [];
+
+                    stores.forEach(s => {
+                        const dbId = String(s.raw?.np_seller_id || '').trim();
+                        const isSalesOk = s.salesStatus === '販売OK';
+
+                        // 対象条件：個人会員IDあり & 販売OK
+                        if (!dbId || !isSalesOk) {
+                            excluded.push({ store: s, reason: !dbId ? 'ID未登録' : `販売ステータス:${s.salesStatus}` });
+                        } else if (csvIds.has(dbId)) {
+                            ok.push(s);
+                        } else {
+                            ng.push(s);
+                        }
+                    });
+
+                    setBp50Result({ ok, ng, excluded, total: stores.length, csvCount: csvIds.size });
+                    if (bp50InputRef.current) bp50InputRef.current.value = '';
+                },
+                error: (err) => alert('CSVの解析に失敗しました: ' + err.message)
+            });
+        };
+        reader.readAsArrayBuffer(file);
     };
 
     const filteredStores = stores.filter(s => {
