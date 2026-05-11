@@ -573,7 +573,7 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
                                     <label>第</label>
                                     <input type="number" min="1" max="5" value={editForm.repeatConfig.nth} onChange={e => setEditForm({...editForm, repeatConfig: {...editForm.repeatConfig, nth: e.target.value}})} className="ux-repeat-num" />
                                     <select value={editForm.repeatConfig.weekday} onChange={e => setEditForm({...editForm, repeatConfig: {...editForm.repeatConfig, weekday: e.target.value}})} className="ux-repeat-select">
-                                        <option value="0">日曜</option><option value="1">月曜</option><option value="2">火曜</option><option value="3">水曜</option><option value="4">木曜</option><option value="5">金曜</option><option value="6">土曜</option>
+                                        <option value="1">月曜</option><option value="2">火曜</option><option value="3">水曜</option><option value="4">木曜</option><option value="5">金曜</option>
                                     </select>
                                 </div>
                             )}
@@ -581,7 +581,7 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
                                 <div className="ux-repeat-sub">
                                     <label>毎週</label>
                                     <select value={editForm.repeatConfig.weekday} onChange={e => setEditForm({...editForm, repeatConfig: {...editForm.repeatConfig, weekday: e.target.value}})} className="ux-repeat-select">
-                                        <option value="0">日曜</option><option value="1">月曜</option><option value="2">火曜</option><option value="3">水曜</option><option value="4">木曜</option><option value="5">金曜</option><option value="6">土曜</option>
+                                        <option value="1">月曜</option><option value="2">火曜</option><option value="3">水曜</option><option value="4">木曜</option><option value="5">金曜</option>
                                     </select>
                                 </div>
                             )}
