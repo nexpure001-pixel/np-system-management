@@ -296,6 +296,24 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
             if (selectedTask) {
                 await updateDoc(doc(db, 'schedule_tasks', selectedTask.id), taskData);
                 await logAction(selectedTask.id, 'タスク更新', { title: selectedTask.title }, { title: editForm.title });
+
+                // もし大元のテンプレートが編集された場合、未完了の自動生成タスクを一掃し、再生成させる
+                if (selectedTask.isRepeatTemplate) {
+                    const generatedInstances = tasks.filter(t => t.generatedFromTemplate === selectedTask.id && !t.completed);
+                    for (const instance of generatedInstances) {
+                        await deleteDoc(doc(db, 'schedule_tasks', instance.id));
+                    }
+                    
+                    // 特定のテンプレートの生成済みキャッシュだけ削除して再生成を促す
+                    const keysToRemove = [];
+                    checkedTemplatesRef.current.forEach(key => {
+                        if (key.startsWith(`${selectedTask.id}-`)) {
+                            keysToRemove.push(key);
+                        }
+                    });
+                    keysToRemove.forEach(k => checkedTemplatesRef.current.delete(k));
+                }
+
             } else {
                 const ref = await addDoc(collection(db, 'schedule_tasks'), { ...taskData, completed: false, created_at: Timestamp.now() });
                 await logAction(ref.id, 'タスク作成', null, { title: editForm.title });
