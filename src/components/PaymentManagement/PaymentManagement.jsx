@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import React, { useState, useEffect, useMemo, useRef, startTransition } from 'react';
 import { supabase } from '../../lib/supabase';
 import './PaymentManagement.css';
 
@@ -248,13 +247,16 @@ const PaymentManagement = () => {
         shimei: '',
         nyuukin: '',
         bikou: '',
-        kanryou: ''
+        kanryou: '',
+        henkin_taishou: '',
+        soshikizu: ''
     });
+    const [debouncedFilters, setDebouncedFilters] = useState(filters);
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [isGlobalSelected, setIsGlobalSelected] = useState(false);
-    const itemsPerPage = 50;
+    const itemsPerPage = 20;
     const fileInputRef = useRef(null);
 
     // Debounce search query to prevent stuttering while typing
@@ -264,6 +266,14 @@ const PaymentManagement = () => {
         }, 300);
         return () => clearTimeout(timer);
     }, [searchQuery]);
+
+    // Debounce column filters to prevent stuttering while typing in individual columns
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedFilters(filters);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [filters]);
 
     // Quick Add State
     const [quickAdd, setQuickAdd] = useState({
@@ -290,8 +300,11 @@ const PaymentManagement = () => {
             if (error) throw error;
 
             // Pre-normalize data for fast search
-            const normalizedData = (data || []).map(injectSearchableData);
-            setPayments(normalizedData);
+            // Use startTransition to prevent blocking the UI thread during initial render
+            startTransition(() => {
+                const normalizedData = (data || []).map(injectSearchableData);
+                setPayments(normalizedData);
+            });
         } catch (err) {
             console.error('Failed to fetch payments:', err);
         } finally {
@@ -301,6 +314,25 @@ const PaymentManagement = () => {
 
     useEffect(() => {
         fetchPayments();
+
+        // Realtime Subscription for Payment updates
+        const channel = supabase.channel('payments-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, (payload) => {
+                if (payload.eventType === 'INSERT') {
+                    setPayments(prev => {
+                        if (prev.some(p => p.id === payload.new.id)) return prev;
+                        return [injectSearchableData(payload.new), ...prev];
+                    });
+                } else if (payload.eventType === 'UPDATE') {
+                    setPayments(prev => prev.map(p => 
+                        p.id === payload.new.id ? injectSearchableData(payload.new) : p
+                    ));
+                } else if (payload.eventType === 'DELETE') {
+                    setPayments(prev => prev.filter(p => p.id !== payload.old.id));
+                }
+            })
+            .subscribe();
+
         // Load selection from localStorage
         const savedSelection = localStorage.getItem('payment_selection');
         if (savedSelection) {
@@ -311,6 +343,10 @@ const PaymentManagement = () => {
                 console.error('Failed to parse saved selection');
             }
         }
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     // Save selection to localStorage
@@ -327,6 +363,8 @@ const PaymentManagement = () => {
         const reader = new FileReader();
         reader.onload = async (event) => {
             try {
+                // Dynamically import XLSX to prevent blocking the UI thread on initial load
+                const XLSX = await import('xlsx');
                 const data = new Uint8Array(event.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
@@ -693,9 +731,9 @@ const PaymentManagement = () => {
         const normalizedQuery = normalizeKana(debouncedSearchQuery);
 
         const normFilters = {
-            touroku: normalizeKana(filters.touroku),
-            shimei: normalizeKana(filters.shimei),
-            nyuukin: normalizeKana(filters.nyuukin)
+            touroku: normalizeKana(debouncedFilters.touroku),
+            shimei: normalizeKana(debouncedFilters.shimei),
+            nyuukin: normalizeKana(debouncedFilters.nyuukin)
         };
 
         return payments
@@ -707,13 +745,14 @@ const PaymentManagement = () => {
                 );
 
                 const matchesColumns = (
-                    (!filters.shiharaibi || (p.shiharaibi_nyuuryoku ? '済' : '未') === filters.shiharaibi) &&
-                    (!filters.boxIdou || (p.box_idou ? '済' : '未') === filters.boxIdou) &&
+                    (!debouncedFilters.shiharaibi || (p.shiharaibi_nyuuryoku ? '済' : '未') === debouncedFilters.shiharaibi) &&
+                    (!debouncedFilters.boxIdou || (p.box_idou ? '済' : '未') === debouncedFilters.boxIdou) &&
+                    (!debouncedFilters.soshikizu || (p.soshikizu_kakunin ? '済' : '未') === debouncedFilters.soshikizu) &&
                     (!normFilters.touroku || p._searchTouroku.includes(normFilters.touroku)) &&
                     (!normFilters.shimei || p._searchShimei.includes(normFilters.shimei)) &&
                     (!normFilters.nyuukin || p._searchNyuukin.includes(normFilters.nyuukin)) &&
-                    (!filters.kanryou || (filters.kanryou === '完了' ? p.kanryou === true : p.kanryou === false)) &&
-                    (!filters.henkin_taishou || (filters.henkin_taishou === '対象' ? p.henkin_taishou === true : p.henkin_taishou === false))
+                    (!debouncedFilters.kanryou || (debouncedFilters.kanryou === '完了' ? p.kanryou === true : p.kanryou === false)) &&
+                    (!debouncedFilters.henkin_taishou || (debouncedFilters.henkin_taishou === '対象' ? p.henkin_taishou === true : p.henkin_taishou === false))
                 );
 
                 return matchesGlobal && matchesColumns;
@@ -730,7 +769,7 @@ const PaymentManagement = () => {
                 if (timeA !== timeB) return timeB - timeA; // Newer first
                 return (a.id || '').localeCompare(b.id || '');
             });
-    }, [payments, debouncedSearchQuery, filters, sortConfig]);
+    }, [payments, debouncedSearchQuery, debouncedFilters, sortConfig]);
 
     const paginatedPayments = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
@@ -875,11 +914,23 @@ const PaymentManagement = () => {
                             </th>
                             <th><input className="filter-input input-narrow" placeholder="検索" value={filters.touroku} onChange={e => setFilters({ ...filters, touroku: e.target.value })} /></th>
                             <th></th>
-                            <th></th>
+                            <th>
+                                <select className="filter-input input-narrow" value={filters.soshikizu} onChange={e => setFilters({ ...filters, soshikizu: e.target.value })}>
+                                    <option value="">すべて</option>
+                                    <option value="済">済(ﾁｪｯｸあり)</option>
+                                    <option value="未">未(ﾁｪｯｸなし)</option>
+                                </select>
+                            </th>
                             <th></th>
                             <th><input className="filter-input input-narrow" placeholder="名前" value={filters.shimei} onChange={e => setFilters({ ...filters, shimei: e.target.value })} /></th>
                             <th><input className="filter-input input-narrow" placeholder="金額" value={filters.nyuukin} onChange={e => setFilters({ ...filters, nyuukin: e.target.value })} /></th>
-                            <th></th>
+                            <th>
+                                <select className="filter-input input-narrow" value={filters.henkin_taishou} onChange={e => setFilters({ ...filters, henkin_taishou: e.target.value })}>
+                                    <option value="">すべて</option>
+                                    <option value="対象">対象(ﾁｪｯｸあり)</option>
+                                    <option value="未">未(ﾁｪｯｸなし)</option>
+                                </select>
+                            </th>
                             <th></th>
                             <th></th>
                             <th></th>
