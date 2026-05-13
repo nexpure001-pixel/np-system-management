@@ -50,7 +50,8 @@ import {
     setDoc,
     Timestamp,
     limit,
-    getDocs
+    getDocs,
+    where
 } from 'firebase/firestore';
 import Papa from 'papaparse';
 import './ScheduleManagement.css';
@@ -198,9 +199,14 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
             if (checkedTemplatesRef.current.has(checkKey)) return;
             checkedTemplatesRef.current.add(checkKey);
 
-            // 当月分がすでに生成済みかDBデータでチェック
-            const alreadyExists = tasks.some(t => t.generatedFromTemplate === tmpl.id && t.generatedFor === yearMonth);
-            if (alreadyExists) return;
+            // 当月分がすでに生成済みかDBデータで確実にチェック
+            const q = query(
+                collection(db, 'schedule_tasks'), 
+                where('generatedFromTemplate', '==', tmpl.id), 
+                where('generatedFor', '==', yearMonth)
+            );
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) return;
 
             let targetDates = [];
             const y = currentDate.getFullYear(), m = currentDate.getMonth();
