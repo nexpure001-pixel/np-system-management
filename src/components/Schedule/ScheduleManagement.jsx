@@ -86,6 +86,14 @@ const HOLIDAYS_2026 = new Set([
 
 const isHoliday = (date) => HOLIDAYS_2026.has(format(date, 'yyyy-MM-dd'));
 
+const getNextBusinessDay = (date) => {
+    let current = new Date(date);
+    while (isHoliday(current) || current.getDay() === 0 || current.getDay() === 6) {
+        current.setDate(current.getDate() + 1);
+    }
+    return current;
+};
+
 const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [tasks, setTasks] = useState([]);
@@ -220,12 +228,13 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
             if (!targetDates.length) return;
 
             targetDates.forEach(async (tDate) => {
+                const finalDate = getNextBusinessDay(tDate);
                 await addDoc(collection(db, 'schedule_tasks'), {
                     title: tmpl.title,
                     category: tmpl.category,
                     description: tmpl.description || '',
                     memo: tmpl.memo || '',
-                    date: format(tDate, 'yyyy-MM-dd'),
+                    date: format(finalDate, 'yyyy-MM-dd'),
                     completed: false,
                     isImportant: tmpl.isImportant || false,
                     isUrgent: false,
@@ -335,10 +344,26 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
     };
 
     const handleDelete = async () => {
-        if (!selectedTask || !window.confirm("このタスクを削除しますか？")) return;
+        if (!selectedTask) return;
+        
+        let message = "このタスクを削除しますか？";
+        if (selectedTask.isRepeatTemplate) {
+            message = "このタスクは繰り返し設定の大元です。削除すると、自動生成された紐づくタスクもすべて一括で削除されますがよろしいですか？";
+        }
+        
+        if (!window.confirm(message)) return;
+        
         try { 
             await logAction(selectedTask.id, '削除', { title: selectedTask.title }, null);
             await deleteDoc(doc(db, 'schedule_tasks', selectedTask.id)); 
+            
+            if (selectedTask.isRepeatTemplate) {
+                // 紐づくすべてのタスクを一括削除
+                const generatedInstances = tasks.filter(t => t.generatedFromTemplate === selectedTask.id);
+                for (const instance of generatedInstances) {
+                    await deleteDoc(doc(db, 'schedule_tasks', instance.id));
+                }
+            }
             setIsPanelOpen(false); 
         } catch (err) { console.error(err); }
     };
