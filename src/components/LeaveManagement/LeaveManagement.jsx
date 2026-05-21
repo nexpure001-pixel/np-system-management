@@ -202,6 +202,24 @@ const LeaveManagement = () => {
         }
     };
 
+    const handleDeleteGrant = async (grantId) => {
+        if (!window.confirm('この手動付与記録を削除してよろしいですか？')) return;
+        setLoading(true);
+        try {
+            const { error } = await supabase.from('leave_grants').delete().eq('id', grantId);
+            if (error) throw error;
+            
+            alert('付与記録を削除しました。');
+            fetchUserDetail(selectedUserId);
+            fetchStats();
+        } catch (err) {
+            console.error('Delete grant error:', err);
+            alert('削除に失敗しました: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleManualGrant = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -446,11 +464,19 @@ const LeaveManagement = () => {
                                                     <span className={`font-black ${ev.text}`}>
                                                         {ev.amount}日
                                                     </span>
-                                                    {ev.type === 'usage' && (
+                                                    {ev.type === 'usage' ? (
                                                         <button 
                                                             onClick={() => handleCancelLeave(ev.id)}
                                                             className="p-2 text-red-500 hover:text-white hover:bg-red-500 bg-red-100/50 rounded-lg transition-all"
                                                             title="予定をキャンセルする"
+                                                        >
+                                                            <Trash2 className="w-5 h-5" />
+                                                        </button>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={() => handleDeleteGrant(ev.id)}
+                                                            className="p-2 text-red-500 hover:text-white hover:bg-red-500 bg-red-100/50 rounded-lg transition-all"
+                                                            title="付与記録を削除する"
                                                         >
                                                             <Trash2 className="w-5 h-5" />
                                                         </button>
