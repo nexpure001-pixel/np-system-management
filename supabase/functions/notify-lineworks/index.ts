@@ -1,4 +1,7 @@
+// @ts-ignore
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+
+declare const Deno: any;
 
 const CLIENT_ID = Deno.env.get('LW_CLIENT_ID')!;
 const CLIENT_SECRET = Deno.env.get('LW_CLIENT_SECRET')!;
@@ -23,8 +26,9 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
   return buf.buffer;
 }
 
-function base64url(buf: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+function base64url(buf: Uint8Array | ArrayBuffer): string {
+  const u8 = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  return btoa(String.fromCharCode(...u8))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
@@ -106,7 +110,7 @@ async function sendMessage(bodyData: any) {
   console.log('LINE WORKS送信結果:', res.status);
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -116,7 +120,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('エラー:', err.message);
     return new Response(JSON.stringify({ success: false, error: err.message }), {
       status: 500,
