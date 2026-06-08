@@ -33,6 +33,15 @@ function App() {
   const [isAlertDropdownOpen, setIsAlertDropdownOpen] = useState(false);
   const [jumpTask, setJumpTask] = useState(null);
 
+  // デバッグ用: グローバルエラーをキャッチしてアラート表示
+  useEffect(() => {
+    const handleGlobalError = (event) => {
+      alert(`[エラー発生]\nメッセージ: ${event.message}\nファイル: ${event.filename}\n行番号: ${event.lineno}\n\n※このエラーメッセージをコピーしてAIアシスタントに教えてください。`);
+    };
+    window.addEventListener('error', handleGlobalError);
+    return () => window.removeEventListener('error', handleGlobalError);
+  }, []);
+
   // 全システム共通で「スケジュール」の重要超過タスクを監視
   useEffect(() => {
     const q = query(

@@ -85,7 +85,10 @@ const HOLIDAYS_2026 = new Set([
     '2026-11-23', // 勤労感謞の日
 ]);
 
-const isHoliday = (date) => HOLIDAYS_2026.has(format(date, 'yyyy-MM-dd'));
+const isHoliday = (date) => {
+    if (!date || isNaN(new Date(date).getTime())) return false;
+    return HOLIDAYS_2026.has(format(new Date(date), 'yyyy-MM-dd'));
+};
 
 const getNextBusinessDay = (date) => {
     let current = new Date(date);
@@ -133,6 +136,7 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
             if (selectedTask) {
                 const updated = taskList.find(t => t.id === selectedTask.id);
                 if (updated) setSelectedTask(updated);
+                else setSelectedTask(null); // 削除等でリストから消えた場合はクリア
             }
         });
         return () => unsubscribe();
@@ -187,7 +191,7 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
 
     // 自動リピート生成（カレンダーの表示月が変わったとき、またはタスク読み込み時）
     useEffect(() => {
-        if (!tasks.length) return;
+        if (!tasks.length || !currentDate || isNaN(currentDate.getTime())) return;
         
         // カレンダーで「現在表示している月」を基準に生成する
         const yearMonth = format(currentDate, 'yyyy-MM');
@@ -211,11 +215,13 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
             let targetDates = [];
             const y = currentDate.getFullYear(), m = currentDate.getMonth();
             if (tmpl.repeatType === 'monthly_date') {
-                const d = parseInt(tmpl.repeatConfig?.date || 1);
+                const parsedDate = parseInt(tmpl.repeatConfig?.date);
+                const d = isNaN(parsedDate) ? 1 : parsedDate;
                 targetDates.push(new Date(y, m, d));
             } else if (tmpl.repeatType === 'weekly') {
                 // 対象曜日をその月すべて生成
-                const wd = parseInt(tmpl.repeatConfig?.weekday ?? 1);
+                const parsedWd = parseInt(tmpl.repeatConfig?.weekday);
+                const wd = isNaN(parsedWd) ? 1 : parsedWd;
                 const first = new Date(y, m, 1);
                 const diff = (wd - first.getDay() + 7) % 7;
                 let current = new Date(y, m, 1 + diff);
@@ -225,16 +231,22 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
                 }
             } else if (tmpl.repeatType === 'monthly_nth') {
                 // 第N曜日
-                const wd = parseInt(tmpl.repeatConfig?.weekday ?? 1);
-                const nth = parseInt(tmpl.repeatConfig?.nth ?? 1);
+                const parsedWd = parseInt(tmpl.repeatConfig?.weekday);
+                const wd = isNaN(parsedWd) ? 1 : parsedWd;
+                const parsedNth = parseInt(tmpl.repeatConfig?.nth);
+                const nth = isNaN(parsedNth) ? 1 : parsedNth;
                 const first = new Date(y, m, 1);
                 const diff = (wd - first.getDay() + 7) % 7;
                 targetDates.push(new Date(y, m, 1 + diff + (nth - 1) * 7));
             }
+            
+            // 有効な日付のみにフィルター
+            targetDates = targetDates.filter(d => d && !isNaN(d.getTime()));
             if (!targetDates.length) return;
 
             targetDates.forEach(async (tDate) => {
                 const finalDate = getNextBusinessDay(tDate);
+                if (!finalDate || isNaN(finalDate.getTime())) return;
                 await addDoc(collection(db, 'schedule_tasks'), {
                     title: tmpl.title,
                     category: tmpl.category,
@@ -254,9 +266,10 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
         });
     }, [tasks.length, currentDate]);
 
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+    try {
+        const monthStart = startOfMonth(currentDate);
+        const monthEnd = endOfMonth(monthStart);
+        const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
     const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
     const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
@@ -306,35 +319,194 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
 
     const handleSave = async (e) => {
         if (e) e.preventDefault();
-        const taskData = { ...editForm, updated_at: Timestamp.now() };
+        
+        // 繰り返しグループの判定
+        const isRepeat = selectedTask && (selectedTask.isRepeatTemplate || selectedTask.generatedFromTemplate);
+        const templateId = isRepeat ? (selectedTask.isRepeatTemplate ? selectedTask.id : selectedTask.generatedFromTemplate) : null;
+
         try {
             if (selectedTask) {
-                await updateDoc(doc(db, 'schedule_tasks', selectedTask.id), taskData);
-                await logAction(selectedTask.id, 'タスク更新', { title: selectedTask.title }, { title: editForm.title });
-
-                // もし大元のテンプレートが編集された場合、未完了の自動生成タスクを一掃し、再生成させる
-                if (selectedTask.isRepeatTemplate) {
-                    const generatedInstances = tasks.filter(t => t.generatedFromTemplate === selectedTask.id && !t.completed);
-                    for (const instance of generatedInstances) {
-                        await deleteDoc(doc(db, 'schedule_tasks', instance.id));
+                if (isRepeat && templateId) {
+                    // --- 繰り返しタスクグループの更新 ---
+                    const baseTask = tasks.find(t => t.id === templateId);
+                    if (!baseTask) {
+                        alert("大元のテンプレートが見つかりません。");
+                        return;
                     }
-                    
-                    // 特定のテンプレートの生成済みキャッシュだけ削除して再生成を促す
-                    const keysToRemove = [];
-                    checkedTemplatesRef.current.forEach(key => {
-                        if (key.startsWith(`${selectedTask.id}-`)) {
-                            keysToRemove.push(key);
-                        }
-                    });
-                    keysToRemove.forEach(k => checkedTemplatesRef.current.delete(k));
-                }
 
+                    // 1. 予定日（date）の変更検知と、repeatConfig の逆算
+                    let updatedRepeatConfig = { ...editForm.repeatConfig };
+                    const originalDateStr = format(selectedTask.date, 'yyyy-MM-dd');
+                    const isDateChanged = editForm.date !== originalDateStr;
+
+                    if (isDateChanged && editForm.repeatType !== 'none') {
+                        const newDateObj = new Date(editForm.date);
+                        const day = newDateObj.getDay();
+                        // 土日の場合は平日に丸める (0:日曜, 6:土曜)
+                        const weekday = day === 0 ? 1 : (day === 6 ? 5 : day);
+                        
+                        if (editForm.repeatType === 'weekly') {
+                            updatedRepeatConfig.weekday = weekday;
+                        } else if (editForm.repeatType === 'monthly_date') {
+                            updatedRepeatConfig.date = Math.min(28, Math.max(1, newDateObj.getDate()));
+                        } else if (editForm.repeatType === 'monthly_nth') {
+                            updatedRepeatConfig.weekday = weekday;
+                            updatedRepeatConfig.nth = Math.min(5, Math.ceil(newDateObj.getDate() / 7));
+                        }
+                    }
+
+                    // 2. 大元（テンプレート）を更新
+                    const templateUpdateData = {
+                        title: editForm.title,
+                        category: editForm.category,
+                        description: editForm.description || '',
+                        memo: editForm.memo || '',
+                        isImportant: editForm.isImportant || false,
+                        isUrgent: editForm.isUrgent || false,
+                        urgentDeadline: editForm.isUrgent ? (editForm.urgentDeadline || '') : '',
+                        assignee: editForm.assignee || '',
+                        repeatType: editForm.repeatType,
+                        repeatConfig: updatedRepeatConfig,
+                        isRepeatTemplate: editForm.repeatType !== 'none',
+                        date: editForm.date, // 基準予定日も更新
+                        updated_at: Timestamp.now()
+                    };
+
+                    await updateDoc(doc(db, 'schedule_tasks', templateId), templateUpdateData);
+                    await logAction(templateId, 'テンプレート更新', { title: baseTask.title }, { title: editForm.title });
+
+                    // 3. 連動スケジュール（自動生成されたタスク）の同期処理
+                    const generatedInstances = tasks.filter(t => t.generatedFromTemplate === templateId);
+                    
+                    const isRepeatRuleChanged = editForm.repeatType !== baseTask.repeatType || 
+                        JSON.stringify(updatedRepeatConfig) !== JSON.stringify(baseTask.repeatConfig) ||
+                        isDateChanged;
+
+                    if (isRepeatRuleChanged) {
+                        // 予定日やリピート条件が変更された場合、未完了のタスクを削除し再生成
+                        const incompleteInstances = generatedInstances.filter(t => !t.completed);
+                        for (const inst of incompleteInstances) {
+                            await deleteDoc(doc(db, 'schedule_tasks', inst.id));
+                        }
+
+                        // すでに生成されていた月の特定、およびカレンダー表示中の月を含める
+                        const uniqueMonths = [...new Set(generatedInstances.map(t => t.generatedFor).filter(Boolean))];
+                        const currentYM = format(currentDate, 'yyyy-MM');
+                        if (!uniqueMonths.includes(currentYM)) {
+                            uniqueMonths.push(currentYM);
+                        }
+
+                        // 各月について再生成
+                        for (const ym of uniqueMonths) {
+                            // キャッシュクリア
+                            const cacheKey = `${templateId}-${ym}`;
+                            checkedTemplatesRef.current.delete(cacheKey);
+
+                            const [yearStr, monthStr] = ym.split('-');
+                            const y = parseInt(yearStr), m = parseInt(monthStr) - 1;
+                            let targetDates = [];
+
+                            if (editForm.repeatType === 'monthly_date') {
+                                const parsedDate = parseInt(updatedRepeatConfig?.date);
+                                const d = isNaN(parsedDate) ? 1 : parsedDate;
+                                targetDates.push(new Date(y, m, d));
+                            } else if (editForm.repeatType === 'weekly') {
+                                const parsedWd = parseInt(updatedRepeatConfig?.weekday);
+                                const wd = isNaN(parsedWd) ? 1 : parsedWd;
+                                const first = new Date(y, m, 1);
+                                const diff = (wd - first.getDay() + 7) % 7;
+                                let current = new Date(y, m, 1 + diff);
+                                while (current.getMonth() === m) {
+                                    targetDates.push(new Date(current));
+                                    current.setDate(current.getDate() + 7);
+                                }
+                            } else if (editForm.repeatType === 'monthly_nth') {
+                                const parsedWd = parseInt(updatedRepeatConfig?.weekday);
+                                const wd = isNaN(parsedWd) ? 1 : parsedWd;
+                                const parsedNth = parseInt(updatedRepeatConfig?.nth);
+                                const nth = isNaN(parsedNth) ? 1 : parsedNth;
+                                const first = new Date(y, m, 1);
+                                const diff = (wd - first.getDay() + 7) % 7;
+                                targetDates.push(new Date(y, m, 1 + diff + (nth - 1) * 7));
+                            }
+
+                            // 有効な日付のみにフィルター
+                            targetDates = targetDates.filter(d => d && !isNaN(d.getTime()));
+
+                            for (const tDate of targetDates) {
+                                const finalDate = getNextBusinessDay(tDate);
+                                if (!finalDate || isNaN(finalDate.getTime())) continue;
+                                await addDoc(collection(db, 'schedule_tasks'), {
+                                    title: editForm.title,
+                                    category: editForm.category,
+                                    description: editForm.description || '',
+                                    memo: editForm.memo || '',
+                                    date: format(finalDate, 'yyyy-MM-dd'),
+                                    completed: false,
+                                    isImportant: editForm.isImportant || false,
+                                    isUrgent: false,
+                                    assignee: editForm.assignee || '',
+                                    subtasks: editForm.subtasks || [],
+                                    generatedFromTemplate: templateId,
+                                    generatedFor: ym,
+                                    created_at: Timestamp.now()
+                                });
+                            }
+                        }
+                    } else {
+                        // ルール変更がない場合は基本情報のみを全未完了タスクに同期
+                        const incompleteInstances = generatedInstances.filter(t => !t.completed);
+                        for (const inst of incompleteInstances) {
+                            await updateDoc(doc(db, 'schedule_tasks', inst.id), {
+                                title: editForm.title,
+                                category: editForm.category,
+                                description: editForm.description || '',
+                                memo: editForm.memo || '',
+                                assignee: editForm.assignee || '',
+                                isImportant: editForm.isImportant || false,
+                                isUrgent: editForm.isUrgent || false,
+                                urgentDeadline: editForm.isUrgent ? (editForm.urgentDeadline || '') : '',
+                                updated_at: Timestamp.now()
+                            });
+                        }
+                    }
+
+                    // 4. 連動タスク自身の個別更新 (ルール変更がなく、selectedTaskが連動タスクの場合)
+                    if (!selectedTask.isRepeatTemplate && !isRepeatRuleChanged) {
+                        await updateDoc(doc(db, 'schedule_tasks', selectedTask.id), {
+                            title: editForm.title,
+                            category: editForm.category,
+                            description: editForm.description || '',
+                            memo: editForm.memo || '',
+                            assignee: editForm.assignee || '',
+                            isImportant: editForm.isImportant || false,
+                            isUrgent: editForm.isUrgent || false,
+                            urgentDeadline: editForm.isUrgent ? (editForm.urgentDeadline || '') : '',
+                            date: editForm.date,
+                            updated_at: Timestamp.now()
+                        });
+                    }
+
+                } else {
+                    // 通常の単一タスクの更新
+                    await updateDoc(doc(db, 'schedule_tasks', selectedTask.id), {
+                        ...editForm,
+                        updated_at: Timestamp.now()
+                    });
+                    await logAction(selectedTask.id, 'タスク更新', { title: selectedTask.title }, { title: editForm.title });
+                }
             } else {
+                // 新規作成
+                const taskData = { ...editForm, updated_at: Timestamp.now() };
                 const ref = await addDoc(collection(db, 'schedule_tasks'), { ...taskData, completed: false, created_at: Timestamp.now() });
                 await logAction(ref.id, 'タスク作成', null, { title: editForm.title });
             }
+            setSelectedTask(null);
             setIsPanelOpen(false);
-        } catch (err) { alert("保存に失敗しました"); }
+        } catch (err) {
+            console.error(err);
+            alert("保存に失敗しました");
+        }
     };
 
     const toggleTask = async (taskId, currentStatus) => {
@@ -352,26 +524,38 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
     const handleDelete = async () => {
         if (!selectedTask) return;
         
+        const isRepeat = selectedTask.isRepeatTemplate || selectedTask.generatedFromTemplate;
+        const templateId = isRepeat ? (selectedTask.isRepeatTemplate ? selectedTask.id : selectedTask.generatedFromTemplate) : null;
+        
         let message = "このタスクを削除しますか？";
-        if (selectedTask.isRepeatTemplate) {
-            message = "このタスクは繰り返し設定の大元です。削除すると、自動生成された紐づくタスクもすべて一括で削除されますがよろしいですか？";
+        if (isRepeat) {
+            message = "このタスクは繰り返し設定の一部です。削除すると、大元の設定および自動生成された紐づくスケジュールもすべて一括で削除されますがよろしいですか？";
         }
         
         if (!window.confirm(message)) return;
         
         try { 
             await logAction(selectedTask.id, '削除', { title: selectedTask.title }, null);
-            await deleteDoc(doc(db, 'schedule_tasks', selectedTask.id)); 
             
-            if (selectedTask.isRepeatTemplate) {
+            if (isRepeat && templateId) {
+                // 大元の削除
+                await deleteDoc(doc(db, 'schedule_tasks', templateId));
+                
                 // 紐づくすべてのタスクを一括削除
-                const generatedInstances = tasks.filter(t => t.generatedFromTemplate === selectedTask.id);
+                const generatedInstances = tasks.filter(t => t.generatedFromTemplate === templateId);
                 for (const instance of generatedInstances) {
                     await deleteDoc(doc(db, 'schedule_tasks', instance.id));
                 }
+            } else {
+                // 通常タスクの削除
+                await deleteDoc(doc(db, 'schedule_tasks', selectedTask.id)); 
             }
+            setSelectedTask(null); // 選択状態をクリア
             setIsPanelOpen(false); 
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error(err);
+            alert("削除に失敗しました");
+        }
     };
 
     const importCSVData = async () => {
@@ -501,7 +685,10 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
                                     </div>
                                     {week.slice(0, 5).map((day, dIdx) => {
                                         // テンプレート自体（isRepeatTemplate: true）はカレンダーから隠す
-                                        const dayTasks = filteredTasks.filter(t => isSameDay(t.date, day) && !t.isRepeatTemplate);
+                                        const dayTasks = filteredTasks.filter(t => {
+                                            if (!t.date || isNaN(new Date(t.date).getTime())) return false;
+                                            return isSameDay(t.date, day) && !t.isRepeatTemplate;
+                                        });
                                         const isHol = isHoliday(day) || day.getDay() === 0 || day.getDay() === 6;
                                         return (
                                             <div key={dIdx} className={`ux-day-cell ${!isSameMonth(day, monthStart) ? 'dimmed' : ''} ${isHol ? 'is-holiday' : ''}`} onClick={() => { setSelectedTask(null); setEditForm({...editForm, title: '', date: format(day, 'yyyy-MM-dd'), category: 'customer', description: '', memo: ''}); setIsPanelOpen(true); }}>
@@ -669,6 +856,30 @@ const ScheduleManagement = ({ jumpTask, onJumpComplete }) => {
             )}
         </div>
     );
+    } catch (renderError) {
+        console.error("Render Error in ScheduleManagement:", renderError);
+        return (
+            <div style={{ padding: '24px', background: '#fff5f5', color: '#c53030', border: '1px solid #feb2b2', borderRadius: '12px', margin: '24px', fontFamily: 'monospace', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                <h2 style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.25rem' }}>⚠️ 画面の描画中にエラーが発生しました</h2>
+                <p style={{ margin: '0 0 16px 0', fontSize: '0.95rem' }}><strong>エラーメッセージ:</strong> {renderError.message}</p>
+                <p style={{ margin: '0 0 8px 0', fontWeight: 'bold' }}>スタックトレース:</p>
+                <pre style={{ background: '#fff', padding: '16px', border: '1px solid #fed7d7', borderRadius: '6px', overflow: 'auto', maxHeight: '350px', fontSize: '0.8rem', lineHeight: '1.4', color: '#4a5568' }}>
+                    {renderError.stack}
+                </pre>
+                <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+                    <button onClick={() => window.location.reload()} style={{ padding: '8px 16px', background: '#c53030', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                        画面を再読み込み
+                    </button>
+                    <button onClick={() => {
+                        const errText = `Message: ${renderError.message}\nStack: ${renderError.stack}`;
+                        navigator.clipboard.writeText(errText).then(() => alert('エラーログをコピーしました。AIに貼り付けてください。'));
+                    }} style={{ padding: '8px 16px', background: '#4a5568', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+                        📋 エラーログをコピー
+                    </button>
+                </div>
+            </div>
+        );
+    }
 };
 
 export default ScheduleManagement;

@@ -248,8 +248,7 @@ const PaymentManagement = () => {
         nyuukin: '',
         bikou: '',
         kanryou: '',
-        henkin_taishou: '',
-        soshikizu: ''
+        henkin_taishou: ''
     });
     const [debouncedFilters, setDebouncedFilters] = useState(filters);
     const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
