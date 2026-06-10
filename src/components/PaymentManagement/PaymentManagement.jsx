@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, startTransition } from 'react';
 import { supabase } from '../../lib/supabase';
+import * as XLSX from 'xlsx';
 import './PaymentManagement.css';
 
 // --- Utilities ---
@@ -362,8 +363,6 @@ const PaymentManagement = () => {
         const reader = new FileReader();
         reader.onload = async (event) => {
             try {
-                // Dynamically import XLSX to prevent blocking the UI thread on initial load
-                const XLSX = await import('xlsx');
                 const data = new Uint8Array(event.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
